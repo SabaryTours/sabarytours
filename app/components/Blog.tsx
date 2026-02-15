@@ -1,0 +1,71 @@
+import BlogGrid from "./BlogGrid";
+
+export default function Blog() {
+  return (
+    <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7 relative bg-white">
+      {/* Pattern Overlay - all over the section */}
+      <div 
+        className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: 'url("/assets/pattern.png")',
+          backgroundRepeat: 'repeat',
+          backgroundSize: 'auto',
+          opacity: 0.15,
+          pointerEvents: 'none',
+        }}
+      />
+      
+      <div className="container mx-auto px-6 relative z-10 py-16">
+        {/* Header Section */}
+        <div className="flex flex-col gap-[20px] items-center mb-12">
+          {/* Top Line - Icon + Subtitle */}
+          <div className="flex gap-[5px] items-center justify-center">
+            {/* Blog Icon */}
+            <div className="h-5 w-[14px] relative">
+              <svg
+                viewBox="0 0 14 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-full h-full"
+              >
+                <path
+                  d="M7 0L0 4V18L7 22L14 18V4L7 0Z"
+                  fill="#0060CC"
+                />
+              </svg>
+              </div>
+            <p className="text-[#0060cc] text-[14px] font-bold leading-[24px] ">
+              Blogs, Articles, News
+            </p>
+                </div>
+
+          {/* Main Heading */}
+          <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center overflow-hidden">
+            <h2 
+              className="text-[32px] text-[#222] relative"
+              style={{
+                fontFamily: 'var(--font-unlimited-pie)',
+                lineHeight: 1
+              }}
+            >
+              Welcome to
+            </h2>
+            <h2 
+              className="text-[32px] text-[#ff5e00] relative"
+              style={{
+                fontFamily: 'var(--font-unlimited-pie)',
+                lineHeight: 1,
+                textShadow: '2px 2px 0px #551f00'
+              }}
+            >
+              our travel blog
+            </h2>
+              </div>
+            </div>
+
+        <BlogGrid />
+      </div>
+    </section>
+  );
+}
+
