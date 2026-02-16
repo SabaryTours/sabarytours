@@ -5,7 +5,7 @@ export default function Packages() {
     <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7">
       {/* Background Container - matching hero section structure */}
       <div 
-        className="relative py-16 rounded-2xl"
+        className="relative py-16 rounded-2xl overflow-visible"
         style={{
           backgroundColor: '#FEEFFF',
           borderRadius: '16px',

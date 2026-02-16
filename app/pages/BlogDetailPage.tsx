@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BlogPost, comments, getRelatedPosts } from "../data/blog";
-import BlogGrid from "../components/BlogGrid";
 import Footer from "../components/Footer";
 
 interface BlogDetailPageProps {
@@ -15,8 +14,8 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
   return (
     <div className="min-h-screen bg-white">
       {/* Back Link */}
-      <section className="w-full px-12 pt-7">
-        <div className="container mx-auto px-6">
+      <section className="w-full px-2 sm:px-4 md:px-12 pt-7">
+        <div className="container mx-auto px-4 sm:px-6">
           <Link 
             href="/blog" 
             className="text-[#0060cc] text-[14px] font-bold leading-[24px] hover:text-[#ff5e00] transition-colors inline-flex items-center gap-2"
@@ -39,8 +38,8 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
       </section>
 
       {/* Main Content */}
-      <section className="w-full px-12 py-7">
-        <div className="container mx-auto px-6 max-w-4xl">
+      <section className="w-full px-2 sm:px-4 md:px-12 py-7">
+        <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
           {/* Article Title */}
           <h1 
             className="text-[40px] md:text-[48px] font-normal leading-[1.2] text-[#222] uppercase mb-4"
@@ -123,18 +122,18 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
                 <input
                   type="text"
                   placeholder="Enter your name"
-                  className="px-4 py-3 border border-[#e3e3e3] rounded-lg focus:outline-none focus:border-[#ff5e00]"
+                  className="px-4 py-3 border border-[#e3e3e3] rounded-lg focus:outline-none focus:border-[#ff5e00] text-[14px] leading-[24px] text-[#222] placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px]"
                 />
                 <input
                   type="email"
                   placeholder="Enter your email"
-                  className="px-4 py-3 border border-[#e3e3e3] rounded-lg focus:outline-none focus:border-[#ff5e00]"
+                  className="px-4 py-3 border border-[#e3e3e3] rounded-lg focus:outline-none focus:border-[#ff5e00] text-[14px] leading-[24px] text-[#222] placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px]"
                 />
               </div>
               <textarea
                 placeholder="Type your comment..."
                 rows={6}
-                className="w-full px-4 py-3 border border-[#e3e3e3] rounded-lg focus:outline-none focus:border-[#ff5e00]"
+                className="w-full px-4 py-3 border border-[#e3e3e3] rounded-lg focus:outline-none focus:border-[#ff5e00] text-[14px] leading-[24px] text-[#222] placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px]"
               />
               <button
                 type="submit"
@@ -152,7 +151,7 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
               <div className="space-y-6">
                 {postComments.map((comment) => (
                   <div key={comment.id} className="flex gap-4">
-                    <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                    <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0">
                       <Image
                         src={comment.avatar || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"}
                         alt={comment.author}

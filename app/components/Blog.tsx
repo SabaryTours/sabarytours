@@ -2,7 +2,7 @@ import BlogGrid from "./BlogGrid";
 
 export default function Blog() {
   return (
-    <section className="w-full px-4 sm:px-6 md:px-12 py-2 sm:py-4 md:py-7 relative bg-white">
+    <section className="w-full px-4 sm:px-6 md:px-12 py-2 sm:py-4 md:py-7 relative bg-white overflow-visible">
       {/* Pattern Overlay - all over the section */}
       <div 
         className="absolute inset-0 z-0"

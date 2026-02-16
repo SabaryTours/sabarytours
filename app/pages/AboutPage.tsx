@@ -1,6 +1,146 @@
+"use client";
+
 import Image from "next/image";
 import Footer from "../components/Footer";
 import { teamMembers } from "../data/team";
+import { useEffect, useRef, useState } from "react";
+
+function CircularImageCard({ item, isMobile = false }: { item: { src: string; alt: string; hasLogo?: boolean; hasHeart?: boolean }; isMobile?: boolean }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = useState(false);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setIsInView(true);
+      return;
+    }
+
+    const card = cardRef.current;
+    if (!card) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [isMobile]);
+
+  return (
+    <div
+      ref={cardRef}
+      className="relative shrink-0 snap-center transition-all duration-300"
+      style={{
+        transform: isInView ? "scale(1)" : "scale(0.9)",
+        opacity: isInView ? 1 : 0.7,
+      }}
+    >
+      <div className={`relative rounded-full overflow-hidden border-4 border-white shadow-xl ${isMobile ? "w-64 h-64" : "w-48 h-48"}`}>
+        <Image
+          src={item.src}
+          alt={item.alt}
+          fill
+          className="object-cover"
+          unoptimized
+        />
+      </div>
+      {item.hasLogo && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="bg-white/90 rounded-full px-4 py-2">
+            <span className="text-[#0060CC] text-[12px] font-bold">
+              Sabary Tours
+            </span>
+          </div>
+        </div>
+      )}
+      {item.hasHeart && (
+        <div className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-lg">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="#ff5e00"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TeamMemberCard({ member, isMobile = false }: { member: typeof teamMembers[0]; isMobile?: boolean }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = useState(false);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setIsInView(true);
+      return;
+    }
+
+    const card = cardRef.current;
+    if (!card) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [isMobile]);
+
+  return (
+    <div
+      ref={cardRef}
+      className={`overflow-hidden relative rounded-[16px] bg-white shadow-lg shrink-0 snap-center transition-all duration-300 ${
+        isMobile
+          ? "h-[320px] w-[280px]"
+          : "sm:h-[250px] md:h-[280px] lg:h-[310px] sm:w-[220px] md:w-[240px] lg:w-[260px]"
+      }`}
+      style={{
+        transform: isInView ? "scale(1)" : "scale(0.9)",
+        opacity: isInView ? 1 : 0.7,
+      }}
+    >
+      {/* Image Container */}
+      <div className="absolute inset-0">
+        <Image
+          src={member.image}
+          alt={member.name}
+          fill
+          className="object-cover"
+          unoptimized
+        />
+      </div>
+      {/* Progressive Blur Overlay with Gradual Fade */}
+      <div className={`absolute bottom-0 left-0 right-0 overflow-hidden ${isMobile ? "h-[80px]" : "sm:h-[90px] md:h-[100px] lg:h-[110px]"}`}>
+        {/* Gradient mask for gradual fade */}
+        <div className="absolute inset-0 team-blur-fade pointer-events-none" />
+        {/* Member Info Card */}
+        <div className={`absolute left-1/2 -translate-x-1/2 bg-[#222] flex flex-col items-start rounded-[6px] ${
+          isMobile
+            ? "bottom-[6px] gap-[6px] p-[6px] w-[220px]"
+            : "sm:bottom-[7px] md:bottom-[8px] sm:gap-[7px] md:gap-[8px] sm:p-[7px] md:p-[8px] sm:w-[180px] md:w-[200px] lg:w-[220px]"
+        }`}>
+          <div className="text-white text-[14px] font-bold leading-[24px] w-full font-sans truncate">
+            {member.name}
+          </div>
+          <div className="text-[#d4d3d4] text-[14px] font-normal leading-[24px] w-full font-sans truncate">
+            {member.title}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AboutPage() {
   return (
@@ -277,10 +417,10 @@ export default function AboutPage() {
           <div className="container mx-auto px-3 sm:px-4 md:px-6 py-12 sm:py-14 md:py-16">
             <div className="max-w-4xl mx-auto text-center">
               <h2
-                className="text-[28px] text-white font-normal leading-normal mb-8 uppercase text-center whitespace-nowrap"
+                className="text-[24px] sm:text-[28px] text-white font-normal leading-normal mb-8 uppercase text-center break-words"
                 style={{
                   fontFamily: "var(--font-unlimited-pie)",
-                  textShadow: '0px 4px 0px #893300',
+                  textShadow: '1px 1px 0px #893300',
                   WebkitTextStroke: "1px #893300",
                 } as React.CSSProperties}
               >
@@ -290,7 +430,18 @@ export default function AboutPage() {
                 We now host travelers from across the world. Sabary Tours wants to become the preferred tourism and hospitality company for travelers worldwide, offering unforgettable Ghanaian experiences with warmth, care, and local insight.
               </p>
               {/* Three Circular Images */}
-              <div className="flex flex-wrap justify-center gap-8">
+              {/* Mobile: Horizontal Scroll */}
+              <div className="md:hidden flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4">
+                {[
+                  { src: "/assets/tour-1.jpg", alt: "Tour photo", hasLogo: true },
+                  { src: "/assets/tour-2.jpg", alt: "Tour photo", hasHeart: true },
+                  { src: "/assets/tour-3.jpg", alt: "Tour photo", hasHeart: true },
+                ].map((item, index) => (
+                  <CircularImageCard key={index} item={item} isMobile={true} />
+                ))}
+              </div>
+              {/* Desktop: Grid Layout */}
+              <div className="hidden md:flex flex-wrap justify-center gap-8">
                 <div className="relative">
                   <div className="relative w-48 h-48 rounded-full overflow-hidden border-4 border-white shadow-xl">
                     <Image
@@ -367,9 +518,9 @@ export default function AboutPage() {
         <div className="relative rounded-2xl overflow-hidden bg-white">
           <div className="container mx-auto px-3 sm:px-4 md:px-6 py-12 sm:py-14 md:py-16">
             <div className="max-w-4xl mx-auto">
-              <div className="flex gap-[12px] items-center justify-center leading-none mb-12">
+              <div className="flex flex-col sm:flex-row gap-[12px] items-center justify-center leading-none mb-12">
                 <h2
-                  className="text-[32px] font-normal uppercase shrink-0"
+                  className="text-[28px] sm:text-[32px] font-normal uppercase"
                   style={{
                     fontFamily: "var(--font-unlimited-pie)",
                     color: "#222",
@@ -379,7 +530,7 @@ export default function AboutPage() {
                   the people
                 </h2>
                 <h2
-                  className="text-[32px] font-normal uppercase shrink-0"
+                  className="text-[28px] sm:text-[32px] font-normal uppercase"
                   style={{
                     fontFamily: "var(--font-unlimited-pie)",
                     color: "#ff5e00",
@@ -390,38 +541,17 @@ export default function AboutPage() {
                   who make it happen
                 </h2>
               </div>
-              <div className="flex flex-wrap md:flex-nowrap justify-center gap-3 sm:gap-4 items-center w-full">
-            {teamMembers.map((member) => (
-              <div
-                key={member.id}
-                className="h-[220px] sm:h-[250px] md:h-[280px] lg:h-[310px] overflow-hidden relative rounded-[16px] sm:rounded-[18px] md:rounded-[20px] shrink-0 w-[200px] sm:w-[220px] md:w-[240px] lg:w-[260px] bg-white shadow-lg"
-              >
-                {/* Image Container */}
-                <div className="absolute inset-0">
-                  <Image
-                    src={member.image}
-                    alt={member.name}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                </div>
-                {/* Progressive Blur Overlay with Gradual Fade */}
-                <div className="absolute bottom-0 left-0 right-0 h-[80px] sm:h-[90px] md:h-[100px] lg:h-[110px] overflow-hidden">
-                  {/* Gradient mask for gradual fade */}
-                  <div className="absolute inset-0 team-blur-fade pointer-events-none" />
-                  {/* Member Info Card */}
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[6px] sm:bottom-[7px] md:bottom-[8px] bg-[#222] flex flex-col gap-[6px] sm:gap-[7px] md:gap-[8px] items-start p-[6px] sm:p-[7px] md:p-[8px] rounded-[6px] sm:rounded-[7px] md:rounded-[8px] w-[160px] sm:w-[180px] md:w-[200px] lg:w-[220px]">
-                    <div className="text-white text-[14px] font-bold leading-[24px] w-full font-sans truncate">
-                      {member.name}
-                    </div>
-                    <div className="text-[#d4d3d4] text-[14px] font-normal leading-[24px] w-full font-sans truncate">
-                      {member.title}
-                    </div>
-                  </div>
-                </div>
+              {/* Mobile: Horizontal Scroll */}
+              <div className="md:hidden flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4">
+                {teamMembers.map((member) => (
+                  <TeamMemberCard key={member.id} member={member} isMobile={true} />
+                ))}
               </div>
-            ))}
+              {/* Desktop: Grid Layout */}
+              <div className="hidden md:flex flex-wrap md:flex-nowrap justify-center gap-3 sm:gap-4 items-center w-full">
+                {teamMembers.map((member) => (
+                  <TeamMemberCard key={member.id} member={member} isMobile={false} />
+                ))}
               </div>
             </div>
           </div>

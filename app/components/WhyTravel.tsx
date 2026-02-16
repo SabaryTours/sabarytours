@@ -47,7 +47,7 @@ export default function WhyTravel() {
   return (
     <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7">
       {/* Blue Background Container - matching hero section structure */}
-      <div className="bg-blue-50 relative rounded-2xl py-16">
+      <div className="bg-blue-50 relative rounded-2xl py-16 overflow-visible">
         <div className="container mx-auto px-6">
           {/* Header Section */}
           <div className="flex flex-col gap-[20px] items-center mb-12">

@@ -23,7 +23,7 @@ const events = [
 
 export default function WhatsHappening() {
   return (
-    <section className="w-full bg-[#0060CC] relative py-8 sm:py-12 md:py-16">
+    <section className="w-full bg-[#0060CC] relative py-8 sm:py-12 md:py-16 overflow-visible">
       {/* Pattern background */}
       <div className="absolute inset-0 opacity-80">
         <div className="w-full h-full bg-repeat" style={{

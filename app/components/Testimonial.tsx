@@ -45,10 +45,10 @@ export default function Testimonial() {
   const currentTestimonial = testimonials[currentIndex];
   
   return (
-    <section className="w-full px-4 sm:px-6 md:px-12 py-2 sm:py-4 md:py-7 relative">
+    <section className="w-full px-4 sm:px-6 md:px-12 py-2 sm:py-4 md:py-7 relative overflow-visible">
       {/* Background Container */}
       <div 
-        className="relative py-8 sm:py-12 md:py-16 px-4 sm:px-8 md:px-12"
+        className="relative py-8 sm:py-12 md:py-16 px-4 sm:px-8 md:px-12 overflow-visible"
         style={{
           backgroundColor: '#ffdfcc',
           borderRadius: '16px',

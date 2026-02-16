@@ -1,10 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import Logo from "./Logo";
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-[#1B0A00] relative pt-8 pb-12">
+    <footer className="w-full bg-[#1B0A00] relative pt-4 pb-8">
       {/* Decorative border pattern - triangles */}
       <div className="absolute inset-0 opacity-20" style={{
         backgroundImage: `url("/assets/pattern.svg")`,
@@ -166,78 +167,43 @@ export default function Footer() {
         </div>
 
         {/* Payment Methods */}
-        <div className="container mx-auto pt-6 pb-4 relative z-10 border-t border-white/10">
+        <div className="container mx-auto relative z-10 border-t border-white/10">
           <div className="flex flex-col items-center gap-4">
             <p className="text-white/70 text-[12px] sm:text-[13px] font-normal leading-[20px] text-center">
               We accept secure payments via the above methods
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
               {/* Visa */}
-              <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
-                <img
+              {/* <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
+                <Image
                   src="/assets/payments/visa.svg"
                   alt="Visa"
-                  className="w-full h-full object-contain opacity-80 hover:opacity-100 transition-opacity"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
+                  fill
+                  className="object-contain opacity-80 hover:opacity-100 transition-opacity"
+                  unoptimized
                 />
-              </div>
+              </div> */}
               {/* Mastercard */}
-              <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
-                <img
+              {/* <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
+                <Image
                   src="/assets/payments/mastercard.svg"
+                  fill
                   alt="Mastercard"
-                  className="w-full h-full object-contain opacity-80 hover:opacity-100 transition-opacity"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
+                  className="object-contain opacity-80 hover:opacity-100 transition-opacity"
+                  unoptimized
+                />
+              </div> */}
+
+              <div className="relative w-20 h-12 sm:w-24 sm:h-14 flex items-center justify-center">
+                <Image
+                  src="/assets/paystack-logo.jpg"
+                  fill
+                  alt="Paystack"
+                  className="object-contain opacity-80 hover:opacity-100 transition-opacity"
+                  unoptimized
                 />
               </div>
-              {/* Mobile Money */}
-              <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
-                <img
-                  src="/assets/payments/mobile-money.svg"
-                  alt="Mobile Money"
-                  className="w-full h-full object-contain opacity-80 hover:opacity-100 transition-opacity"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-              {/* PayPal */}
-              <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
-                <img
-                  src="/assets/payments/paypal.svg"
-                  alt="PayPal"
-                  className="w-full h-full object-contain opacity-80 hover:opacity-100 transition-opacity"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-              {/* MTN Mobile Money */}
-              <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
-                <img
-                  src="/assets/payments/mtn.svg"
-                  alt="MTN Mobile Money"
-                  className="w-full h-full object-contain opacity-80 hover:opacity-100 transition-opacity"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-              {/* Vodafone Cash */}
-              <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
-                <img
-                  src="/assets/payments/vodafone-cash.svg"
-                  alt="Vodafone Cash"
-                  className="w-full h-full object-contain opacity-80 hover:opacity-100 transition-opacity"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
+            
             </div>
           </div>
         </div>
