@@ -45,10 +45,10 @@ export default function Testimonial() {
   const currentTestimonial = testimonials[currentIndex];
   
   return (
-    <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7 relative">
+    <section className="w-full px-4 sm:px-6 md:px-12 py-2 sm:py-4 md:py-7 relative">
       {/* Background Container */}
       <div 
-        className="relative py-16 px-12"
+        className="relative py-8 sm:py-12 md:py-16 px-4 sm:px-8 md:px-12"
         style={{
           backgroundColor: '#ffdfcc',
           borderRadius: '16px',
@@ -102,7 +102,7 @@ export default function Testimonial() {
             </div>
 
             {/* Main Heading */}
-            <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center overflow-hidden">
+            <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center overflow-visible px-2">
               <h2 
                 className="text-[32px] text-[#222] relative"
                 style={{
@@ -117,7 +117,7 @@ export default function Testimonial() {
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
                   lineHeight: 1,
-                  textShadow: '2px 2px 0px #551f00'
+                  textShadow: '1px 1px 0px #551f00'
                 }}
               >
                 they loved it!
@@ -159,7 +159,7 @@ export default function Testimonial() {
                   fontFamily: 'var(--font-unlimited-pie)',
                   lineHeight: 'none',
                   color: '#ffffff',
-                  textShadow: '2px 2px 0px #893300, -2px -2px 0px #893300, 2px -2px 0px #893300, -2px 2px 0px #893300, 0px 4px 0px #893300',
+                  textShadow: '1px 1px 0px #893300',
                 }}
               >
                 AMAZING!

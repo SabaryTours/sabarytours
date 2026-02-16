@@ -62,17 +62,25 @@ export default function Header() {
   /* Close dropdowns on outside click */
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (currencyRef.current && !currencyRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      
+      // Only close if clicking outside both the currency dropdown and its button
+      if (currencyRef.current && !currencyRef.current.contains(target)) {
         setCurrencyOpen(false);
       }
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+      
+      // Only close if clicking outside both the user menu and its button
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) {
         setUserMenuOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    // Use capture phase to ensure we catch the event
+    if (currencyOpen || userMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside, true);
+      return () => document.removeEventListener("mousedown", handleClickOutside, true);
+    }
+  }, [currencyOpen, userMenuOpen]);
 
   const handleLogout = () => {
     logout();
@@ -177,7 +185,10 @@ export default function Header() {
             <div className="relative z-50" ref={currencyRef}>
               <button
                 type="button"
-                onClick={() => setCurrencyOpen((prev) => !prev)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrencyOpen((prev) => !prev);
+                }}
                 className="bg-gray-100 flex items-center gap-2 h-[40px] px-3 rounded-full transition-colors hover:bg-gray-200"
               >
                 <span className="text-[12px] text-[#222]">
@@ -192,49 +203,53 @@ export default function Header() {
               </button>
 
               {/* Dropdown (always mounted for stability) */}
-              <div
-                className={`absolute right-0 top-full mt-2 w-[140px] bg-white rounded-lg shadow-xl border border-gray-100 transition-all duration-200 origin-top overflow-hidden ${
-                  currencyOpen
-                    ? "opacity-100 scale-100 pointer-events-auto z-60"
-                    : "opacity-0 scale-95 pointer-events-none"
-                }`}
-                style={{ zIndex: 9999 }}
-              >
-                <div className="px-3 py-2 text-[12px] text-[#8e8e8e] border-b border-gray-100">
-                  Change currency
-                </div>
+              {currencyOpen && (
+                <div
+                  className="absolute right-0 top-full mt-2 w-[140px] bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden"
+                  style={{ zIndex: 9999 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="px-3 py-2 text-[12px] text-[#8e8e8e] border-b border-gray-100">
+                    Change currency
+                  </div>
 
-                <div className="py-1">
-                  {currencies.map((currency) => (
-                    <button
-                      key={currency.code}
-                      type="button"
-                      onClick={() => {
-                        setSelectedCurrency(currency);
-                        setCurrencyOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-[12px] transition-colors ${
-                        selectedCurrency.code === currency.code
-                          ? "bg-[#fff5e6] text-[#ff5e00] font-semibold"
-                          : "hover:bg-[#fff5e6] text-[#222]"
-                      }`}
-                    >
-                      {currency.symbol} {currency.code}
-                    </button>
-                  ))}
+                  <div className="py-1">
+                    {currencies.map((currency) => (
+                      <button
+                        key={currency.code}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCurrency(currency);
+                          setCurrencyOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-[12px] transition-colors ${
+                          selectedCurrency.code === currency.code
+                            ? "bg-[#fff5e6] text-[#ff5e00] font-semibold"
+                            : "hover:bg-[#fff5e6] text-[#222]"
+                        }`}
+                      >
+                        {currency.symbol} {currency.code}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Mobile Button */}
           <button
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="md:hidden flex flex-col gap-1.5 p-2"
+              className={`md:hidden flex flex-col gap-1.5 p-2 rounded-lg transition-colors ${
+                mobileMenuOpen ? "bg-gray-100" : ""
+              }`}
             aria-label="Toggle menu"
           >
             <span
-              className={`w-6 h-0.5 bg-[#222] transition-all duration-300 ${
-                mobileMenuOpen ? "rotate-45 translate-y-2" : ""
+              className={`w-6 h-0.5 transition-all duration-300 ${
+                mobileMenuOpen 
+                  ? "rotate-45 translate-y-2 bg-[#222]" 
+                  : "bg-[#222]"
               }`}
             />
             <span
@@ -243,8 +258,10 @@ export default function Header() {
               }`}
             />
             <span
-              className={`w-6 h-0.5 bg-[#222] transition-all duration-300 ${
-                mobileMenuOpen ? "-rotate-45 -translate-y-2" : ""
+              className={`w-6 h-0.5 transition-all duration-300 ${
+                mobileMenuOpen 
+                  ? "-rotate-45 -translate-y-2 bg-[#222]" 
+                  : "bg-[#222]"
               }`}
             />
           </button>

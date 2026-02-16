@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
                   textShadow: "1px 1px 0px #ddd",
                 }}
               >
-                Forgot Password?
+                Forgot Password ?
               </h1>
               <p className="text-gray-600 font-semibold text-[14px]">
                 Enter your email and we&apos;ll send you a reset link

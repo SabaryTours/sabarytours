@@ -88,7 +88,7 @@ export default function PackageDetailPage({ packageData }: PackageDetailPageProp
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
                   lineHeight: 1,
-                  textShadow: '2px 2px 0px #551f00'
+                  textShadow: '1px 1px 0px #551f00'
                 }}
               >
                 our packages

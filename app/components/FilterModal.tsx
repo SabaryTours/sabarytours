@@ -84,7 +84,7 @@ export default function FilterModal({ isOpen, onClose, tours, onFilterChange }: 
             className="text-[24px] text-[#ff5e00] font-normal uppercase"
             style={{
               fontFamily: 'var(--font-unlimited-pie)',
-              textShadow: '2px 2px 0px #331300',
+              textShadow: '1px 1px 0px #331300',
             }}
           >
             Filter Tours

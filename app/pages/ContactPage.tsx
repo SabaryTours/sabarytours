@@ -136,7 +136,7 @@ export default function ContactPage() {
                 }}
               >
                 <div
-                  className="flex gap-[12px] items-center leading-none uppercase w-full overflow-hidden"
+                  className="flex flex-col sm:flex-row gap-[12px] items-center leading-none uppercase w-full overflow-hidden"
                   style={{
                     fontFamily: 'var(--font-unlimited-pie)',
                     fontSize: '32px',
@@ -146,7 +146,7 @@ export default function ContactPage() {
                   <p
                     className="text-[#ff5e00]"
                     style={{
-                      textShadow: '2px 2px 0px #551f00',
+                      textShadow: '1px 1px 0px #551f00',
                     }}
                   >
                     questions, suggestions or feedback?

@@ -37,7 +37,7 @@ export default function WhatsHappening() {
       </div>
 
       <div className="container mx-auto px-6 relative z-10">
-      <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center mb-12 overflow-hidden">
+      <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center mb-12 overflow-visible px-2">
               <h2 
                 className="text-[32px] text-[#ffffff] relative"
                 style={{
@@ -52,7 +52,7 @@ export default function WhatsHappening() {
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
                   lineHeight: 1,
-                  textShadow: '2px 2px 0px #551f00'
+                  textShadow: '1px 1px 0px #551f00'
                 }}
               >
                 happening now?!

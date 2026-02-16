@@ -24,7 +24,7 @@ export default function Hero() {
               <h1 
                 className="text-[20px] sm:text-[28px] md:text-[32px] lg:text-[36px] xl:text-[40px] font-normal leading-[1.2] text-[#ff5e00] uppercase break-words overflow-wrap-anywhere"
                 style={{
-                  textShadow: '2px 2px 0px #331300',
+                  textShadow: '1px 1px 0px #331300',
                   fontFamily: 'var(--font-unlimited-pie)'
                 }}
               >

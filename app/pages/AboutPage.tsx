@@ -383,14 +383,14 @@ export default function AboutPage() {
                   style={{
                     fontFamily: "var(--font-unlimited-pie)",
                     color: "#ff5e00",
-                    textShadow: "2px 2px 0px #551f00",
+                    textShadow: "1px 1px 0px #551f00",
                     lineHeight: 1,
                   }}
                 >
                   who make it happen
                 </h2>
               </div>
-              <div className="flex flex-nowrap justify-center gap-3 sm:gap-4 items-center w-full">
+              <div className="flex flex-wrap md:flex-nowrap justify-center gap-3 sm:gap-4 items-center w-full">
             {teamMembers.map((member) => (
               <div
                 key={member.id}

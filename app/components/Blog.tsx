@@ -2,7 +2,7 @@ import BlogGrid from "./BlogGrid";
 
 export default function Blog() {
   return (
-    <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7 relative bg-white">
+    <section className="w-full px-4 sm:px-6 md:px-12 py-2 sm:py-4 md:py-7 relative bg-white">
       {/* Pattern Overlay - all over the section */}
       <div 
         className="absolute inset-0 z-0"
@@ -15,7 +15,7 @@ export default function Blog() {
         }}
       />
       
-      <div className="container mx-auto px-6 relative z-10 py-16">
+      <div className="container mx-auto px-4 sm:px-6 relative z-10 py-8 sm:py-12 md:py-16">
         {/* Header Section */}
         <div className="flex flex-col gap-[20px] items-center mb-12">
           {/* Top Line - Icon + Subtitle */}
@@ -40,7 +40,7 @@ export default function Blog() {
                 </div>
 
           {/* Main Heading */}
-          <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center overflow-hidden">
+          <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center overflow-visible px-2">
             <h2 
               className="text-[32px] text-[#222] relative"
               style={{
@@ -55,7 +55,7 @@ export default function Blog() {
               style={{
                 fontFamily: 'var(--font-unlimited-pie)',
                 lineHeight: 1,
-                textShadow: '2px 2px 0px #551f00'
+                textShadow: '1px 1px 0px #551f00'
               }}
             >
               our travel blog

@@ -36,7 +36,7 @@ export default function BookingErrorPage() {
               className="text-[28px] sm:text-[32px] md:text-[36px] text-[#ff5e00] font-normal uppercase mb-2"
               style={{
                 fontFamily: 'var(--font-unlimited-pie)',
-                textShadow: '2px 2px 0px #331300',
+                textShadow: '1px 1px 0px #331300',
               }}
             >
               Booking

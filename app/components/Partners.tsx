@@ -30,7 +30,7 @@ export default function Partners() {
         {/* Header Section */}
         <div className="flex flex-col gap-[20px] items-center mb-12">
           {/* Main Heading */}
-          <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center overflow-hidden">
+          <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center overflow-visible px-2">
             <h2
               className="text-[32px] text-[#222] relative"
               style={{
@@ -45,7 +45,7 @@ export default function Partners() {
               style={{
                 fontFamily: "var(--font-unlimited-pie)",
                 lineHeight: 1,
-                textShadow: "2px 2px 0px #551f00",
+                textShadow: "1px 1px 0px #551f00",
               }}
             >
               Partners
