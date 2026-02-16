@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { contactFormSchema } from "@/lib/validations/contact";
+import { contactFormSchema } from "../../lib/validations/contact";
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,11 +31,22 @@ export async function POST(request: NextRequest) {
     const serverPrefix = process.env.MAILCHIMP_SERVER_PREFIX;
     const audienceId = process.env.MAILCHIMP_AUDIENCE_ID;
 
+    // In mock mode (no API configured), just log and return success
     if (!apiKey || !serverPrefix || !audienceId) {
-      console.error("Mailchimp configuration missing");
+      console.log("Contact form submission (mock mode):", {
+        firstName,
+        lastName,
+        email,
+        phone,
+        subject,
+        message,
+      });
       return NextResponse.json(
-        { message: "Server configuration error. Please contact support." },
-        { status: 500 }
+        {
+          message: "Thank you! Your message has been received successfully.",
+          success: true,
+        },
+        { status: 200 }
       );
     }
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { isAuthenticated, getUser, logout } from "../lib/authService";
 import Link from "next/link";
-import { Download, Calendar, Repeat, Award, LogOut } from "lucide-react";
+import { Download06Icon, Calendar04Icon, RefreshIcon, Award05Icon, Logout05Icon } from "hugeicons-react";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -95,7 +95,7 @@ export default function DashboardPage() {
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-full transition-colors font-sans text-[14px] font-semibold"
             >
-              <LogOut size={18} />
+              <Logout05Icon size={18} />
               Logout
             </button>
           </div>
@@ -107,7 +107,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div className="flex items-center gap-3 mb-2">
-              <Calendar className="text-[#ff5e00]" size={24} />
+              <Calendar04Icon className="text-[#ff5e00]" size={24} />
               <h3 className="text-[#222] font-bold text-[16px] font-sans">Upcoming Tours</h3>
             </div>
             <p className="text-[32px] font-bold text-[#222] font-sans">{upcomingBookings.length}</p>
@@ -115,7 +115,7 @@ export default function DashboardPage() {
 
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div className="flex items-center gap-3 mb-2">
-              <Award className="text-[#ff5e00]" size={24} />
+              <Award05Icon className="text-[#ff5e00]" size={24} />
               <h3 className="text-[#222] font-bold text-[16px] font-sans">Sabary Miles</h3>
             </div>
             <p className="text-[32px] font-bold text-[#222] font-sans">1,250</p>
@@ -124,7 +124,7 @@ export default function DashboardPage() {
 
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div className="flex items-center gap-3 mb-2">
-              <Repeat className="text-[#ff5e00]" size={24} />
+              <RefreshIcon className="text-[#ff5e00]" size={24} />
               <h3 className="text-[#222] font-bold text-[16px] font-sans">Total Bookings</h3>
             </div>
             <p className="text-[32px] font-bold text-[#222] font-sans">
@@ -180,7 +180,7 @@ export default function DashboardPage() {
                         {booking.amount}
                       </span>
                       <button className="flex items-center gap-2 px-4 py-2 bg-[#ff5e00] text-white rounded-full hover:bg-[#e55500] transition-colors font-sans text-[14px] font-semibold">
-                        <Download size={16} />
+                        <Download06Icon size={16} />
                         Receipt
                       </button>
                       <Link
@@ -234,7 +234,7 @@ export default function DashboardPage() {
                         {booking.amount}
                       </span>
                       <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-[#222] rounded-full hover:bg-gray-200 transition-colors font-sans text-[14px] font-semibold">
-                        <Download size={16} />
+                        <Download06Icon size={16} />
                         Invoice
                       </button>
                       <Link

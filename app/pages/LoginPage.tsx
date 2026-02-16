@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AtSign, Lock, Eye, EyeClosed } from "lucide-react";
+import { Mail01Icon, LockIcon, EyeIcon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
 import { login } from "../lib/authService";
 import Logo from "../components/Logo";
@@ -113,7 +113,7 @@ export default function LoginPage() {
 
             <div className="space-y-3">
               <div className="relative">
-                <AtSign
+                <Mail01Icon
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                   size={18}
                 />
@@ -129,7 +129,7 @@ export default function LoginPage() {
               </div>
 
               <div className="relative">
-                <Lock
+                <LockIcon
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                   size={18}
                 />
@@ -146,7 +146,7 @@ export default function LoginPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer"
                   onClick={togglePassword}
                 >
-                  {showPassword ? <EyeClosed size={18} /> : <Eye size={18} />}
+                  <EyeIcon size={18} className={showPassword ? "opacity-50" : ""} />
                 </div>
               </div>
             </div>

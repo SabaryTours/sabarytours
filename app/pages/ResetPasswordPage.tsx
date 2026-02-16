@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Lock, Eye, EyeClosed, ArrowLeft } from "lucide-react";
+import { LockIcon, EyeIcon, ArrowLeft01Icon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
 import { resetPassword } from "../lib/authService";
 import Logo from "../components/Logo";
@@ -125,7 +125,7 @@ export default function ResetPasswordPage() {
               <>
                 <div className="space-y-3">
                   <div className="relative">
-                    <Lock
+                    <LockIcon
                       className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                       size={18}
                     />
@@ -142,12 +142,12 @@ export default function ResetPasswordPage() {
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer"
                       onClick={togglePassword}
                     >
-                      {showPassword ? <EyeClosed size={18} /> : <Eye size={18} />}
+                      <EyeIcon size={18} className={showPassword ? "opacity-50" : ""} />
                     </div>
                   </div>
 
                   <div className="relative">
-                    <Lock
+                    <LockIcon
                       className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                       size={18}
                     />
@@ -164,7 +164,7 @@ export default function ResetPasswordPage() {
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer"
                       onClick={toggleConfirmPassword}
                     >
-                      {showConfirmPassword ? <EyeClosed size={18} /> : <Eye size={18} />}
+                      <EyeIcon size={18} className={showConfirmPassword ? "opacity-50" : ""} />
                     </div>
                   </div>
                 </div>
@@ -186,7 +186,7 @@ export default function ResetPasswordPage() {
                 href="/login"
                 className="text-[#ff5e00] text-[14px] hover:underline font-medium inline-flex items-center gap-2"
               >
-                <ArrowLeft size={16} />
+                <ArrowLeft01Icon size={16} />
                 Back to login
               </Link>
             </div>

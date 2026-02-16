@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AtSign, ArrowLeft } from "lucide-react";
+import { Mail01Icon, ArrowLeft01Icon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
 import { forgotPassword } from "../lib/authService";
 import Logo from "../components/Logo";
@@ -77,7 +77,7 @@ export default function ForgotPasswordPage() {
             {!success ? (
               <>
                 <div className="relative">
-                  <AtSign
+                  <Mail01Icon
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                     size={18}
                   />
@@ -119,7 +119,7 @@ export default function ForgotPasswordPage() {
                 href="/login"
                 className="text-[#ff5e00] text-[14px] hover:underline font-medium inline-flex items-center gap-2"
               >
-                <ArrowLeft size={16} />
+                <ArrowLeft01Icon size={16} />
                 Back to login
               </Link>
             </div>

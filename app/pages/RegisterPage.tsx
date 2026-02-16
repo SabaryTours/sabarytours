@@ -3,10 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AtSign, Lock, Eye, EyeClosed, User, Phone } from "lucide-react";
+import { Mail01Icon, LockIcon, EyeIcon, UserIcon, CallIcon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
 import { register } from "../lib/authService";
-import Logo from "../components/Logo";
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -67,32 +66,6 @@ export default function RegisterPage() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    const backendURL = process.env.NEXT_PUBLIC_API_URL;
-    if (backendURL) {
-      window.location.href = `${backendURL}/auth/google`;
-    } else {
-      // Mock mode - simulate Google login
-      setLoading(true);
-      setTimeout(() => {
-        const mockResponse = {
-          token: "mock_google_token_" + Date.now(),
-          user: {
-            id: "1",
-            email: "user@gmail.com",
-            firstName: "Google",
-            lastName: "User",
-            username: "googleuser",
-          },
-        };
-        if (typeof window !== "undefined") {
-          localStorage.setItem("token", mockResponse.token);
-          localStorage.setItem("user", JSON.stringify(mockResponse.user));
-        }
-        router.push("/dashboard");
-      }, 500);
-    }
-  };
 
   return (
     <div className="w-full h-screen flex">
@@ -130,7 +103,7 @@ export default function RegisterPage() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="relative">
-                  <User
+                  <UserIcon
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                     size={18}
                   />
@@ -145,7 +118,7 @@ export default function RegisterPage() {
                   />
                 </div>
                 <div className="relative">
-                  <User
+                  <UserIcon
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                     size={18}
                   />
@@ -162,7 +135,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="relative">
-                <AtSign
+                <Mail01Icon
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                   size={18}
                 />
@@ -178,7 +151,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="relative">
-                <Phone
+                <CallIcon
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                   size={18}
                 />
@@ -193,7 +166,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="relative">
-                <Lock
+                <LockIcon
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                   size={18}
                 />
@@ -210,12 +183,12 @@ export default function RegisterPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer"
                   onClick={togglePassword}
                 >
-                  {showPassword ? <EyeClosed size={18} /> : <Eye size={18} />}
+                  <EyeIcon size={18} className={showPassword ? "opacity-50" : ""} />
                 </div>
               </div>
 
               <div className="relative">
-                <Lock
+                <LockIcon
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                   size={18}
                 />
@@ -232,7 +205,7 @@ export default function RegisterPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer"
                   onClick={toggleConfirmPassword}
                 >
-                  {showConfirmPassword ? <EyeClosed size={18} /> : <Eye size={18} />}
+                  <EyeIcon size={18} className={showConfirmPassword ? "opacity-50" : ""} />
                 </div>
               </div>
             </div>
