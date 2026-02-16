@@ -6,7 +6,7 @@ import { packages } from "../data/packages";
 import { useEffect, useRef, useState } from "react";
 
 function PackageCard({ pkg, isMobile = false }: { pkg: typeof packages[0]; isMobile?: boolean }) {
-  const cardRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLAnchorElement>(null);
   const [isInView, setIsInView] = useState(false);
 
   useEffect(() => {
