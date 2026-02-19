@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import axios, { AxiosError } from "axios";
-import apiClient from "../lib/axios";
 import { contactFormSchema, type ContactFormData } from "../lib/validations/contact";
 import type { ZodError } from "zod";
 import Footer from "../components/Footer";
@@ -72,34 +70,23 @@ export default function ContactPage() {
     setSubmitMessage("");
 
     try {
-      const response = await apiClient.post("/api/contact", formData);
-
-      if (response.data.success) {
-        setSubmitStatus("success");
-        setSubmitMessage(response.data.message || "Thank you! Your message has been sent successfully.");
-        // Reset form
-        setFormData({
-          firstName: "",
-          lastName: "",
-          phone: "",
-          email: "",
-          subject: "",
-          message: "",
-        });
-      } else {
-        setSubmitStatus("error");
-        setSubmitMessage(response.data.message || "Something went wrong. Please try again.");
-      }
+      // Mock submission - replace with actual API call later
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setSubmitStatus("success");
+      setSubmitMessage("Thank you! Your message has been sent successfully.");
+      // Reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        phone: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError<{ message?: string }>;
-        const errorMessage = axiosError.response?.data?.message || axiosError.message || "Failed to send message. Please try again later.";
-        setSubmitStatus("error");
-        setSubmitMessage(errorMessage);
-      } else {
-        setSubmitStatus("error");
-        setSubmitMessage("Failed to send message. Please try again later.");
-      }
+      setSubmitStatus("error");
+      setSubmitMessage(error instanceof Error ? error.message : "Failed to send message. Please try again later.");
       console.error("Form submission error:", error);
     } finally {
       setIsSubmitting(false);

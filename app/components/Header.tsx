@@ -67,7 +67,7 @@ export default function Header() {
       // Only close if clicking outside both the currency dropdown and its button
       if (currencyRef.current && !currencyRef.current.contains(target)) {
         setCurrencyOpen(false);
-      }
+    }
       
       // Only close if clicking outside both the user menu and its button
       if (userMenuRef.current && !userMenuRef.current.contains(target)) {
@@ -305,7 +305,7 @@ export default function Header() {
                   </Link>
                 ))}
             </nav>
-            
+
             {/* Mobile Auth Buttons */}
             <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
               {authenticated ? (

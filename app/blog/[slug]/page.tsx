@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getBlogPostBySlug, blogPosts } from "../../data/blog";
+import { getBlogPostBySlug } from "../../data/blog";
 import BlogDetailPage from "../../pages/BlogDetailPage";
 
 interface PageProps {
@@ -11,6 +11,7 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
+  const { blogPosts } = await import("../../data/blog");
   return blogPosts.map((post) => ({
     slug: post.slug,
   }));

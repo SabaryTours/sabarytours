@@ -4,7 +4,6 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft01Icon } from "hugeicons-react";
 import { Tour } from "../data/packages";
-import Header from "../components/Header";
 import AvailabilityCalendar from "../components/AvailabilityCalendar";
 import CustomDropdown from "../components/CustomDropdown";
 import PaymentOptions from "../components/PaymentOptions";
@@ -137,7 +136,7 @@ export default function BookingPage({ tour }: BookingPageProps) {
       } else {
         throw new Error("Booking failed");
       }
-    } catch (error) {
+    } catch {
       router.push(`/booking/error?tour=${tour.slug}`);
     }
   };
@@ -168,8 +167,7 @@ export default function BookingPage({ tour }: BookingPageProps) {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-8 sm:py-10 md:py-12">
-        <div className="container mx-auto max-w-2xl">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8 sm:py-10 md:py-12">
           {/* Header */}
           <div className="mb-8">
             <button
@@ -349,13 +347,13 @@ export default function BookingPage({ tour }: BookingPageProps) {
             {/* Live Pricing Breakdown */}
             <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 space-y-3 border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300">
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[#666] text-[14px] font-sans">
+              <div className="flex items-center justify-between">
+                <span className="text-[#666] text-[14px] font-sans">
                     Base Price × {formData.numberOfPeople} {formData.numberOfPeople === 1 ? "person" : "people"}
-                  </span>
-                  <span className="text-[#222] text-[14px] font-bold font-sans">
+                </span>
+                <span className="text-[#222] text-[14px] font-bold font-sans">
                     ${subtotal.toFixed(2)}
-                  </span>
+                </span>
                 </div>
                 
                 {formData.date && (
@@ -457,15 +455,14 @@ export default function BookingPage({ tour }: BookingPageProps) {
                 </button>
               </div>
             ) : (
-              <button
-                type="submit"
-                className="w-full bg-[#ff5e00] text-white py-4 rounded-lg font-bold text-[16px] hover:bg-[#e55500] hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 font-sans shadow-lg"
-              >
+            <button
+              type="submit"
+              className="w-full bg-[#ff5e00] text-white py-4 rounded-lg font-bold text-[16px] hover:bg-[#e55500] hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 font-sans shadow-lg"
+            >
                 Continue to Payment - ${paymentAmount.toFixed(2)}
-              </button>
+            </button>
             )}
           </form>
-        </div>
       </div>
     </div>
   );

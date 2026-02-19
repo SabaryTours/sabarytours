@@ -46,16 +46,16 @@ h1, h2, h3, h4, h5, h6, p, span, div, a, button, label {
 }
 
 /* Ensure containers don't overflow */
-.container, .w-full {
+/* .container, .w-full {
   max-width: 100%;
   overflow-x: hidden;
-}
+} */
 
 /* Target Tailwind max-width utilities using attribute selector */
-[class*="max-w-"] {
+/* [class*="max-w-"] {
   max-width: 100%;
   overflow-x: hidden;
-}
+} */
 
 /* Prevent horizontal scroll */
 html, body {

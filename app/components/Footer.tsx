@@ -170,11 +170,11 @@ export default function Footer() {
         <div className="container mx-auto relative z-10 border-t border-white/10">
           <div className="flex flex-col items-center gap-4">
             <p className="text-white/70 text-[12px] sm:text-[13px] font-normal leading-[20px] text-center">
-              We accept secure payments via the above methods
+              Secured by <b>paystack</b>
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
               {/* Visa */}
-              {/* <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
+              <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
                 <Image
                   src="/assets/payments/visa.svg"
                   alt="Visa"
@@ -182,9 +182,9 @@ export default function Footer() {
                   className="object-contain opacity-80 hover:opacity-100 transition-opacity"
                   unoptimized
                 />
-              </div> */}
+              </div>
               {/* Mastercard */}
-              {/* <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
+              <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
                 <Image
                   src="/assets/payments/mastercard.svg"
                   fill
@@ -192,7 +192,7 @@ export default function Footer() {
                   className="object-contain opacity-80 hover:opacity-100 transition-opacity"
                   unoptimized
                 />
-              </div> */}
+              </div>
 
               <div className="relative w-20 h-12 sm:w-24 sm:h-14 flex items-center justify-center">
                 <Image

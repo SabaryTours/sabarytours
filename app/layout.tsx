@@ -28,7 +28,7 @@ export default function RootLayout({
       >
         <LayoutWrapper>
           <ConditionalHeader />
-        {children}
+          {children}
         </LayoutWrapper>
         <TawkToChat />
       </body>

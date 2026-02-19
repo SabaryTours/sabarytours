@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# PHP files (removed - using Supabase now)
+*.php
+
+# SQL dumps (removed - using Supabase now)
+*.sql

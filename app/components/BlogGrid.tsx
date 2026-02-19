@@ -6,15 +6,26 @@ import { EyeIcon, Message01Icon } from "hugeicons-react";
 import { blogPosts } from "../data/blog";
 
 export default function BlogGrid() {
+  // Get first 6 blog posts
+  const posts = blogPosts.slice(0, 6);
+
+  if (posts.length === 0) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="text-gray-600">No blogs available</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-wrap justify-center" style={{ gap: '20px' }}>
-      {blogPosts.map((post) => (
-          <Link
-            key={post.id}
-            href={`/blog/${post.slug}`}
-            className="flex flex-col gap-3 cursor-pointer hover:scale-[1.02] transition-transform duration-300"
-            style={{ width: '350px' }}
-          >
+      {posts.map((post) => (
+        <Link
+          key={post.id}
+          href={`/blog/${post.slug}`}
+          className="flex flex-col gap-3 cursor-pointer hover:scale-[1.02] transition-transform duration-300"
+          style={{ width: '350px' }}
+        >
           {/* Card Image */}
           <div 
             className="relative overflow-hidden rounded-2xl group"

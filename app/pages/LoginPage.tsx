@@ -3,19 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail01Icon, LockIcon, EyeIcon } from "hugeicons-react";
+import { UserIcon, LockIcon, EyeIcon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
-import { login } from "../lib/authService";
 import Logo from "../components/Logo";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const router = useRouter();
 
   const togglePassword = () => setShowPassword((prev) => !prev);
@@ -32,47 +32,45 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setFieldErrors({});
 
+    // Mock login - replace with actual auth logic later
     try {
-      const response = await login(formData);
-      // Store token and user data
-      if (typeof window !== "undefined") {
-        localStorage.setItem("token", response.token);
-        localStorage.setItem("user", JSON.stringify(response.user));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      if (formData.username && formData.password) {
+        router.push("/dashboard");
+      } else {
+        setError("Please enter both username and password.");
       }
-      router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed. Please try again.");
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = () => {
-    const backendURL = process.env.NEXT_PUBLIC_API_URL;
-    if (backendURL) {
-      window.location.href = `${backendURL}/auth/google`;
-    } else {
-      // Mock mode - simulate Google login
-      setLoading(true);
-      setTimeout(() => {
-        const mockResponse = {
-          token: "mock_google_token_" + Date.now(),
-          user: {
-            id: "1",
-            email: "user@gmail.com",
-            firstName: "Google",
-            lastName: "User",
-            username: "googleuser",
-          },
-        };
-        if (typeof window !== "undefined") {
-          localStorage.setItem("token", mockResponse.token);
-          localStorage.setItem("user", JSON.stringify(mockResponse.user));
-        }
-        router.push("/dashboard");
-      }, 500);
-    }
+    // Mock Google login - replace with actual OAuth later
+    setLoading(true);
+    setTimeout(() => {
+      const mockResponse = {
+        token: "mock_google_token_" + Date.now(),
+        user: {
+          id: "1",
+          email: "user@gmail.com",
+          firstName: "Google",
+          lastName: "User",
+          username: "googleuser",
+        },
+      };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", mockResponse.token);
+        localStorage.setItem("user", JSON.stringify(mockResponse.user));
+      }
+      router.push("/dashboard");
+      setLoading(false);
+    }, 500);
   };
 
   return (
@@ -111,17 +109,29 @@ export default function LoginPage() {
               </div>
             )}
 
+            {fieldErrors.username && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {fieldErrors.username}
+              </div>
+            )}
+
+            {fieldErrors.password && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {fieldErrors.password}
+              </div>
+            )}
+
             <div className="space-y-3">
               <div className="relative">
-                <Mail01Icon
+                <UserIcon
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                   size={18}
                 />
                 <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  value={formData.email}
+                  type="text"
+                  name="username"
+                  placeholder="Username"
+                  value={formData.username}
                   onChange={handleChange}
                   className="w-full p-3 pl-10 pr-4 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-[#ff5e00] text-black shadow-sm hover:shadow-md hover:bg-gray-50 transition-all border border-gray-200 font-sans text-[14px]"
                   required

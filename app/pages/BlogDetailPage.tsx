@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BlogPost, comments, getRelatedPosts } from "../data/blog";
+import { type BlogPost, getRelatedPosts } from "../data/blog";
 import Footer from "../components/Footer";
 
 interface BlogDetailPageProps {
@@ -8,7 +8,7 @@ interface BlogDetailPageProps {
 }
 
 export default function BlogDetailPage({ post }: BlogDetailPageProps) {
-  const postComments = comments[post.slug] || [];
+  // Get related posts (exclude current blog)
   const relatedPosts = getRelatedPosts(post.slug, 3);
 
   return (
@@ -55,10 +55,12 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
             <span>By {post.author}</span>
             <span>•</span>
             <span>{post.date}</span>
-            <span>•</span>
-            <span>{post.views} views</span>
-            <span>•</span>
-            <span>{post.comments} comment{post.comments !== 1 ? 's' : ''}</span>
+            {post.comments > 0 && (
+              <>
+                <span>•</span>
+                <span>{post.comments} comment{post.comments !== 1 ? 's' : ''}</span>
+              </>
+            )}
           </div>
 
           {/* Social Sharing Icons */}
@@ -98,18 +100,16 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
               fill
               className="object-cover"
               priority
+              unoptimized
             />
           </div>
 
           {/* Article Content */}
           <div className="prose prose-lg max-w-none mb-12">
-            <div className="text-[#222] text-[16px] leading-[28px] whitespace-pre-line">
-              {post.content.split('\n\n').map((paragraph, index) => (
-                <p key={index} className="mb-4">
-                  {paragraph}
-                </p>
-              ))}
-            </div>
+            <div 
+              className="text-[#222] text-[16px] leading-[28px] whitespace-pre-line"
+              dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, '<br />') }}
+            />
           </div>
 
           {/* Comment Section */}
@@ -144,32 +144,11 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
             </form>
           </div>
 
-          {/* Existing Comments */}
-          {postComments.length > 0 && (
+          {/* Comments Section - Show count if available */}
+          {post.comments > 0 && (
             <div className="mb-12">
-              <h3 className="text-[24px] font-bold text-[#222] mb-6">{postComments.length} comment{postComments.length !== 1 ? 's' : ''}</h3>
-              <div className="space-y-6">
-                {postComments.map((comment) => (
-                  <div key={comment.id} className="flex gap-4">
-                    <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0">
-                      <Image
-                        src={comment.avatar || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"}
-                        alt={comment.author}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[#222] font-bold text-[14px]">{comment.author}</span>
-                        <span className="text-[#8e8e8e] text-[14px]">{comment.date}</span>
-                      </div>
-                      <p className="text-[#222] text-[14px] leading-[24px]">{comment.content}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <h3 className="text-[24px] font-bold text-[#222] mb-6">{post.comments} comment{post.comments !== 1 ? 's' : ''}</h3>
+              <p className="text-[#8e8e8e] text-[14px]">Comments feature coming soon.</p>
             </div>
           )}
 
@@ -200,28 +179,23 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
                           unoptimized
                         />
                       </div>
-                      <div 
-                        className="absolute top-3 left-3 flex items-center gap-[10px] px-[10px] py-[10px] rounded-[20px]"
-                        style={{
-                          backdropFilter: 'blur(6px)',
-                          backgroundColor: 'rgba(255,255,255,0.72)',
-                          border: '0.5px solid white',
-                        }}
-                      >
-                        <div className="flex items-center gap-1">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="#222" />
-                          </svg>
-                          <span className="text-[#222] text-[10px] font-bold leading-none">{relatedPost.views} views</span>
+                      {relatedPost.comments > 0 && (
+                        <div 
+                          className="absolute top-3 left-3 flex items-center gap-[10px] px-[10px] py-[10px] rounded-[20px]"
+                          style={{
+                            backdropFilter: 'blur(6px)',
+                            backgroundColor: 'rgba(255,255,255,0.72)',
+                            border: '0.5px solid white',
+                          }}
+                        >
+                          <div className="flex items-center gap-1">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z" fill="#222" />
+                            </svg>
+                            <span className="text-[#222] text-[10px] font-bold leading-none">{relatedPost.comments} comment{relatedPost.comments !== 1 ? 's' : ''}</span>
+                          </div>
                         </div>
-                        <div className="w-1 h-1 rounded-full bg-[#222]" />
-                        <div className="flex items-center gap-1">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z" fill="#222" />
-                          </svg>
-                          <span className="text-[#222] text-[10px] font-bold leading-none">{relatedPost.comments} comment{relatedPost.comments !== 1 ? 's' : ''}</span>
-                        </div>
-                      </div>
+                      )}
                     </div>
                     <h4 className="text-[#3e3638] text-[14px] font-bold leading-[24px]">{relatedPost.title}</h4>
                   </Link>

@@ -8,6 +8,7 @@ import { Tour, getSimilarTours } from "../data/packages";
 import Footer from "../components/Footer";
 import StarRating from "../components/StarRating";
 import TourGrid from "../components/TourGrid";
+import SafeHTML from "../components/SafeHTML";
 
 interface TourDetailPageProps {
   tour: Tour;
@@ -43,7 +44,7 @@ export default function TourDetailPage({ tour }: TourDetailPageProps) {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-8 md:py-10">
-        <div className="container mx-auto max-w-6xl">
+        <div className="container mx-auto max-w-5xl">
           <div className="mb-6">
             <button
               onClick={() => window.history.back()}
@@ -97,9 +98,11 @@ export default function TourDetailPage({ tour }: TourDetailPageProps) {
               )}
             </div>
 
-            <p className="text-[#666] text-[15px] sm:text-[16px] leading-[26px] font-sans max-w-3xl">
-              {tour.description}
-            </p>
+            {tour.description && (
+              <div className="text-[#666] text-[15px] sm:text-[16px] leading-[26px] font-sans max-w-3xl">
+                <SafeHTML html={tour.description} />
+              </div>
+            )}
           </div>
 
           {/* Pills Navigation */}
@@ -129,7 +132,7 @@ export default function TourDetailPage({ tour }: TourDetailPageProps) {
 
       {/* Main Image with Gallery */}
       <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 mb-10">
-        <div className="container mx-auto max-w-6xl">
+        <div className="container mx-auto max-w-5xl">
           <div className="relative w-full h-[350px] sm:h-[450px] md:h-[550px] rounded-lg overflow-hidden bg-gray-100">
             <Image
               src={tour.gallery && tour.gallery.length > 0 ? tour.gallery[selectedGalleryImage] : tour.image}
@@ -167,7 +170,7 @@ export default function TourDetailPage({ tour }: TourDetailPageProps) {
 
       {/* Content */}
       <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 pb-12">
-        <div className="container mx-auto max-w-4xl">
+        <div className="container mx-auto max-w-5xl">
           {activeTab === "about" && (
             <div className="space-y-10">
               {tour.activities && tour.activities.length > 0 && (
@@ -424,7 +427,7 @@ export default function TourDetailPage({ tour }: TourDetailPageProps) {
       {/* FAQ Section */}
       {tour.faq && tour.faq.length > 0 && (
         <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-12 bg-gray-50">
-          <div className="container mx-auto max-w-4xl">
+          <div className="container mx-auto max-w-5xl">
             <h2 className="text-[#222] text-[24px] sm:text-[28px] font-bold mb-8 font-sans">
               Frequently Asked Questions
             </h2>
@@ -447,7 +450,7 @@ export default function TourDetailPage({ tour }: TourDetailPageProps) {
       {/* Similar Tours */}
       {similarTours.length > 0 && (
         <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-12">
-          <div className="container mx-auto max-w-6xl">
+          <div className="container mx-auto max-w-5xl">
             <h2 className="text-[#222] text-[24px] sm:text-[28px] font-bold mb-8 font-sans">
               Similar Tours You Might Like
             </h2>
