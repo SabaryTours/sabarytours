@@ -8,7 +8,7 @@ export default async function PackagesPage() {
   const { data: packages } = await supabase.from('packages').select('*').order('created_at', { ascending: true });
 
   return (
-    <div className="min-h-screen bg-white overflow-hidden">
+    <div className="min-h-screen bg-white overflow-visible">
       {/* Hero Section */}
       <section className="w-full px-4 sm:px-6 md:px-12 py-8 md:py-12">
         <div className="relative rounded-3xl overflow-hidden bg-[#2B7BD4]">
@@ -72,7 +72,7 @@ export default async function PackagesPage() {
             </div>
 
             {/* Main Heading */}
-            <div className="flex flex-wrap gap-2 sm:gap-[12px] items-center leading-none uppercase w-full justify-center overflow-hidden">
+            <div className="flex flex-wrap gap-2 sm:gap-[12px] items-center leading-none uppercase w-full justify-center overflow-visible">
               <h2 
                 className="text-[24px] sm:text-[28px] md:text-[32px] text-[#222] relative"
                 style={{

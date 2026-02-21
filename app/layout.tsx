@@ -6,6 +6,7 @@ import LayoutWrapper from "./components/LayoutWrapper";
 import TawkToChat from "./components/TawkToChat";
 import AnnouncementModal from "./components/AnnouncementModal";
 import { Toaster } from "react-hot-toast";
+import GoogleTranslate from "./components/GoogleTranslate";
 
 // Remove next/font/google to prevent build-time fetch errors
 // const quicksand = Quicksand({
@@ -39,6 +40,7 @@ export default function RootLayout({
       <body
         className={`font-sans antialiased`}
       >
+        <GoogleTranslate />
         <LayoutWrapper>
           <ConditionalHeader />
         {children}

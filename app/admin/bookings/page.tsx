@@ -93,7 +93,7 @@ export default function AdminBookingsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       {booking.booking_status !== 'confirmed' && (
                         <button 
                           onClick={() => updateStatus(booking.id, 'confirmed')}

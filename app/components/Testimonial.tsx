@@ -204,14 +204,14 @@ export default function Testimonial() {
             </div>
 
             {/* Progress Indicators */}
-            <div className="flex gap-[10px] items-center justify-center px-2">
+            <div className="flex gap-1.5 sm:gap-[10px] items-center justify-center px-2 flex-wrap max-w-full">
               {testimonials.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentIndex(index)}
                   className="bg-white rounded-md transition-all duration-300 hover:opacity-80"
                   style={{
-                    width: index === currentIndex ? '137px' : '40px',
+                    width: index === currentIndex ? 'clamp(40px, 15vw, 137px)' : 'clamp(12px, 4vw, 40px)',
                     height: '4px',
                   }}
                   aria-label={`Go to testimonial ${index + 1}`}

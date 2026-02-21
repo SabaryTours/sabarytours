@@ -236,9 +236,9 @@ export default function RegisterPage() {
               disabled={loading}
               className="py-3 text-white rounded-full shadow-md transition-all hover:cursor-pointer font-medium bg-[#ff5e00] hover:bg-[#e55500] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <p className="text-center font-sans text-[14px]">
+              <span className="text-center font-sans text-[14px] text-white">
                 {loading ? "Creating account..." : "Create Account"}
-              </p>
+              </span>
             </button>
 
 
