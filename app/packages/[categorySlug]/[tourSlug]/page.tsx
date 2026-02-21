@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 import { getPackageBySlug, getTourBySlug, getToursByCategory } from "../../../lib/api";
 import TourDetailPage from "../../../pages/TourDetailPage";
 
@@ -9,6 +10,25 @@ interface PageProps {
   }> | {
     categorySlug: string;
     tourSlug: string;
+  };
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const { tourSlug } = resolvedParams;
+  
+  const tour = await getTourBySlug(tourSlug);
+  
+  if (!tour) return { title: "Tour Not Found - Sabary Tours" };
+  
+  return {
+    title: `${tour.title} | Sabary Tours`,
+    description: tour.description?.substring(0, 160) || `Experience ${tour.title} in Ghana with Sabary Tours.`,
+    openGraph: {
+      title: `${tour.title} - Sabary Tours`,
+      description: tour.description?.substring(0, 160) || `Experience ${tour.title} in Ghana with Sabary Tours.`,
+      images: tour.image ? [tour.image] : [],
+    },
   };
 }
 
