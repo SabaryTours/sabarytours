@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 // import { Quicksand } from "next/font/google";
 import "./globals.css";
 import ConditionalHeader from "./components/ConditionalHeader";
@@ -18,6 +18,44 @@ import GoogleTranslate from "./components/GoogleTranslate";
 export const metadata: Metadata = {
   title: "Sabary Tours - Experience Ghana The Sabary Way",
   description: "Discover the beauty, culture, and adventure that Ghana has to offer with Sabary Tours. Expertly crafted tours creating memories that last a lifetime.",
+  keywords: ["Ghana tours", "Travel Ghana", "Accra tours", "Sabary Tours", "West Africa travel", "Ghana vacations"],
+  authors: [{ name: "Sabary Tours" }],
+  openGraph: {
+    title: "Sabary Tours - Experience Ghana The Sabary Way",
+    description: "Discover the beauty, culture, and adventure that Ghana has to offer. Expertly crafted tours creating memories that last a lifetime.",
+    url: "https://sabarytours.com",
+    siteName: "Sabary Tours",
+    images: [
+      {
+        url: "/assets/logo.svg",
+        width: 800,
+        height: 600,
+        alt: "Sabary Tours Logo",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  icons: {
+    icon: [
+      { url: "/assets/logo.svg" },
+    ],
+    shortcut: ["/assets/logo.svg"],
+    apple: [
+      { url: "/assets/logo.svg", sizes: "180x180", type: "image/svg+xml" },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
 };
 
 export default function RootLayout({
