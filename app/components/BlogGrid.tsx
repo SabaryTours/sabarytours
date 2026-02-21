@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { EyeIcon, Message01Icon } from "hugeicons-react";
+import TourLoader from "./TourLoader";
 
 export default function BlogGrid() {
   const [posts, setPosts] = useState<any[]>([]);
@@ -37,7 +38,7 @@ export default function BlogGrid() {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="text-gray-600">Loading blogs...</div>
+        <TourLoader />
       </div>
     );
   }

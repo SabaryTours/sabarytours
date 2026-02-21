@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { isAuthenticated, getUser, logout } from "../lib/authService";
 import Link from "next/link";
 import { Download06Icon, Calendar04Icon, RefreshIcon, Award05Icon, Logout05Icon } from "hugeicons-react";
+import TourLoader from "../components/TourLoader";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -62,8 +63,8 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-[#222] font-sans">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <TourLoader />
       </div>
     );
   }

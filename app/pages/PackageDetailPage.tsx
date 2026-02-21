@@ -73,7 +73,7 @@ export default function PackageDetailPage({ packageData }: PackageDetailPageProp
             </div>
 
             {/* Main Heading */}
-            <div className="flex flex-wrap gap-2 sm:gap-[12px] items-center leading-none uppercase w-full justify-center overflow-hidden ">
+            <div className="flex flex-wrap gap-2 sm:gap-[12px] items-center leading-none uppercase w-full justify-center overflow-visible">
               <h2 
                 className="text-[24px] sm:text-[28px] md:text-[32px] text-[#222] relative"
                 style={{

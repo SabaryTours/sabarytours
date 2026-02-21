@@ -19,6 +19,35 @@ export default function Header() {
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("EN");
+
+  useEffect(() => {
+    // Read Google Translate cookie to set initial language
+    if (typeof document !== "undefined") {
+      const match = document.cookie.match(/googtrans=\/en\/([a-z]{2,3})/i);
+      if (match && match[1]) {
+        setSelectedLanguage(match[1].toUpperCase());
+      }
+    }
+  }, []);
+
+  const handleLanguageSelect = (langCode: string) => {
+    setSelectedLanguage(langCode);
+    setLanguageOpen(false);
+    
+    // Set Google Translate cookie
+    const gCode = langCode.toLowerCase();
+    
+    // If English, clear the cookie to show original text
+    if (gCode === 'en') {
+      document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=" + window.location.hostname + "; path=/;";
+    } else {
+      document.cookie = `googtrans=/en/${gCode}; path=/`;
+      document.cookie = `googtrans=/en/${gCode}; domain=${window.location.hostname}; path=/`;
+    }
+    
+    window.location.reload();
+  };
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
@@ -294,11 +323,7 @@ export default function Header() {
                     {languages.map(lang => (
                       <button
                         key={lang.code}
-                        onClick={() => {
-                          setSelectedLanguage(lang.code);
-                          setLanguageOpen(false);
-                          window.location.reload();
-                        }}
+                        onClick={() => handleLanguageSelect(lang.code)}
                         className={`w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors font-sans ${
                           selectedLanguage === lang.code ? "bg-[#fff5e6] text-[#ff5e00] font-semibold" : "hover:bg-gray-50 text-gray-800"
                         }`}

@@ -284,7 +284,7 @@ export default function TourForm({ initialData }: TourFormProps) {
                 <button 
                   type="button" 
                   onClick={() => setPrices(prices.filter((_, i) => i !== index))}
-                  className="absolute -top-3 -right-3 w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200 shadow-sm"
+                  className="absolute -top-3 -right-3 w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-200 shadow-sm"
                 >
                   ✕
                 </button>
@@ -344,7 +344,7 @@ export default function TourForm({ initialData }: TourFormProps) {
               <button 
                 type="button" 
                 onClick={() => setItineraries(itineraries.filter((_, i) => i !== index))}
-                className="absolute top-4 right-4 text-red-500 hover:bg-red-50 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                className="absolute top-4 right-4 text-red-500 hover:bg-red-50 p-1.5 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all"
               >
                 Delete
               </button>
