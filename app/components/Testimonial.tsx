@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 
-const testimonials = [
+const defaultTestimonials = [
   {
     name: "Nana Kwame",
     handle: "@nkwame_23",
@@ -32,17 +32,43 @@ const testimonials = [
 
 export default function Testimonial() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [testimonials, setTestimonials] = useState<any[]>(defaultTestimonials);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      const { createClient } = await import('../utils/supabase/client');
+      const supabase = createClient();
+      
+      const { data } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(10);
+        
+      if (data && data.length > 0) {
+        setTestimonials(data.map(r => ({
+          name: r.name || 'Guest',
+          handle: r.position ? `@${r.position.replace(/\s+/g, '').toLowerCase()}` : '@guest',
+          text: r.message || '',
+          image: r.image_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop',
+        })));
+      }
+    };
+    fetchReviews();
+  }, []);
 
   // Auto-rotate testimonials every 5 seconds
   useEffect(() => {
+    if (testimonials.length === 0) return;
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % testimonials.length);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [testimonials]);
 
-  const currentTestimonial = testimonials[currentIndex];
+  const currentTestimonial = testimonials[currentIndex] || defaultTestimonials[0];
   
   return (
     <section className="w-full px-4 sm:px-6 md:px-12 py-2 sm:py-4 md:py-7 relative overflow-visible">

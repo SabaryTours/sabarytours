@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
-import { getTourBySlugOnly } from "../data/packages";
+import { getTourBySlug } from "../lib/api";
 import BookingPage from "../pages/BookingPage";
 
 interface PageProps {
   searchParams: Promise<{
     tour?: string;
-  }>;
+  }> | {
+    tour?: string;
+  };
 }
 
 export default async function BookingRoute({ searchParams }: PageProps) {
@@ -16,7 +18,7 @@ export default async function BookingRoute({ searchParams }: PageProps) {
     notFound();
   }
 
-  const tour = getTourBySlugOnly(tourSlug);
+  const tour = await getTourBySlug(tourSlug);
 
   if (!tour) {
     notFound();

@@ -54,12 +54,16 @@ export default function RegisterPage() {
 
     try {
       const response = await register(formData);
-      // Store token and user data
-      if (typeof window !== "undefined") {
-        localStorage.setItem("token", response.token);
-        localStorage.setItem("user", JSON.stringify(response.user));
+      
+      if (response.error) {
+        setError(response.error);
+        setLoading(false);
+        return;
       }
-      router.push("/dashboard");
+
+      // Supabase handles session persistence automatically.
+      // We can redirect to dashboard immediately.
+      router.push("/dashboard?welcome=true");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed. Please try again.");
     } finally {

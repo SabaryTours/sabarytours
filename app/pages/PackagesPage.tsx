@@ -1,8 +1,12 @@
 import Image from "next/image";
 import CategoryGrid from "../components/CategoryGrid";
 import Footer from "../components/Footer";
+import { createClient } from "../utils/supabase/server";
 
-export default function PackagesPage() {
+export default async function PackagesPage() {
+  const supabase = await createClient();
+  const { data: packages } = await supabase.from('packages').select('*').order('created_at', { ascending: true });
+
   return (
     <div className="min-h-screen bg-white overflow-hidden">
       {/* Hero Section */}
@@ -91,7 +95,7 @@ export default function PackagesPage() {
             </div>
           </div>
 
-          <CategoryGrid />
+          <CategoryGrid packages={packages || []} />
         </div>
       </section>
       <Footer />

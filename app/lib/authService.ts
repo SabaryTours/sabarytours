@@ -1,102 +1,107 @@
-// Auth service utilities - Mock mode only
-// Replace with actual auth implementation when ready
+import { supabase } from './supabase';
 
 export interface LoginCredentials {
-  username: string;
+  email: string; // Changed from username to email for Supabase default
   password: string;
 }
 
 export interface RegisterData {
   email: string;
   password: string;
-  confirmPassword: string;
+  confirmPassword?: string;
   firstName: string;
   lastName: string;
-  username: string;
+  username?: string;
   phone?: string;
 }
 
 export interface AuthResponse {
-  token: string;
-  user: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    username?: string;
-  };
+  user: any;
+  error?: string;
 }
 
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  // Mock login - replace with actual auth implementation when ready
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  
-  const mockResponse: AuthResponse = {
-    token: "mock_token_" + Date.now(),
-    user: {
-      id: "1",
-      email: "user@example.com",
-      firstName: "John",
-      lastName: "Doe",
-      username: credentials.username,
-    },
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: credentials.email,
+    password: credentials.password,
+  });
+
+  if (error) {
+    return { user: null, error: error.message };
+  }
+
+  // Fetch profile to get names
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', data.user.id)
+    .single();
+
+  return {
+    user: { ...data.user, ...profile },
   };
-  return mockResponse;
 };
 
 export const register = async (data: RegisterData): Promise<AuthResponse> => {
-  // Mock registration - replace with actual auth implementation when ready
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  
-  const mockResponse: AuthResponse = {
-    token: "mock_token_" + Date.now(),
-    user: {
-      id: "1",
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      username: data.username,
-    },
-  };
-  return mockResponse;
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email: data.email,
+    password: data.password,
+    options: {
+      data: {
+        first_name: data.firstName,
+        last_name: data.lastName,
+        username: data.username,
+        phone: data.phone
+      }
+    }
+  });
+
+  if (authError) {
+    return { user: null, error: authError.message };
+  }
+
+  return { user: authData.user };
 };
 
-export const forgotPassword = async (email: string): Promise<void> => {
-  // Mock forgot password - replace with actual implementation when ready
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return;
-};
-
-export const resetPassword = async (token: string, password: string): Promise<void> => {
-  // Mock reset password - replace with actual implementation when ready
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return;
-};
-
-export const logout = () => {
+export const logout = async () => {
+  await supabase.auth.signOut();
   if (typeof window !== "undefined") {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
     window.location.href = "/login";
   }
+  return;
 };
 
-export const getAuthToken = (): string | null => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("token");
-  }
-  return null;
+// Now Async!
+export const getUser = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // Get profile data too
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  return { ...user, ...profile };
 };
 
-export const getUser = () => {
-  if (typeof window !== "undefined") {
-    const userStr = localStorage.getItem("user");
-    return userStr ? JSON.parse(userStr) : null;
-  }
-  return null;
+export const isAuthenticated = async (): Promise<boolean> => {
+  const { data } = await supabase.auth.getSession();
+  return !!data.session;
 };
 
-export const isAuthenticated = (): boolean => {
-  return !!getAuthToken();
+export const forgotPassword = async (email: string) => {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  });
+  if (error) throw new Error(error.message);
+  return true;
+};
+
+export const resetPassword = async (password: string) => {
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw new Error(error.message);
+  return true;
 };
 

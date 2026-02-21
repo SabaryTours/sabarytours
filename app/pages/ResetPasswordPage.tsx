@@ -66,7 +66,7 @@ export default function ResetPasswordPage() {
     }
 
     try {
-      await resetPassword(token, formData.password);
+      await resetPassword(formData.password);
       setSuccess(true);
       setTimeout(() => {
         router.push("/login");

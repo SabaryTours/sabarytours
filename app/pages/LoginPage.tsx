@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { UserIcon, LockIcon, EyeIcon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
 import Logo from "../components/Logo";
+import { createClient } from "../utils/supabase/client";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -34,15 +35,27 @@ export default function LoginPage() {
     setError("");
     setFieldErrors({});
 
-    // Mock login - replace with actual auth logic later
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (formData.username && formData.password) {
-        router.push("/dashboard");
-      } else {
-        setError("Please enter both username and password.");
+      if (!formData.username || !formData.password) {
+        setError("Please enter both email and password.");
+        setLoading(false);
+        return;
       }
+
+      const supabase = createClient();
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: formData.username, 
+        password: formData.password
+      });
+      
+      if (authError) {
+        setError(authError.message);
+        setLoading(false);
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh(); // Important: Refresh server state
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
     } finally {
@@ -52,25 +65,25 @@ export default function LoginPage() {
 
   const handleGoogleLogin = () => {
     // Mock Google login - replace with actual OAuth later
-    setLoading(true);
-    setTimeout(() => {
-      const mockResponse = {
-        token: "mock_google_token_" + Date.now(),
-        user: {
-          id: "1",
-          email: "user@gmail.com",
-          firstName: "Google",
-          lastName: "User",
-          username: "googleuser",
-        },
-      };
-      if (typeof window !== "undefined") {
-        localStorage.setItem("token", mockResponse.token);
-        localStorage.setItem("user", JSON.stringify(mockResponse.user));
-      }
-      router.push("/dashboard");
+      setLoading(true);
+      setTimeout(() => {
+        const mockResponse = {
+          token: "mock_google_token_" + Date.now(),
+          user: {
+            id: "1",
+            email: "user@gmail.com",
+            firstName: "Google",
+            lastName: "User",
+            username: "googleuser",
+          },
+        };
+        if (typeof window !== "undefined") {
+          localStorage.setItem("token", mockResponse.token);
+          localStorage.setItem("user", JSON.stringify(mockResponse.user));
+        }
+        router.push("/dashboard");
       setLoading(false);
-    }, 500);
+      }, 500);
   };
 
   return (

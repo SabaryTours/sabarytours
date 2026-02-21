@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft01Icon } from "hugeicons-react";
+import { ArrowLeft01Icon, CheckmarkBadge01Icon, Calendar01Icon, UserIcon, CreditCardIcon } from "hugeicons-react";
 import { Tour } from "../data/packages";
 import AvailabilityCalendar from "../components/AvailabilityCalendar";
 import CustomDropdown from "../components/CustomDropdown";
@@ -17,23 +17,32 @@ interface BookingPageProps {
 
 export default function BookingPage({ tour }: BookingPageProps) {
   const router = useRouter();
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
     package: "",
-    numberOfPeople: 1,
     date: "",
     timeSlot: "",
     pickupLocation: "",
   });
+  
+  // New state for dynamic price tier selections: { [tierName]: quantity }
+  const [tierSelections, setTierSelections] = useState<Record<string, number>>(
+    tour.price_tiers && tour.price_tiers.length > 0 
+      ? { [tour.price_tiers[0].name]: 1 }
+      : { "Base": 1 }
+  );
+
+  const totalPeople = Object.values(tierSelections).reduce((a, b) => a + b, 0);
   const [paymentOption, setPaymentOption] = useState<"full" | "deposit">("full");
   const [voucherCode, setVoucherCode] = useState<string>("");
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
 
-  // Mock available dates with slots - replace with API call
+  // Mock available dates with slots
   const availableDates = useMemo(() => {
     const dates = [];
     const today = new Date();
@@ -42,7 +51,6 @@ export default function BookingPage({ tour }: BookingPageProps) {
       date.setDate(today.getDate() + i);
       const dateString = date.toISOString().split('T')[0];
       
-      // Mock: Some dates have time slots, some don't
       const hasSlots = i % 3 !== 0;
       dates.push({
         date: dateString,
@@ -58,60 +66,77 @@ export default function BookingPage({ tour }: BookingPageProps) {
     return dates;
   }, [tour.priceValue]);
 
-  // Calculate base price based on date and group size
-  const basePrice = useMemo(() => {
-    let price = tour.priceValue || 100;
+  // Calculate total price based on selected tiers or fallback basePrice
+  const subtotal = useMemo(() => {
+    let tPrice = 0;
     
-    // Price adjustments based on date (weekend/holiday pricing)
+    if (tour.price_tiers && tour.price_tiers.length > 0) {
+      tour.price_tiers.forEach(tier => {
+        const qty = tierSelections[tier.name] || 0;
+        tPrice += (tier.amount * qty);
+      });
+    } else {
+      // Legacy fallback
+      tPrice = (tour.priceValue || 100) * totalPeople;
+    }
+
+    // Weekend surcharge check (optional legacy logic)
     if (formData.date) {
       const selectedDate = new Date(formData.date);
       const dayOfWeek = selectedDate.getDay();
-      // Weekend pricing (Saturday = 6, Sunday = 0)
       if (dayOfWeek === 0 || dayOfWeek === 6) {
-        price = price * 1.15; // 15% increase on weekends
+        tPrice = tPrice * 1.15; 
       }
     }
 
-    // Group size discounts
-    if (formData.numberOfPeople >= 5) {
-      price = price * 0.9; // 10% discount for 5+ people
-    } else if (formData.numberOfPeople >= 3) {
-      price = price * 0.95; // 5% discount for 3+ people
+    // Group discount (optional legacy logic)
+    if (totalPeople >= 5) {
+      tPrice = tPrice * 0.9;
+    } else if (totalPeople >= 3) {
+      tPrice = tPrice * 0.95; 
     }
 
-    return price;
-  }, [tour.priceValue, formData.date, formData.numberOfPeople]);
+    return tPrice;
+  }, [tour.priceValue, tour.price_tiers, tierSelections, formData.date, totalPeople]);
 
-  // Calculate subtotal
-  const subtotal = basePrice * formData.numberOfPeople;
-
-  // Apply voucher discount
   const discountAmount = (subtotal * voucherDiscount) / 100;
   const totalPrice = subtotal - discountAmount;
+  const paymentAmount = paymentOption === "deposit" ? (totalPrice * 30) / 100 : totalPrice;
 
-  // Calculate payment amount based on selected option
-  const paymentAmount = paymentOption === "deposit" 
-    ? (totalPrice * 30) / 100 
-    : totalPrice;
+  const handleVoucherApply = (code: string, discount: number) => {
+    setVoucherCode(code);
+    setVoucherDiscount(discount);
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate required fields
-    if (!formData.pickupLocation) {
-      alert("Please select a pick-up location");
-      return;
+  const handleVoucherRemove = () => {
+    setVoucherCode("");
+    setVoucherDiscount(0);
+  };
+
+  const handleNextStep = () => {
+    if (step === 1) {
+      if (!formData.date || !formData.timeSlot) {
+        alert("Please select a date and time slot.");
+        return;
+      }
+      setStep(2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (step === 2) {
+      if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.pickupLocation) {
+        alert("Please fill in all personal details and pick-up location.");
+        return;
+      }
+      setStep(3);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
-
-    // Show payment section
-    setShowPayment(true);
   };
 
   const handlePaymentSuccess = async (reference: string) => {
     try {
-      // Send booking confirmation
       const bookingData = {
         ...formData,
+        numberOfPeople: totalPeople,
+        tierSelections, // Pass precise breakdown if needed
         paymentReference: reference,
         paymentOption,
         voucherCode: voucherCode || null,
@@ -122,12 +147,9 @@ export default function BookingPage({ tour }: BookingPageProps) {
         tourSlug: tour.slug,
       };
 
-      // Call API to save booking
       const response = await fetch("/api/bookings", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bookingData),
       });
 
@@ -141,330 +163,390 @@ export default function BookingPage({ tour }: BookingPageProps) {
     }
   };
 
-  const handlePaymentError = (error: string) => {
-    alert(`Payment error: ${error}`);
-  };
-
-  const handleVoucherApply = (code: string, discount: number) => {
-    setVoucherCode(code);
-    setVoucherDiscount(discount);
-  };
-
-  const handleVoucherRemove = () => {
-    setVoucherCode("");
-    setVoucherDiscount(0);
-  };
-
-  const incrementPeople = () => {
-    setFormData({ ...formData, numberOfPeople: formData.numberOfPeople + 1 });
-  };
-
-  const decrementPeople = () => {
-    if (formData.numberOfPeople > 1) {
-      setFormData({ ...formData, numberOfPeople: formData.numberOfPeople - 1 });
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8 sm:py-10 md:py-12">
-          {/* Header */}
-          <div className="mb-8">
-            <button
-              onClick={() => router.back()}
-              className="text-[#666] hover:text-[#222] text-[14px] font-sans mb-4 inline-flex items-center gap-2 transition-colors"
-            >
-              <ArrowLeft01Icon className="w-4 h-4" />
-              Back
-            </button>
-            <h1 
-              className="text-[28px] sm:text-[32px] md:text-[36px] text-[#ff5e00] font-normal uppercase mb-2"
-              style={{
-                fontFamily: 'var(--font-unlimited-pie)',
-                textShadow: '1px 1px 0px #331300',
-              }}
-            >
-              Book Tour
-            </h1>
-            <p className="text-[#222] text-[16px] font-bold font-sans">
-              {tour.title}
-            </p>
-            {tour.rating && (
-              <div className="mt-2">
-                <span className="text-[#666] text-[14px] font-sans">
-                  {tour.rating} ⭐ ({tour.reviewCount} reviews)
-                </span>
-              </div>
-            )}
+    <div className="min-h-screen bg-gray-50 pb-20">
+      
+      {/* Top Banner */}
+      <div className="bg-[#1e1d1d] text-white pt-10 pb-20 px-4 sm:px-6 md:px-12">
+        <div className="max-w-4xl mx-auto">
+          <button
+            onClick={() => step > 1 ? setStep(step - 1 as 1 | 2) : router.back()}
+            className="text-gray-400 hover:text-white text-[14px] font-sans mb-6 inline-flex items-center gap-2 transition-colors"
+          >
+            <ArrowLeft01Icon className="w-4 h-4" />
+            {step > 1 ? "Go Back" : "Cancel Booking"}
+          </button>
+          
+          <h1 
+            className="text-[28px] sm:text-[36px] text-white font-normal uppercase mb-2"
+            style={{ fontFamily: 'var(--font-unlimited-pie)' }}
+          >
+            Complete your booking
+          </h1>
+          <p className="text-gray-300 text-[16px] font-sans">
+            {tour.title}
+          </p>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-12 -mt-12 relative z-10">
+        
+        {/* Progress Timeline */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6 flex items-center justify-between relative">
+          {/* Progress Line */}
+          <div className="absolute top-1/2 left-[10%] right-[10%] h-1 bg-gray-100 -translate-y-1/2 z-0 hidden sm:block">
+            <div 
+              className="h-full bg-[#ff5e00] transition-all duration-500" 
+              style={{ width: step === 1 ? '0%' : step === 2 ? '50%' : '100%' }}
+            />
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* First Name and Last Name */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[#222] text-[14px] font-bold mb-2 font-sans">
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  placeholder="eg. Jane"
-                  className="w-full px-4 py-3 text-[#222] rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] font-sans placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px]"
-                  required
-                />
+          {[
+            { num: 1, label: "Date & Guests", Icon: Calendar01Icon },
+            { num: 2, label: "Your Details", Icon: UserIcon },
+            { num: 3, label: "Review & Pay", Icon: CreditCardIcon },
+          ].map((s) => (
+            <div key={s.num} className="relative z-10 flex flex-col items-center gap-2 w-1/3">
+              <div 
+                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                  step >= s.num ? 'bg-[#ff5e00] text-white' : 'bg-gray-100 text-gray-400'
+                }`}
+              >
+                {step > s.num ? <CheckmarkBadge01Icon size={24} /> : <s.Icon size={20} />}
               </div>
-              <div>
-                <label className="block text-[#222] text-[14px] font-bold mb-2 font-sans">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  placeholder="eg. Doe"
-                  className="w-full px-4 py-3 text-[#222] rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] font-sans placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px]"
-                  required
-                />
-              </div>
+              <span className={`text-[12px] sm:text-[14px] font-medium font-sans text-center ${
+                step >= s.num ? 'text-gray-900' : 'text-gray-400'
+              }`}>
+                {s.label}
+              </span>
             </div>
+          ))}
+        </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-[#222] text-[14px] font-bold mb-2 font-sans">
-                Email
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="eg. janedoe@gmail.com"
-                className="w-full px-4 py-3 text-[#222] rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] font-sans placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px]"
-                required
-              />
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="block text-[#222] text-[14px] font-bold mb-2 font-sans">
-                Phone
-              </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder=""
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] font-sans"
-                required
-              />
-            </div>
-
-            {/* Package Selection */}
-            <div>
-              <label className="block text-[#222] text-[14px] font-bold mb-2 font-sans">
-                Select Price Package
-              </label>
-              <CustomDropdown
-                options={[
-                  { value: "standard", label: "Standard Package" },
-                  { value: "premium", label: "Premium Package" },
-                ]}
-                value={formData.package}
-                onChange={(value) => setFormData({ ...formData, package: value })}
-                placeholder="--Select--"
-              />
-            </div>
-
-            {/* Number of People */}
-            <div>
-              <label className="block text-[#222] text-[14px] font-bold mb-2 font-sans">
-                Number of people
-              </label>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={decrementPeople}
-                  className="w-10 h-10 bg-[#ff5e00] text-white rounded-lg flex items-center justify-center font-bold hover:bg-[#e55500] transition-colors"
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  value={formData.numberOfPeople}
-                  readOnly
-                  className="w-20 px-4 py-3 rounded-lg border border-gray-300 text-center font-sans font-bold"
-                />
-                <button
-                  type="button"
-                  onClick={incrementPeople}
-                  className="w-10 h-10 bg-[#ff5e00] text-white rounded-lg flex items-center justify-center font-bold hover:bg-[#e55500] transition-colors"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Date Picker with Availability */}
-            <div>
-              <label className="block text-[#222] text-[14px] font-bold mb-2 font-sans">
-                Select Date & Time <span className="text-red-500">*</span>
-              </label>
-              <AvailabilityCalendar
-                value={formData.date}
-                onChange={(date, timeSlot) => setFormData({ ...formData, date, timeSlot: timeSlot || "" })}
-                selectedTimeSlot={formData.timeSlot}
-                availableDates={availableDates}
-                minDate={new Date().toISOString().split('T')[0]}
-              />
-              {formData.date && (
-                <p className="text-[#666] text-[12px] font-normal mt-2 font-sans">
-                  Selected: {new Date(formData.date).toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
-                  {formData.timeSlot && ` at ${formData.timeSlot}`}
-                </p>
-              )}
-            </div>
-
-            {/* Pick-up Location */}
-            <PickupLocation
-              value={formData.pickupLocation}
-              onChange={(location) => setFormData({ ...formData, pickupLocation: location })}
-            />
-
-            {/* Voucher Code */}
-            <VoucherCode
-              onApply={handleVoucherApply}
-              onRemove={handleVoucherRemove}
-              appliedCode={voucherCode}
-              discount={voucherDiscount}
-            />
-
-            {/* Live Pricing Breakdown */}
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 space-y-3 border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300">
-              <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[#666] text-[14px] font-sans">
-                    Base Price × {formData.numberOfPeople} {formData.numberOfPeople === 1 ? "person" : "people"}
-                </span>
-                <span className="text-[#222] text-[14px] font-bold font-sans">
-                    ${subtotal.toFixed(2)}
-                </span>
+        {/* Form Container */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 lg:p-10">
+          
+          {/* STEP 1: Date & Guests */}
+          {step === 1 && (
+            <div className="space-y-8 animate-fade-in">
+              <h2 className="text-2xl font-bold font-sans text-gray-900 border-b border-gray-100 pb-4">
+                1. Select Date & Guests
+              </h2>
+              
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">
+                    Number of people
+                  </label>
+                  
+                  {tour.price_tiers && tour.price_tiers.length > 0 ? (
+                    tour.price_tiers.map((tier) => (
+                      <div key={tier.name} className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <div>
+                          <p className="font-bold text-gray-900 font-sans">{tier.name}</p>
+                          <p className="text-sm text-gray-500 font-sans">{tier.currency || 'GHS'} {tier.amount}</p>
+                          {tier.description && <p className="text-xs text-gray-400 font-sans mt-0.5">{tier.description}</p>}
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentQty = tierSelections[tier.name] || 0;
+                              if (currentQty > 0) {
+                                setTierSelections({ ...tierSelections, [tier.name]: currentQty - 1 });
+                              }
+                            }}
+                            className="w-8 h-8 sm:w-10 sm:h-10 bg-white border border-gray-200 text-gray-700 rounded-lg flex items-center justify-center font-bold hover:border-[#ff5e00] hover:text-[#ff5e00] transition-colors"
+                          >
+                            -
+                          </button>
+                          <span className="w-8 text-center font-sans font-bold text-lg text-gray-900">
+                            {tierSelections[tier.name] || 0}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentQty = tierSelections[tier.name] || 0;
+                              setTierSelections({ ...tierSelections, [tier.name]: currentQty + 1 });
+                            }}
+                            className="w-8 h-8 sm:w-10 sm:h-10 bg-white border border-gray-200 text-gray-700 rounded-lg flex items-center justify-center font-bold hover:border-[#ff5e00] hover:text-[#ff5e00] transition-colors"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    // Legacy Fallback
+                    <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 w-fit">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentQty = tierSelections["Base"] || 0;
+                          if (currentQty > 1) {
+                            setTierSelections({ "Base": currentQty - 1 });
+                          }
+                        }}
+                        className="w-10 h-10 bg-white border border-gray-200 text-gray-700 rounded-lg flex items-center justify-center font-bold hover:border-[#ff5e00] hover:text-[#ff5e00] transition-colors"
+                      >
+                        -
+                      </button>
+                      <span className="w-12 text-center font-sans font-bold text-lg text-gray-900">
+                        {tierSelections["Base"] || 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentQty = tierSelections["Base"] || 0;
+                          setTierSelections({ "Base": currentQty + 1 });
+                        }}
+                        className="w-10 h-10 bg-white border border-gray-200 text-gray-700 rounded-lg flex items-center justify-center font-bold hover:border-[#ff5e00] hover:text-[#ff5e00] transition-colors"
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
                 </div>
-                
-                {formData.date && (
-                  <div className="flex items-center justify-between text-[12px] text-[#666] font-sans">
-                    <span>Date: {new Date(formData.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                    {new Date(formData.date).getDay() === 0 || new Date(formData.date).getDay() === 6 ? (
-                      <span className="text-[#ff5e00]">Weekend pricing applied</span>
-                    ) : null}
-                  </div>
-                )}
 
-                {formData.numberOfPeople >= 3 && (
-                  <div className="flex items-center justify-between text-[12px] text-green-600 font-sans">
-                    <span>Group discount ({formData.numberOfPeople >= 5 ? '10%' : '5%'})</span>
-                    <span>-${(subtotal - basePrice * formData.numberOfPeople).toFixed(2)}</span>
-                  </div>
-                )}
-
-                {voucherDiscount > 0 && (
-                  <div className="flex items-center justify-between text-[12px] text-green-600 font-sans">
-                    <span>Voucher discount ({voucherDiscount}%)</span>
-                    <span>-${discountAmount.toFixed(2)}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-gray-300 pt-3 mt-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[#222] text-[16px] font-bold font-sans">Subtotal</span>
-                  <span className="text-[#ff5e00] text-[24px] font-bold font-sans">
-                    ${totalPrice.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Payment Options */}
-            <PaymentOptions
-              totalPrice={totalPrice}
-              selectedOption={paymentOption}
-              onSelectOption={setPaymentOption}
-              depositPercentage={30}
-            />
-
-            {/* Trust Indicators */}
-            <div className="flex flex-wrap gap-4 text-[12px] text-[#666] font-sans">
-              {tour.freeCancellation && (
-                <div className="flex items-center gap-1">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#00A86B">
-                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                  </svg>
-                  <span>Free cancellation</span>
-                </div>
-              )}
-              <div className="flex items-center gap-1">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#0060CC">
-                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
-                </svg>
-                <span>Secure booking</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#FF5E00">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
-                <span>Instant confirmation</span>
-              </div>
-            </div>
-
-            {/* Payment Section */}
-            {showPayment ? (
-              <div className="space-y-4">
-                <div className="border-t border-gray-200 pt-4">
-                  <h3 className="text-[#222] text-[18px] font-bold mb-4 font-sans">
-                    Complete Your Booking
-                  </h3>
-                  <PaystackPayment
-                    amount={paymentAmount}
-                    email={formData.email}
-                    onSuccess={handlePaymentSuccess}
-                    onError={handlePaymentError}
-                    metadata={{
-                      tourId: tour.id,
-                      tourSlug: tour.slug,
-                      numberOfPeople: formData.numberOfPeople,
-                      date: formData.date,
-                      timeSlot: formData.timeSlot,
-                      pickupLocation: formData.pickupLocation,
-                      paymentOption,
-                      voucherCode: voucherCode || null,
-                    }}
+                <div>
+                  <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">
+                    Select Package
+                  </label>
+                  <CustomDropdown
+                    options={[
+                      { value: "standard", label: "Standard Package" },
+                      { value: "premium", label: "Premium Package (+ Amenities)" },
+                    ]}
+                    value={formData.package}
+                    onChange={(value) => setFormData({ ...formData, package: value })}
+                    placeholder="--Select--"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">
+                    Select Date & Time <span className="text-red-500">*</span>
+                  </label>
+                  <AvailabilityCalendar
+                    value={formData.date}
+                    onChange={(date, timeSlot) => setFormData({ ...formData, date, timeSlot: timeSlot || "" })}
+                    selectedTimeSlot={formData.timeSlot}
+                    availableDates={availableDates}
+                    minDate={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-gray-100 flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setShowPayment(false)}
-                  className="w-full text-[#666] text-[14px] font-sans underline hover:text-[#ff5e00]"
+                  onClick={handleNextStep}
+                  className="bg-[#ff5e00] text-white px-8 py-4 rounded-xl font-bold text-[16px] hover:bg-[#e55500] hover:shadow-lg transition-all"
                 >
-                  ← Back to edit booking
+                  Continue to Details
                 </button>
               </div>
-            ) : (
-            <button
-              type="submit"
-              className="w-full bg-[#ff5e00] text-white py-4 rounded-lg font-bold text-[16px] hover:bg-[#e55500] hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 font-sans shadow-lg"
-            >
-                Continue to Payment - ${paymentAmount.toFixed(2)}
-            </button>
-            )}
-          </form>
+            </div>
+          )}
+
+          {/* STEP 2: Personal Details */}
+          {step === 2 && (
+            <div className="space-y-8 animate-fade-in">
+              <h2 className="text-2xl font-bold font-sans text-gray-900 border-b border-gray-100 pb-4">
+                2. Your Details
+              </h2>
+              
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">First Name <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      placeholder="eg. Jane"
+                      className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] font-sans"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">Last Name <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      placeholder="eg. Doe"
+                      className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] font-sans"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">Email <span className="text-red-500">*</span></label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="eg. janedoe@gmail.com"
+                      className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] font-sans"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">Phone Number <span className="text-red-500">*</span></label>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="+233..."
+                      className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] font-sans"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">Pick-up Location <span className="text-red-500">*</span></label>
+                  <PickupLocation
+                    value={formData.pickupLocation}
+                    onChange={(location) => setFormData({ ...formData, pickupLocation: location })}
+                  />
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-gray-100 flex justify-between items-center">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="text-gray-500 font-bold font-sans hover:text-[#ff5e00]"
+                >
+                  Go Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextStep}
+                  className="bg-[#ff5e00] text-white px-8 py-4 rounded-xl font-bold text-[16px] hover:bg-[#e55500] hover:shadow-lg transition-all"
+                >
+                  Continue to Payment
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3: Review & Payment */}
+          {step === 3 && (
+            <div className="space-y-8 animate-fade-in">
+              <h2 className="text-2xl font-bold font-sans text-gray-900 border-b border-gray-100 pb-4">
+                3. Review & Pay
+              </h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                {/* Summary Panel */}
+                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 h-fit">
+                  <h3 className="text-lg font-bold font-sans text-gray-900 mb-4">Booking Summary</h3>
+                  
+                  <ul className="space-y-3 mb-6 text-sm font-sans text-gray-600">
+                    <li className="flex justify-between">
+                      <span>Tour</span>
+                      <span className="font-bold text-gray-900 text-right">{tour.title}</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>Date</span>
+                      <span className="font-bold text-gray-900 text-right">
+                        {new Date(formData.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        {formData.timeSlot && ` at ${formData.timeSlot}`}
+                      </span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>Guests</span>
+                      <span className="font-bold text-gray-900 text-right">{totalPeople} People</span>
+                    </li>
+                  </ul>
+
+                  <VoucherCode
+                    onApply={handleVoucherApply}
+                    onRemove={handleVoucherRemove}
+                    appliedCode={voucherCode}
+                    discount={voucherDiscount}
+                  />
+
+                  <div className="border-t border-gray-200 mt-6 pt-4 space-y-2">
+                    <div className="flex justify-between text-sm text-gray-600 font-sans">
+                      <span>Subtotal</span>
+                      <span>${subtotal.toFixed(2)}</span>
+                    </div>
+                    {voucherDiscount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600 font-sans">
+                        <span>Discount ({voucherDiscount}%)</span>
+                        <span>-${discountAmount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-xl font-bold font-sans text-gray-900 pt-2">
+                      <span>Total</span>
+                      <span className="text-[#ff5e00]">${totalPrice.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Panel */}
+                <div className="space-y-6">
+                  {!showPayment ? (
+                    <>
+                      <PaymentOptions
+                        totalPrice={totalPrice}
+                        selectedOption={paymentOption}
+                        onSelectOption={setPaymentOption}
+                        depositPercentage={30}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPayment(true)}
+                        className="w-full bg-[#ff5e00] text-white py-4 rounded-xl font-bold text-[16px] hover:bg-[#e55500] hover:shadow-xl transition-all font-sans"
+                      >
+                        Confirm & Pay ${paymentAmount.toFixed(2)}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStep(2)}
+                        className="w-full text-center text-gray-500 font-bold font-sans hover:text-[#ff5e00]"
+                      >
+                        Go Back
+                      </button>
+                    </>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="bg-orange-50 border border-orange-200 rounded-xl p-6">
+                        <PaystackPayment
+                          amount={paymentAmount}
+                          email={formData.email}
+                          onSuccess={handlePaymentSuccess}
+                          onError={(err) => alert(`Payment error: ${err}`)}
+                          metadata={{
+                            tourId: tour.id,
+                            tourSlug: tour.slug,
+                            numberOfPeople: totalPeople,
+                            date: formData.date,
+                            timeSlot: formData.timeSlot,
+                            pickupLocation: formData.pickupLocation,
+                            paymentOption,
+                          }}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowPayment(false)}
+                        className="w-full text-gray-500 font-bold font-sans hover:text-[#ff5e00] underline"
+                      >
+                        Change Payment Option
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );
 }
-

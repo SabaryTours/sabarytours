@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { getCategoryBySlug, getToursByCategory, packageCategories } from "../../data/packages";
+import { getToursByCategory, getPackageBySlug } from "../../lib/api";
+import { createClient } from "../../utils/supabase/server";
 import CategoryPage from "../../pages/CategoryPage";
 
 interface PageProps {
@@ -10,8 +11,15 @@ interface PageProps {
   };
 }
 
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+
 export async function generateStaticParams() {
-  return packageCategories.map((category) => ({
+  const supabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+  const { data: packages } = await supabase.from('packages').select('slug');
+  return (packages || []).map((category) => ({
     categorySlug: category.slug,
   }));
 }
@@ -21,8 +29,8 @@ export default async function CategoryRoute({ params }: PageProps) {
   const resolvedParams = params instanceof Promise ? await params : params;
   const { categorySlug } = resolvedParams;
   
-  const category = getCategoryBySlug(categorySlug);
-  const tours = getToursByCategory(categorySlug);
+  const category = await getPackageBySlug(categorySlug);
+  const tours = await getToursByCategory(categorySlug);
 
   if (!category) {
     notFound();

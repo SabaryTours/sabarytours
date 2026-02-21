@@ -70,7 +70,7 @@ export default function TourGrid({ tours, categorySlug }: TourGridProps) {
             
             {/* Title */}
             <h3 
-              className="text-white text-[16px] sm:text-[18px] md:text-[20px] uppercase mb-2 drop-shadow-lg"
+              className="text-white text-[16px] sm:text-[18px] md:text-[20px] uppercase mb-2 drop-shadow-lg line-clamp-2"
               style={{
                 fontFamily: 'var(--font-unlimited-pie)',
                 lineHeight: 'normal',
@@ -81,7 +81,7 @@ export default function TourGrid({ tours, categorySlug }: TourGridProps) {
             </h3>
 
             {/* Price and Booked Count */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mt-auto">
               <span className="text-white text-[14px] sm:text-[16px] font-bold font-sans">
                 {tour.price}
               </span>

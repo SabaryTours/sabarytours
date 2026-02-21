@@ -95,8 +95,7 @@ export default function PackageDetailPage({ packageData }: PackageDetailPageProp
               </h2>
             </div>
           </div>
-
-          <PackagesGrid />
+          <PackagesGrid packages={packages} />
         </div>
       </section>
       <Footer />

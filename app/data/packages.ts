@@ -17,6 +17,7 @@ export interface Tour {
   description: string;
   price: string;
   priceValue?: number; // For filtering
+  price_tiers?: any[];
   duration?: string;
   rating?: number; // 1-5 stars
   reviewCount?: number;
@@ -28,6 +29,7 @@ export interface Tour {
   whyBook?: string[];
   gallery?: string[];
   location?: string;
+  map_url?: string;
   mapCoordinates?: {
     lat: number;
     lng: number;
@@ -89,7 +91,7 @@ export const packageCategories: PackageCategory[] = [
     image: "/assets/package-img3.png",
     description: "Experience authentic Ghanaian cuisine and more.",
   },
-  
+
 ];
 
 // Tours within categories
@@ -285,8 +287,8 @@ export function getToursByCategory(categorySlug: string): Tour[] {
 
 export function getSimilarTours(currentTour: Tour, limit: number = 3): Tour[] {
   return tours
-    .filter((tour) => 
-      tour.id !== currentTour.id && 
+    .filter((tour) =>
+      tour.id !== currentTour.id &&
       tour.categorySlug === currentTour.categorySlug
     )
     .slice(0, limit);

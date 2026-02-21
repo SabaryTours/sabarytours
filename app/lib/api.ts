@@ -1,0 +1,170 @@
+import { createClient } from '../utils/supabase/server';
+import { Tour } from '../data/packages';
+
+// Helper to generate a slug if missing
+const generateSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+export async function getPackageBySlug(slug: string) {
+  const supabase = await createClient();
+  const { data: pkg, error } = await supabase
+    .from('packages')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+
+  if (error || !pkg) return null;
+  return pkg;
+}
+
+export async function getToursByCategory(categorySlug: string): Promise<Tour[]> {
+  const supabase = await createClient();
+
+  const { data: tours, error } = await supabase
+    .from('tours')
+    .select(`
+      *,
+      tour_images(image_url, display_order),
+      tour_prices(amount, currency)
+    `)
+    .eq('category', categorySlug)
+    .eq('status', 'published');
+
+  if (error || !tours) {
+    console.error("Supabase fetch error:", error);
+    return [];
+  }
+
+  // Map to frontend Tour interface
+  return tours.map((t: any) => {
+    // Sort images by order
+    const sortedImages = (t.tour_images || []).sort((a: any, b: any) => a.display_order - b.display_order);
+    const gallery = sortedImages.map((img: any) => img.image_url);
+    const primaryImage = gallery[0] || '/assets/placeholder-tour.jpg'; // fallback
+
+    const basePrice = t.tour_prices?.[0]?.amount || 0;
+    const currency = t.tour_prices?.[0]?.currency || t.currency || 'GHS';
+
+    return {
+      id: t.id.toString(), // Support UUID
+      title: t.title,
+      slug: t.slug || generateSlug(t.title),
+      categorySlug: categorySlug, // keeping UI context
+      image: primaryImage,
+      gallery: gallery,
+      description: t.description || '',
+      price: `${currency} ${basePrice}`,
+      priceValue: basePrice,
+      duration: t.duration || 'Full Day',
+      location: t.location || 'Ghana',
+      map_url: t.map_url,
+      price_tiers: t.tour_prices || [],
+      rating: 4.8, // Mock ratings until reviews are linked
+      reviewCount: Math.floor(Math.random() * 100) + 10,
+      bookedCount: Math.floor(Math.random() * 500) + 50,
+      freeCancellation: true,
+    } as Tour;
+  });
+}
+
+export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
+  const supabase = await createClient();
+
+  const { data: tours, error } = await supabase
+    .from('tours')
+    .select(`
+      *,
+      tour_images(image_url, display_order),
+      tour_prices(amount, currency, name),
+      tour_itineraries(title, description, day_number),
+      tour_features(feature)
+    `)
+    .eq('status', 'published');
+
+  if (error || !tours) return null;
+
+  // Find by active generated slug
+  const matchedTour = tours.find((t: any) => (t.slug || generateSlug(t.title)) === tourSlug);
+
+  if (!matchedTour) return null;
+  const t = matchedTour;
+
+  const sortedImages = (t.tour_images || []).sort((a: any, b: any) => a.display_order - b.display_order);
+  const gallery = sortedImages.map((img: any) => img.image_url);
+  const primaryImage = gallery[0] || '/assets/placeholder-tour.jpg';
+
+  const basePrice = t.tour_prices?.[0]?.amount || 0;
+  const currency = t.tour_prices?.[0]?.currency || t.currency || 'GHS';
+
+  // Itinerary
+  const sortedItin = (t.tour_itineraries || []).sort((a: any, b: any) => a.day_number - b.day_number);
+  const mappedItin = sortedItin.map((i: any) => ({
+    time: `Day ${i.day_number}`,
+    activity: i.title || 'Activity',
+    description: i.description
+  }));
+
+  // Features
+  const features = (t.tour_features || []).map((f: any) => f.feature);
+
+  return {
+    id: t.id.toString(),
+    title: t.title,
+    slug: t.slug || generateSlug(t.title),
+    categorySlug: 'tours',
+    image: primaryImage,
+    gallery: gallery.length > 0 ? gallery : [primaryImage],
+    description: t.description || '',
+    price: `${currency} ${basePrice}`,
+    priceValue: basePrice,
+    duration: t.duration || 'Full Day',
+    location: t.location || 'Ghana',
+    map_url: t.map_url,
+    price_tiers: t.tour_prices || [],
+    whatsIncluded: features,
+    itinerary: mappedItin,
+    rating: 4.8,
+    reviewCount: 45,
+    bookedCount: 120,
+    freeCancellation: true,
+  } as Tour;
+}
+
+// Blog Posts
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  image: string;
+  views: number;
+  comments: number;
+  author: string;
+  date: string;
+  content: string;
+  excerpt?: string;
+}
+
+export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
+  const supabase = await createClient();
+
+  const { data: post, error } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('status', 'published')
+    .eq('slug', slug)
+    .single();
+
+  if (error || !post) return null;
+
+  return {
+    id: post.id.toString(),
+    title: post.title,
+    slug: post.slug || generateSlug(post.title),
+    image: post.image_url || '/assets/placeholder-blog.jpg',
+    views: Math.floor(Math.random() * 1000) + 100,
+    comments: Math.floor(Math.random() * 50),
+    author: 'Sabary Tours',
+    date: new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+    content: post.content || '',
+    excerpt: post.summary || '',
+  } as BlogPost;
+}

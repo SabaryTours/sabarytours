@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { packageCategories } from "../data/packages";
+import type { PackageCategory } from "./PackagesGrid";
 
-export default function CategoryGrid() {
+export default function CategoryGrid({ packages = [] }: { packages: PackageCategory[] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-      {packageCategories.map((category) => (
+      {packages.map((category) => (
         <Link
           key={category.id}
           href={`/packages/${category.slug}`}

@@ -1,0 +1,412 @@
+[
+  {
+    "legacy_id": 1,
+    "email": "admin@sabarytours.com",
+    "username": "sabary",
+    "password_hash": "$2y$12$gIeosKKb2TZPb7cWytHBVuomXb55dnd5WCgx/pu5319mJkOgLuszu",
+    "firstname": "Sabary",
+    "lastname": "Tour",
+    "phone": "",
+    "role": "admin"
+  },
+  {
+    "legacy_id": 77,
+    "email": "kingklan07@hotmail.com",
+    "username": "allblack",
+    "password_hash": "$2y$12$t4c3QPbcGih40aeBr6oazeOR2Tlm6srtn4o9YpKyOryABSn7DcbIK",
+    "firstname": "All black",
+    "lastname": "Kankam",
+    "phone": "0242252749",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 78,
+    "email": "vwhite@saul.com",
+    "username": "amani_nikolaus",
+    "password_hash": "$2y$12$WoNNYmRzCEj36M7FzMp8aOCpdJShV1apQLvrozXQGzw0KW9kM6K3y",
+    "firstname": "Connie",
+    "lastname": "Zieme",
+    "phone": "17171392063",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 79,
+    "email": "fjahimaz@comcast.net",
+    "username": "rey_effertz42",
+    "password_hash": "$2y$12$CNJby4FzvsLUgo8Dlez3rOg.gn0rjwggxG4/bgcaAgvKT5D8D97MO",
+    "firstname": "Earl",
+    "lastname": "Casper",
+    "phone": "10972146996",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 80,
+    "email": "rameshdaya27@gmail.com",
+    "username": "emmanuel.ernser46",
+    "password_hash": "$2y$12$QWINMXjst.BuBNp1FnLbz.SQwPPnEQOxveBrjs4qdiQj.b3mthsuC",
+    "firstname": "Amani",
+    "lastname": "Windler",
+    "phone": "19948472483",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 81,
+    "email": "lailasabary@gmail.com",
+    "username": "theawkwardtraveller",
+    "password_hash": "$2y$12$7/Be1DxeEjEL70EKj1MMyOHKo7e7P8J4bODTXxUEeN5Pu/VVbrc9G",
+    "firstname": "Laila",
+    "lastname": "Abdul Rahman",
+    "phone": "+233543093838",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 82,
+    "email": "mcmurray676@btinternet.com",
+    "username": "kelsi81",
+    "password_hash": "$2y$12$1nPUW0iK6PV29T5d/tBPheeQAvRnb/qul9SfNBtFtaDxQ5Q/KGBT2",
+    "firstname": "Consuelo",
+    "lastname": "Schaden",
+    "phone": "12123617946",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 84,
+    "email": "razakhaniffa6@yahoo.com",
+    "username": "pometa12345",
+    "password_hash": "$2y$12$pkI6wieQ3uPeAm6Jbnyu1OQ1WmBd8NFamhmjWWS6N0arElYZpzidO",
+    "firstname": "Haniffa",
+    "lastname": "Razak",
+    "phone": "3897646844",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 85,
+    "email": "razaksherifa2@libero.it",
+    "username": "sherifarazak",
+    "password_hash": "$2y$12$76o0UAn1KOh6GM8xe5A1AO4wn0xzWSPSBLWaop7zuLbnr2iQnCquO",
+    "firstname": "Sherifa",
+    "lastname": "Razak",
+    "phone": "3714384326",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 95,
+    "email": "abdulrahmanjalila@yahoo.it",
+    "username": "abdul rahman",
+    "password_hash": "$2y$12$93UVGXrOBEHWLgaJSXHy8ewdLywjM2DXV1GKmH7vI6P4sJfmMmbg6",
+    "firstname": "Jalila",
+    "lastname": "Abdul Rahman",
+    "phone": "00393278642284",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 96,
+    "email": "ladyhive@gmail.com",
+    "username": "lady julia",
+    "password_hash": "$2y$12$f64TspdwAqTH45syAgdeE.6Y7rbyAFesqN6Yj6DFNGa5p8gnFl3IC",
+    "firstname": "Lady Julia",
+    "lastname": "Asamany",
+    "phone": "0209059446",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 99,
+    "email": "contact.djoks@gmail.com",
+    "username": "philip",
+    "password_hash": "$2y$12$vEyacVcWf4PXc4woEroR7O.5EZKDzkGGMyAwxkTBUx2kkAuq3XAjq",
+    "firstname": "Philip",
+    "lastname": "Djokoto",
+    "phone": "+233544009412",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 100,
+    "email": "claudiamenie@gmail.com",
+    "username": "claudia",
+    "password_hash": "$2y$12$hMBUZKuaha/RqAIZe6hw1unSRPj0WrF.n6bgYnWWibSpUAdm4PILC",
+    "firstname": "Claudia",
+    "lastname": "Mintogo",
+    "phone": "0269384159",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 101,
+    "email": "esijossey@gmail.com",
+    "username": "jossey",
+    "password_hash": "$2y$12$kPTMgXY10jenouz/xhjZtuvjMbWe2McUh8.mhHRTjKHca3WOP1r16",
+    "firstname": "Josephine",
+    "lastname": "Ahose",
+    "phone": "0553005775",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 103,
+    "email": "afiakaley@outlook.com",
+    "username": "engracia",
+    "password_hash": "$2y$12$u72r7eTHMdNx/DE7kVTBHeGtnD5qd6PkcGDYtiqH87fkrrbfiwjKC",
+    "firstname": "Engracia",
+    "lastname": "Mofuman",
+    "phone": "+233245223992",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 104,
+    "email": "ehikhamenorkingsley71@gmail.com",
+    "username": "lordking",
+    "password_hash": "$2y$12$PvmrDjNKfLOC7tDshGE3LefF0GK9pHNS.WOu5NofYlhw5efhVG3Ka",
+    "firstname": "Ehikhamenor",
+    "lastname": "Kingsley",
+    "phone": "+233550650979",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 105,
+    "email": "nialhassan9020@gmail.com",
+    "username": "tunteya",
+    "password_hash": "$2y$12$hPOqXiW9HNDdfY4HIh3zfOdolEHMDYlmkgCHJTx0lvUwbrSjPtVLm",
+    "firstname": "Nihaad",
+    "lastname": "Alhassan",
+    "phone": "+233592577804",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 106,
+    "email": "sharifazanti@gmail.com",
+    "username": "sharifhg",
+    "password_hash": "$2y$12$Jm7MziXjSjxxfA44N5EyVO2k7triyb4CcUyqTdExv0R5UncxmU6O.",
+    "firstname": "Sharif",
+    "lastname": "Azanti",
+    "phone": "0542118854",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 108,
+    "email": "ahlamsaani@gmail.com",
+    "username": "teiyarh_24",
+    "password_hash": "$2y$12$Yv4epM3KkRkQsUO70uhR..DhlOROXfTtb9oZibPC0e.9taE6kcB2m",
+    "firstname": "Ahlam",
+    "lastname": "Saani",
+    "phone": "+233247744523",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 109,
+    "email": "emerald2adjei@gmail.com",
+    "username": "enyaadjei",
+    "password_hash": "$2y$12$EKGkJa4dBWHKTqwl8RkuwuitOnkVY58LwTLl9aaE9FDDqZeX1h7Ay",
+    "firstname": "Emerald",
+    "lastname": "Adjei",
+    "phone": "+233240428787",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 110,
+    "email": "taphyann@gmail.com",
+    "username": "fafali",
+    "password_hash": "$2y$12$oHHa7a01fOqUp/e0EYoTwe91d905BRPefrNFqAOlplZSDR6Xfnw32",
+    "firstname": "Fafali",
+    "lastname": "Tudzi",
+    "phone": "0202009483",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 111,
+    "email": "gedmond3@gmail.com",
+    "username": "kwesi07",
+    "password_hash": "$2y$12$Xmc5iAN3WouycDcnPheFVOwOpJhy.qHHZKF/ZXprMi/yxk/XwIWfm",
+    "firstname": "Edmond",
+    "lastname": "Kwesi",
+    "phone": "0501216793",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 112,
+    "email": "ddesireej77@gmail.com",
+    "username": "ddjones",
+    "password_hash": "$2y$12$tGv11vtCbTvUg7BndJYQdeKunQjZtZaU426G2IZh/Sm.n0ggexyrK",
+    "firstname": "Danielle",
+    "lastname": "Jones",
+    "phone": "0506409069",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 466,
+    "email": "vdames@aol.com",
+    "username": "vdames",
+    "password_hash": "$2y$12$xmVK1s8Ia0G9QbieLHJv3.ooJ/sjZvq4ogjTKHUMWiZYP9tP/G4Kq",
+    "firstname": "Valerie",
+    "lastname": "Dames",
+    "phone": "9514015753",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 467,
+    "email": "eamuah1@gmail.com",
+    "username": "kukuubey",
+    "password_hash": "$2y$12$nnnHee.7MBwiBMjJNAWgC.9zmjGq8bPiIrpciHoEwT5j9yAidqUNy",
+    "firstname": "Ekua Amoaba",
+    "lastname": "Amuah",
+    "phone": "0548058570",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 468,
+    "email": "info@vickieremoe.com",
+    "username": "akarababe",
+    "password_hash": "$2y$12$W7qpGh3NOqI2io/ybdG7sO9dMUaS83XbRgj1CP2W3rEE1Go.VtfM2",
+    "firstname": "Vickie",
+    "lastname": "Remoe",
+    "phone": "+233 26 984 2756",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 469,
+    "email": "mariaahmed293@gmail.com",
+    "username": "mariah",
+    "password_hash": "$2y$12$teLfsoaa5jGdYM.oDllMQOPtShScMqzTqgb9f3NR/pQBHTbCZgjT2",
+    "firstname": "Maria",
+    "lastname": "Ahmed",
+    "phone": "233242930086",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 470,
+    "email": "klassickelvido@gmail.com",
+    "username": "kelvin3015",
+    "password_hash": "$2y$12$lRaZcLwkDeZ7UkatM2yOV.I9YUzV9f4iJqM9J3dgKaKH4.MTVkmzu",
+    "firstname": "Kelvin",
+    "lastname": "Ugiagbe",
+    "phone": "0558552338",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 471,
+    "email": "alfred.adusei@yahoo.com",
+    "username": "alfred",
+    "password_hash": "$2y$12$bzOKCNN/16aHfge3R0UiKObEehnEgKtuh/IlyWgcK5eDDh2Y9XCDm",
+    "firstname": "ALFRED",
+    "lastname": "ADUSEI",
+    "phone": "+233265426874",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 472,
+    "email": "d.aryee150@gmail.com",
+    "username": "dany_earl",
+    "password_hash": "$2y$12$6fvdGM5aWZPhyJT30Pnx2.w8HWtNCBlH9Idl9dj7T06Jf9dH02nhy",
+    "firstname": "Daniel",
+    "lastname": "Aryee",
+    "phone": "0241559606",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 473,
+    "email": "kojopanpana@gmail.com",
+    "username": "panpana",
+    "password_hash": "$2y$12$9pZ71DcdcpWeAbCQriZggOSvaZ9JnE6AJOZUNSGLiJsv6V7XHX5Ye",
+    "firstname": "Kojo",
+    "lastname": "Panpana",
+    "phone": "+233246792209",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 474,
+    "email": "douglassdavis50@gmail.com",
+    "username": "douglassdavis",
+    "password_hash": "$2y$12$2UGPq.yrzEjQdsnEY9toEO2AYo/oHipCqiUQuygvtSpJAghRok8gu",
+    "firstname": "Douglass",
+    "lastname": "Davis",
+    "phone": "+19192641726",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 475,
+    "email": "ephyanessa@gmail.com",
+    "username": "ephyanessa",
+    "password_hash": "$2y$12$PZjZwDlWP2pGvu5XxZ8uwe1MO/vGZiyUYpqhkXBm5bsPFeltlZvD2",
+    "firstname": "Vanessa",
+    "lastname": "Otchere",
+    "phone": "+233273430538",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 476,
+    "email": "kughanny21@gmail.com",
+    "username": "kughanny21@gmail.com",
+    "password_hash": "$2y$12$VcPQGhxu5zE5aAIseYTHI.EIWQg2RESSb5lTogglP.jPUtV1H/Bh6",
+    "firstname": "Hannah",
+    "lastname": "Nyande",
+    "phone": "0591968706",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 477,
+    "email": "slichy_sue@yahoo.com",
+    "username": "slichy",
+    "password_hash": "$2y$12$RA48spQ/asqK8xJlzH807u8LeSZVl177tNsN.fDfGXP4CpwSHDaWO",
+    "firstname": "Sue",
+    "lastname": "Buachie",
+    "phone": "0548331950",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 478,
+    "email": "adwoa.akomeah@gmail.com",
+    "username": "benewaa",
+    "password_hash": "$2y$12$ofhhMT30V/dWwXXYWQFZYeS8O1.yZmKja6jc.ZcqOcJC3AUL060Ma",
+    "firstname": "Adwoa",
+    "lastname": "Akomea",
+    "phone": "233270948500",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 479,
+    "email": "messamsn@gmail.com",
+    "username": "messan",
+    "password_hash": "$2y$12$7A8yFl/.nnknAnF/eg40be66ffvhzhZxBwU4HNLyJbZ1C4DctbPUm",
+    "firstname": "Mawule",
+    "lastname": "Messan",
+    "phone": "0242397102",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 480,
+    "email": "slazengerschnist@gmail.com",
+    "username": "bwoy nuru",
+    "password_hash": "$2y$12$2t/aJxjniTeCvMCKNAzOTOFJ7mTMnGx94XQRhkM.S0D3KwANlSuju",
+    "firstname": "Muhammad Nurudeen",
+    "lastname": "Salisu",
+    "phone": "0554273690",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 483,
+    "email": "p.o.yirenkyi@gmail.com",
+    "username": "pwillis7",
+    "password_hash": "$2y$12$r6xrNkKC6TFC1c9R8/TQhOmYiy1mZHO0qrFNfGHMGiPJ1TahEGe9y",
+    "firstname": "Philip",
+    "lastname": "Yirenkyi",
+    "phone": "0503478398",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 484,
+    "email": "mahamahamida@gmail.com",
+    "username": "hamida",
+    "password_hash": "$2y$12$jH7EeRNOF1mW8G5k8Wn3FO1qMJvKMP0x5hIgMsimlXMDtCB.6g.Xa",
+    "firstname": "Hamida",
+    "lastname": "Mahama",
+    "phone": "+233548243018",
+    "role": "subscriber"
+  },
+  {
+    "legacy_id": 488,
+    "email": "mahamahamida1554@gmail.com",
+    "username": "meedah47",
+    "password_hash": "$2y$12$uUyGbnrqMP0mrALTpGH15eHcbZwFG7qhglJasQKAcabnw.HAnynCu",
+    "firstname": "Hamida",
+    "lastname": "Mahama",
+    "phone": "+233548243018",
+    "role": "subscriber"
+  }
+]
