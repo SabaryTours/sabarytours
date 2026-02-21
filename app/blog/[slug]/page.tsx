@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getBlogPostBySlug } from "../../data/blog";
+import { getBlogPostBySlug } from "../../lib/api";
 import BlogDetailPage from "../../pages/BlogDetailPage";
 
 interface PageProps {
@@ -10,19 +10,12 @@ interface PageProps {
   };
 }
 
-export async function generateStaticParams() {
-  const { blogPosts } = await import("../../data/blog");
-  return blogPosts.map((post) => ({
-    slug: post.slug,
-  }));
-}
-
 export default async function BlogPostPage({ params }: PageProps) {
   // Handle both sync and async params
   const resolvedParams = params instanceof Promise ? await params : params;
   const { slug } = resolvedParams;
   
-  const post = getBlogPostBySlug(slug);
+  const post = await getBlogPostBySlug(slug);
 
   if (!post) {
     notFound();

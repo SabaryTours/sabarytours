@@ -8,8 +8,9 @@ const authPages = ["/login", "/register", "/forgot-password", "/reset-password"]
 export default function ConditionalHeader() {
   const pathname = usePathname();
   const isAuthPage = authPages.includes(pathname || "");
+  const isAdminPage = pathname?.startsWith("/admin");
 
-  if (isAuthPage) {
+  if (isAuthPage || isAdminPage) {
     return null;
   }
 

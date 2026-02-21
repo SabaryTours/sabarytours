@@ -3,7 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
-import { packageCategories, type PackageCategory } from "../data/packages";
+
+export interface PackageCategory {
+  id: string;
+  title: string;
+  slug: string;
+  image: string;
+  description?: string;
+}
 
 function PackageCard({ pkg, isMobile = false }: { pkg: PackageCategory; isMobile?: boolean }) {
   const cardRef = useRef<HTMLAnchorElement>(null);
@@ -101,9 +108,7 @@ function PackageCard({ pkg, isMobile = false }: { pkg: PackageCategory; isMobile
   );
 }
 
-export default function PackagesGrid() {
-  const packages = packageCategories;
-
+export default function PackagesGrid({ packages = [] }: { packages: PackageCategory[] }) {
   return (
     <>
       {/* Mobile: Horizontal Scroll Container */}

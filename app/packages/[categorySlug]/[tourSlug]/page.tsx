@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getCategoryBySlug, getTourBySlug, tours } from "../../../data/packages";
+import { getPackageBySlug, getTourBySlug, getToursByCategory } from "../../../lib/api";
 import TourDetailPage from "../../../pages/TourDetailPage";
 
 interface PageProps {
@@ -12,25 +12,20 @@ interface PageProps {
   };
 }
 
-export async function generateStaticParams() {
-  return tours.map((tour) => ({
-    categorySlug: tour.categorySlug,
-    tourSlug: tour.slug,
-  }));
-}
-
 export default async function TourRoute({ params }: PageProps) {
   // Handle both sync and async params
   const resolvedParams = params instanceof Promise ? await params : params;
   const { categorySlug, tourSlug } = resolvedParams;
   
-  const tour = getTourBySlug(categorySlug, tourSlug);
-  const category = getCategoryBySlug(categorySlug);
+  const tour = await getTourBySlug(tourSlug);
+  const category = await getPackageBySlug(categorySlug);
+  const categoryTours = await getToursByCategory(categorySlug);
+  const similarTours = categoryTours.filter(t => t.slug !== tour?.slug).slice(0, 3);
 
   if (!tour || !category) {
     notFound();
   }
 
-  return <TourDetailPage tour={tour} categoryTitle={category.title} />;
+  return <TourDetailPage tour={tour} categoryTitle={category.title} similarTours={similarTours} />;
 }
 

@@ -9,22 +9,55 @@ import { Download06Icon, Calendar04Icon, RefreshIcon, Award05Icon, Logout05Icon 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [upcomingBookings, setUpcomingBookings] = useState<any[]>([]);
+  const [pastBookings, setPastBookings] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
-    const userData = getUser();
-    if (userData) {
+    const loadData = async () => {
+      const userData = await getUser();
+      if (!userData) {
+        router.push('/login');
+        return;
+      }
       setUser(userData);
-    } else {
-      // In mock mode, use demo user data for UI preview
-      setUser({
-        id: "1",
-        email: "demo@sabarytours.com",
-        firstName: "John",
-        lastName: "Doe",
-      });
-    }
-    setLoading(false);
+      
+      const { createClient } = await import('../utils/supabase/client');
+      const supabase = createClient();
+      
+      const { data: userBookings } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          booking_date,
+          status,
+          number_of_people,
+          total_price,
+          currency,
+          tours (title)
+        `)
+        .eq('user_id', userData.id)
+        .order('booking_date', { ascending: false });
+
+      if (userBookings) {
+        const today = new Date().toISOString();
+        const mapped = userBookings.map((b: any) => ({
+          id: b.id,
+          tour: b.tours?.title || 'Custom Tour',
+          date: new Date(b.booking_date).toISOString().split('T')[0],
+          guests: b.number_of_people,
+          status: b.status || 'Pending',
+          amount: `${b.currency || 'GHS'} ${b.total_price || 0}`,
+          isPast: b.booking_date < today
+        }));
+        
+        setUpcomingBookings(mapped.filter(b => !b.isPast));
+        setPastBookings(mapped.filter(b => b.isPast));
+      }
+
+      setLoading(false);
+    };
+    loadData();
   }, [router]);
 
   if (loading) {
@@ -34,37 +67,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  // Mock booking data - replace with actual API calls
-  const upcomingBookings = [
-    {
-      id: 1,
-      tour: "Cape Coast & Elmina Castle Tour",
-      date: "2024-03-15",
-      guests: 2,
-      status: "Confirmed",
-      amount: "$450",
-    },
-    {
-      id: 2,
-      tour: "Kakum National Park Adventure",
-      date: "2024-04-20",
-      guests: 4,
-      status: "Pending",
-      amount: "$680",
-    },
-  ];
-
-  const pastBookings = [
-    {
-      id: 3,
-      tour: "Accra City Tour",
-      date: "2024-01-10",
-      guests: 2,
-      status: "Completed",
-      amount: "$250",
-    },
-  ];
 
   const handleLogout = () => {
     logout();
@@ -86,7 +88,7 @@ export default function DashboardPage() {
               >
                 Welcome back,{" "}
                 <span className="text-[#ff5e00]" style={{ textShadow: "2px 2px 0px #331300" }}>
-                  {user?.firstName || "User"}
+                  {user?.first_name || "User"}
                 </span>
               </h1>
               <p className="text-[#666] text-[14px] font-sans">{user?.email}</p>

@@ -1,29 +1,12 @@
 import Image from "next/image";
+import { createClient } from "../utils/supabase/server";
 
-// Partner logos - Add your partner logo images here
-// Place images in /public/assets/partners/ directory
-const partners = [
-  {
-    id: 1,
-    name: "Dodi World",
-    logo: "/assets/dodi-world.png", // Replace with actual logo path
-    alt: "Partner 1 Logo",
-  },
-  {
-    id: 2,
-    name: "Villa Monticello",
-    logo: "/assets/villa-monticello.png", // Replace with actual logo path
-    alt: "Partner 2 Logo",
-  },
-  // {
-  //   id: 3,
-  //   name: "Dodi World",
-  //   logo: "/assets/partners/partner3.png", // Replace with actual logo path
-  //   alt: "Partner 3 Logo",
-  // },
-];
+export default async function Partners() {
+  const supabase = await createClient();
+  const { data: partners } = await supabase.from('partners').select('*').order('created_at', { ascending: true });
 
-export default function Partners() {
+  if (!partners || partners.length === 0) return null;
+
   return (
     <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7 relative bg-white">
       <div className="container mx-auto px-3 sm:px-4 md:px-6">
@@ -61,8 +44,8 @@ export default function Partners() {
               className="relative w-full max-w-[180px] h-[100px] flex items-center justify-center grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100"
             >
               <Image
-                src={partner.logo}
-                alt={partner.alt}
+                src={partner.image_url || '/assets/placeholder-tour.jpg'}
+                alt={partner.name}
                 fill
                 className="object-contain"
                 unoptimized

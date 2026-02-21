@@ -1,6 +1,10 @@
 import PackagesGrid from "./PackagesGrid";
+import { createClient } from "../utils/supabase/server";
 
-export default function Packages() {
+export default async function Packages() {
+  const supabase = await createClient();
+  const { data: packages } = await supabase.from('packages').select('*').order('created_at', { ascending: true });
+
   return (
     <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7">
       {/* Background Container - matching hero section structure */}
@@ -77,7 +81,7 @@ export default function Packages() {
               </div>
             </div>
 
-          <PackagesGrid />
+          <PackagesGrid packages={packages || []} />
         </div>
       </div>
     </section>
