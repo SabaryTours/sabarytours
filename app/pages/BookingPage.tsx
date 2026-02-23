@@ -4,18 +4,21 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft01Icon, CheckmarkBadge01Icon, Calendar01Icon, UserIcon, CreditCardIcon } from "hugeicons-react";
 import { Tour } from "../data/packages";
+import { isAuthenticated, getUser } from "../lib/authService";
 import AvailabilityCalendar from "../components/AvailabilityCalendar";
 import CustomDropdown from "../components/CustomDropdown";
 import PaymentOptions from "../components/PaymentOptions";
 import VoucherCode from "../components/VoucherCode";
 import PickupLocation from "../components/PickupLocation";
 import PaystackPayment from "../components/PaystackPayment";
+import TourGrid from "../components/TourGrid";
 
 interface BookingPageProps {
   tour: Tour;
+  otherTours?: Tour[];
 }
 
-export default function BookingPage({ tour }: BookingPageProps) {
+export default function BookingPage({ tour, otherTours = [] }: BookingPageProps) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [formData, setFormData] = useState({
@@ -113,12 +116,33 @@ export default function BookingPage({ tour }: BookingPageProps) {
     setVoucherDiscount(0);
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (step === 1) {
       if (!formData.date || !formData.timeSlot) {
         alert("Please select a date and time slot.");
         return;
       }
+
+      const isAuth = await isAuthenticated();
+      if (!isAuth) {
+        alert("Please create an account or log in to continue booking.");
+        // Redirect to login/signup with a return URL
+        router.push(`/login?redirect=/booking?tour=${tour.slug}`);
+        return;
+      }
+
+      // Pre-fill user data
+      const userData = await getUser();
+      if (userData) {
+        setFormData(prev => ({
+          ...prev,
+          firstName: prev.firstName || userData.first_name || "",
+          lastName: prev.lastName || userData.last_name || "",
+          email: prev.email || userData.email || "",
+          phone: prev.phone || userData.phone || "",
+        }));
+      }
+
       setStep(2);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (step === 2) {
@@ -167,29 +191,42 @@ export default function BookingPage({ tour }: BookingPageProps) {
     <div className="min-h-screen bg-gray-50 pb-20">
       
       {/* Top Banner */}
-      <div className="bg-[#1e1d1d] text-white pt-10 pb-20 px-4 sm:px-6 md:px-12">
-        <div className="max-w-4xl mx-auto">
+      <div className="relative pt-10 pb-20 px-4 sm:px-6 md:px-12 w-full overflow-hidden" style={{ backgroundColor: "#893300" }}>
+        
+        {/* Pattern Overlay Layer */}
+        <div
+          className="absolute inset-y-0 left-0 w-full pointer-events-none z-0"
+          style={{
+            backgroundImage: "url(/assets/pattern.svg)",
+            backgroundRepeat: "repeat",
+            backgroundSize: "auto",
+            opacity: 0.3,
+            mixBlendMode: "overlay",
+          }}
+        />
+
+        <div className="max-w-4xl mx-auto relative z-10">
           <button
             onClick={() => step > 1 ? setStep(step - 1 as 1 | 2) : router.back()}
-            className="text-gray-400 hover:text-white text-[14px] font-sans mb-6 inline-flex items-center gap-2 transition-colors"
+            className="text-gray-300 hover:text-white text-[14px] font-sans mb-6 inline-flex items-center gap-2 transition-colors relative z-20"
           >
             <ArrowLeft01Icon className="w-4 h-4" />
             {step > 1 ? "Go Back" : "Cancel Booking"}
           </button>
           
           <h1 
-            className="text-[28px] sm:text-[36px] text-white font-normal uppercase mb-2"
-            style={{ fontFamily: 'var(--font-unlimited-pie)' }}
+            className="text-[28px] sm:text-[36px] text-white font-normal uppercase mb-2 relative z-20"
+            style={{ fontFamily: 'var(--font-unlimited-pie)', textShadow: "1px 1px 0px #551f00" }}
           >
             Complete your booking
           </h1>
-          <p className="text-gray-300 text-[16px] font-sans">
+          <div className="text-gray-200 text-[16px] font-sans relative z-20">
             {tour.title}
-          </p>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-12 -mt-12 relative z-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-12 -mt-12 relative z-20">
         
         {/* Progress Timeline */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6 flex items-center justify-between relative">
@@ -547,6 +584,19 @@ export default function BookingPage({ tour }: BookingPageProps) {
 
         </div>
       </div>
+
+      {/* Cross-Sell Section */}
+      {otherTours && otherTours.length > 0 && (
+        <section className="bg-gray-50 py-12 md:py-16 border-t border-gray-100">
+          <div className="container mx-auto px-4 sm:px-6 md:px-12">
+            <h2 className="text-[20px] md:text-[24px] font-bold text-gray-900 mb-6 uppercase tracking-wide" style={{ fontFamily: "var(--font-unlimited-pie)" }}>
+              Check out other tours
+            </h2>
+            <TourGrid tours={otherTours} categorySlug={tour.categorySlug || 'tours'} />
+          </div>
+        </section>
+      )}
+
     </div>
   );
 }

@@ -70,20 +70,32 @@ export default function ContactPage() {
     setSubmitMessage("");
 
     try {
-      // Mock submission - replace with actual API call later
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send message.');
+      }
       
-        setSubmitStatus("success");
-      setSubmitMessage("Thank you! Your message has been sent successfully.");
-        // Reset form
-        setFormData({
-          firstName: "",
-          lastName: "",
-          phone: "",
-          email: "",
-          subject: "",
-          message: "",
-        });
+      setSubmitStatus("success");
+      setSubmitMessage(data.message || "Thank you! Your message has been sent successfully.");
+      
+      // Reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        phone: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
     } catch (error) {
       setSubmitStatus("error");
       setSubmitMessage(error instanceof Error ? error.message : "Failed to send message. Please try again later.");

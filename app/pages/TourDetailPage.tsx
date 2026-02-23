@@ -9,6 +9,7 @@ import Footer from "../components/Footer";
 import StarRating from "../components/StarRating";
 import TourGrid from "../components/TourGrid";
 import SafeHTML from "../components/SafeHTML";
+import TourComments from "../components/TourComments";
 
 interface TourDetailPageProps {
   tour: Tour;
@@ -321,16 +322,21 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
         </div>
       </div>
 
-      {/* Similar Tours */}
+      {/* 4. Comments / Reviews Section */}
+      <div className="container mx-auto px-4 sm:px-6 md:px-12">
+        <TourComments tourSlug={tour.slug} />
+      </div>
+
+      {/* 5. Similar Tours Cross-Sell */}
       {similarTours.length > 0 && (
-        <div className="w-full bg-gray-50 py-16">
+        <section className="w-full bg-gray-50 py-16 border-t border-gray-100">
           <div className="container mx-auto px-4 sm:px-6 md:px-12">
             <h2 className="text-2xl font-bold font-sans text-gray-900 mb-8 uppercase" style={{ fontFamily: 'var(--font-unlimited-pie)'}}>
               You might also like
             </h2>
             <TourGrid tours={similarTours} categorySlug={tour.categorySlug} />
           </div>
-        </div>
+        </section>
       )}
 
       {/* Gallery Modal */}

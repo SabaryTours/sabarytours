@@ -62,8 +62,8 @@ export default function RegisterPage() {
       }
 
       // Supabase handles session persistence automatically.
-      // We can redirect to dashboard immediately.
-      router.push("/dashboard?welcome=true");
+      const redirectUri = new URLSearchParams(window.location.search).get("redirect");
+      router.push(redirectUri || "/dashboard?welcome=true");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed. Please try again.");
     } finally {

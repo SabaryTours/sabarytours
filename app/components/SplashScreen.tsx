@@ -83,10 +83,10 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
             <div 
               className="absolute inset-0"
               style={{
-                backgroundImage: 'url(/assets/pattern.svg)',
+                backgroundImage: 'url(/assets/waterfall.png)',
                 backgroundRepeat: 'repeat',
                 backgroundSize: 'auto',
-                opacity: 0.3,
+                opacity: 0.9,
                 mixBlendMode: 'overlay',
                 pointerEvents: 'none',
               }}

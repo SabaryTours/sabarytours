@@ -2,8 +2,47 @@
 
 import Image from "next/image";
 import Logo from "./Logo";
+import { useState } from "react";
 
 export default function Footer() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setStatus("loading");
+    setMessage("");
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Only passing the minimum required (plus fallback names) since Mailchimp requires FNAME/LNAME in some configs
+        body: JSON.stringify({
+          email,
+          firstName: "Newsletter",
+          lastName: "Subscriber", 
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to subscribe');
+      }
+
+      setStatus("success");
+      setMessage("Subscribed successfully!");
+      setEmail("");
+    } catch (err: any) {
+      setStatus("error");
+      setMessage(err.message || 'Something went wrong');
+    }
+  };
+
   return (
     <footer className="w-full bg-[#1B0A00] relative pt-4 pb-8">
       {/* Decorative border pattern - triangles */}
@@ -24,9 +63,9 @@ export default function Footer() {
             <div className="mb-4">
               <Logo />
             </div>
-            <p className="text-white text-[14px] font-normal leading-[24px] mb-4">
+            <div className="text-white text-[14px] font-normal leading-[24px] mb-4">
               A travel and tour company in Ghana...Slogan goes here!
-            </p>
+            </div>
             <div className="flex gap-3">
               <a href="#" className="text-white hover:text-[#ff5e00] transition-colors">
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -119,25 +158,39 @@ export default function Footer() {
           {/* Column 4: Newsletter */}
           <div>
             <h3 className="text-white font-bold text-[16px] leading-[24px] mb-4">Newsletter</h3>
-            <p className="text-white text-[14px] font-normal leading-[24px] mb-4">
+            <div className="text-white text-[14px] font-normal leading-[24px] mb-4">
               Get monthly updates in your inbox
-            </p>
-            <form className="flex gap-2">
+            </div>
+            <form onSubmit={handleSubscribe} className="flex gap-2">
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 px-4 py-2 rounded-lg bg-white text-[#222] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff5e00]"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={status === "loading"}
+                required
+                className="flex-1 px-4 py-2 rounded-lg bg-white text-[#222] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] disabled:opacity-70"
               />
               <button
                 type="submit"
-                className="bg-[#ff5e00] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#e55500] transition-colors flex items-center justify-center"
+                disabled={status === "loading"}
+                className="bg-[#ff5e00] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#e55500] transition-colors flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
                 style={{ minWidth: '48px' }}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                {status === "loading" ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                )}
               </button>
             </form>
+            {message && (
+              <p className={`mt-2 text-[13px] ${status === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                {message}
+              </p>
+            )}
           </div>
         </div>
 
@@ -169,9 +222,9 @@ export default function Footer() {
         {/* Payment Methods */}
         <div className="container mx-auto relative z-10 border-t border-white/10">
           <div className="flex flex-col items-center gap-4">
-            <p className="text-white/70 text-[12px] sm:text-[13px] font-normal leading-[20px] text-center">
+            <div className="text-white text-[12px] sm:text-[13px] font-normal leading-[20px] text-center">
               Secured by <b>paystack</b>
-            </p>
+            </div>
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
               {/* Visa */}
               <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
@@ -210,9 +263,9 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="container mx-auto pt-4 text-center relative z-10">
-          <p className="text-white text-[14px] font-normal leading-[24px]">
+          <div className="text-white text-[14px] font-normal leading-[24px]">
             Copyright © 2025 Sabary tours. All rights reserved.
-          </p>
+          </div>
         </div>
         </div>
       </div>

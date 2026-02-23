@@ -54,7 +54,8 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      const redirectUri = new URLSearchParams(window.location.search).get("redirect");
+      router.push(redirectUri || "/dashboard");
       router.refresh(); // Important: Refresh server state
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");

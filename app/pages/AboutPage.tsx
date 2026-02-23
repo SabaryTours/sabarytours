@@ -264,12 +264,12 @@ export default function AboutPage() {
         >
           <div className="container mx-auto px-3 sm:px-4 md:px-6 py-12 sm:py-14 md:py-16">
             <div className="max-w-4xl mx-auto">
-              <p className="text-white text-[16px] md:text-[16px] leading-[20px] mb-6 text-center">
+              <div className="text-white text-[16px] md:text-[16px] leading-[20px] mb-6 text-center">
                 It started with a single backpack and a heart full of curiosity. Long before Sabary Tours became a business, it was just a way of life — finding joy in showing people around Ghana, from its humming cities to its quiet, soul-stirring coasts. The founder didn&apos;t set out to start a tour company. They were just that friend who knew the hidden spots, the market aunties, the best time to catch the golden light by the waterfalls.
-              </p>
-              <p className="text-white text-[16px] md:text-[16px] leading-[20px] mb-8 text-center">
+              </div>
+              <div className="text-white text-[16px] md:text-[16px] leading-[20px] mb-8 text-center">
                 And somewhere between the early morning road trips and the shared jollof by the beach, the idea formed:
-              </p>
+              </div>
               <h2
                 className="text-[20px] sm:text-[22px] md:text-[24px] text-white font-normal leading-normal mb-12 uppercase text-center break-words overflow-wrap-anywhere px-4"
                 style={{
@@ -426,9 +426,9 @@ export default function AboutPage() {
               >
                 Today, we&apos;re still growing
               </h2>
-              <p className="text-white text-[16px] md:text-[18px] leading-[28px] mb-12">
+              <div className="text-white text-[16px] md:text-[18px] leading-[28px] mb-12">
                 We now host travelers from across the world. Sabary Tours wants to become the preferred tourism and hospitality company for travelers worldwide, offering unforgettable Ghanaian experiences with warmth, care, and local insight.
-              </p>
+              </div>
               {/* Three Circular Images */}
               {/* Mobile: Horizontal Scroll */}
               <div className="md:hidden flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4">

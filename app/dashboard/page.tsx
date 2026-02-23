@@ -16,47 +16,55 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      const userData = await getUser();
-      if (!userData) {
-        router.push('/login');
-        return;
-      }
-      setUser(userData);
-      
-      const { createClient } = await import('../utils/supabase/client');
-      const supabase = createClient();
-      
-      const { data: userBookings } = await supabase
-        .from('bookings')
-        .select(`
-          id,
-          booking_date,
-          status,
-          number_of_people,
-          total_price,
-          currency,
-          tours (title)
-        `)
-        .eq('user_id', userData.id)
-        .order('booking_date', { ascending: false });
-
-      if (userBookings) {
-        const today = new Date().toISOString();
-        const mapped = userBookings.map((b: any) => ({
-          id: b.id,
-          tour: b.tours?.title || 'Custom Tour',
-          date: new Date(b.booking_date).toISOString().split('T')[0],
-          guests: b.number_of_people,
-          status: b.status || 'Pending',
-          amount: `${b.currency || 'GHS'} ${b.total_price || 0}`,
-          isPast: b.booking_date < today
-        }));
+      try {
+        const userData = await getUser();
+        if (!userData) {
+          router.push('/login');
+          return;
+        }
+        setUser(userData);
         
-        setUpcomingBookings(mapped.filter(b => !b.isPast));
-        setPastBookings(mapped.filter(b => b.isPast));
-      }
+        const { createClient } = await import('../utils/supabase/client');
+        const supabase = createClient();
+        
+        const { data: userBookings, error: bookingsError } = await supabase
+          .from('bookings')
+          .select(`
+            id,
+            booking_date,
+            status,
+            number_of_people,
+            total_price,
+            currency,
+            tours (title)
+          `)
+          .eq('user_id', userData.id)
+          .order('booking_date', { ascending: false });
 
-      setLoading(false);
+        if (bookingsError) {
+          console.error("Dashboard bookings fetch error:", bookingsError);
+        }
+
+        if (userBookings) {
+          const today = new Date().toISOString();
+          const mapped = userBookings.map((b: any) => ({
+            id: b.id,
+            tour: b.tours?.title || 'Custom Tour',
+            date: new Date(b.booking_date).toISOString().split('T')[0],
+            guests: b.number_of_people,
+            status: b.status || 'Pending',
+            amount: `${b.currency || 'GHS'} ${b.total_price || 0}`,
+            isPast: b.booking_date < today
+          }));
+          
+          setUpcomingBookings(mapped.filter(b => !b.isPast));
+          setPastBookings(mapped.filter(b => b.isPast));
+        }
+      } catch (err) {
+        console.error("Dashboard loadData caught error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
     loadData();
   }, [router]);

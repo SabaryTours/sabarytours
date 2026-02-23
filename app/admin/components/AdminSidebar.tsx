@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  Home01Icon, 
-  Edit02Icon, 
+import {
+  Home01Icon,
+  Edit02Icon,
   MapsIcon,
-  Message01Icon, 
-  Logout05Icon, 
+  Message01Icon,
+  Logout05Icon,
   Cancel01Icon,
-  UserCircleIcon 
+  UserCircleIcon,
+  File01Icon, // Added for 'Pages'
+  Comment01Icon, // NEW
+  Invoice01Icon // NEW
 } from "hugeicons-react";
 import { logout } from "../../lib/authService";
 import Image from "next/image";
@@ -18,11 +21,13 @@ const navItems = [
   { name: "Dashboard", href: "/admin", icon: Home01Icon },
   { name: "Bookings", href: "/admin/bookings", icon: MapsIcon },
   { name: "Inquiries", href: "/admin/inquiries", icon: Message01Icon },
+  { name: "Invoices", href: "/admin/invoices", icon: Invoice01Icon }, // NEW
   { name: "Users", href: "/admin/users", icon: UserCircleIcon },
   { name: "Packages", href: "/admin/packages", icon: MapsIcon },
+  { name: 'Pages', href: '/admin/pages', icon: File01Icon },
+  { name: 'Reviews', href: '/admin/reviews', icon: Comment01Icon },
   { name: "Tours", href: "/admin/tours", icon: MapsIcon },
   { name: "Blogs", href: "/admin/blogs", icon: Edit02Icon },
-  { name: "Reviews", href: "/admin/reviews", icon: Message01Icon },
   { name: "Announcements", href: "/admin/announcements", icon: Message01Icon },
   { name: "Partners", href: "/admin/partners", icon: Message01Icon },
 ];

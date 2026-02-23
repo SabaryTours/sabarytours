@@ -65,7 +65,7 @@ export default function PickupLocation({ value, onChange }: PickupLocationProps)
   const mapInstanceRef = useRef<unknown>(null);
 
   const initializeMap = useCallback(() => {
-    if (!mapRef.current || mapInstanceRef.current || !window.google) return;
+    if (!mapRef.current || mapInstanceRef.current || !window.google || !window.google.maps) return;
 
     const google = window.google;
     const map = new google.maps.Map(mapRef.current, {
