@@ -1,128 +1,117 @@
-import { NextRequest, NextResponse } from "next/server";
-import { contactFormSchema } from "../../lib/validations/contact";
+import { NextResponse } from 'next/server';
+import mailchimp from '@mailchimp/mailchimp_marketing';
+import { createClient } from '../../utils/supabase/server';
 
-export async function POST(request: NextRequest) {
+// Initialize Mailchimp
+const API_KEY = process.env.MAILCHIMP_API_KEY;
+const AUDIENCE_ID = process.env.MAILCHIMP_AUDIENCE_ID;
+
+if (API_KEY) {
+  // Extract the server prefix from the API key (e.g., "us15" from "key-us15")
+  const server = API_KEY.split('-')[1];
+  mailchimp.setConfig({
+    apiKey: API_KEY,
+    server: server,
+  });
+}
+
+export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const { firstName, lastName, email, phone, subject, message, source = 'website' } = body;
 
-    // Validate with Zod schema
-    const validationResult = contactFormSchema.safeParse(body);
-
-    if (!validationResult.success) {
-      const firstError = validationResult.error.issues[0];
+    // Validate required fields
+    if (!email || !firstName || !lastName) {
       return NextResponse.json(
-        { 
-          message: firstError?.message || "Validation failed",
-          errors: validationResult.error.issues 
-        },
+        { error: 'First name, last name, and email are required.' },
         { status: 400 }
       );
     }
 
-    const { firstName, lastName, email, phone, subject, message } = validationResult.data;
-
-    // Mailchimp API configuration
-    // You'll need to add these to your .env.local file:
-    // MAILCHIMP_API_KEY=your_api_key_here
-    // MAILCHIMP_SERVER_PREFIX=your_server_prefix (e.g., "us1", "us2", etc.)
-    // MAILCHIMP_AUDIENCE_ID=your_audience_id_here
-
-    const apiKey = process.env.MAILCHIMP_API_KEY;
-    const serverPrefix = process.env.MAILCHIMP_SERVER_PREFIX;
-    const audienceId = process.env.MAILCHIMP_AUDIENCE_ID;
-
-    // In mock mode (no API configured), just log and return success
-    if (!apiKey || !serverPrefix || !audienceId) {
-      console.log("Contact form submission (mock mode):", {
-        firstName,
-        lastName,
-        email,
-        phone,
-        subject,
-        message,
-      });
+    if (!API_KEY || !AUDIENCE_ID) {
+      console.error('Mailchimp API key or Audience ID is missing in environment variables.');
       return NextResponse.json(
-        {
-          message: "Thank you! Your message has been received successfully.",
-          success: true,
-        },
-        { status: 200 }
-      );
-    }
-
-    // Mailchimp API endpoint
-    const mailchimpUrl = `https://${serverPrefix}.api.mailchimp.com/3.0/lists/${audienceId}/members`;
-
-    // Prepare data for Mailchimp
-    const mailchimpData = {
-      email_address: email,
-      status: "subscribed", // or "pending" if you want double opt-in
-      merge_fields: {
-        FNAME: firstName,
-        LNAME: lastName,
-        PHONE: phone,
-      },
-      tags: ["contact-form"], // Optional: tag contacts from the form
-    };
-
-    // Add custom fields if you have them set up in Mailchimp
-    // You can also send the subject and message as notes or custom fields
-    // For now, we'll add them as merge fields if you set them up in Mailchimp
-
-    // Send to Mailchimp
-    const mailchimpResponse = await fetch(mailchimpUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(mailchimpData),
-    });
-
-    const mailchimpResult = await mailchimpResponse.json();
-
-    if (!mailchimpResponse.ok) {
-      console.error("Mailchimp API error:", mailchimpResult);
-      
-      // Handle specific Mailchimp errors
-      if (mailchimpResult.title === "Member Exists") {
-        return NextResponse.json(
-          { message: "This email is already subscribed." },
-          { status: 400 }
-        );
-      }
-
-      return NextResponse.json(
-        { message: "Failed to process your request. Please try again." },
+        { error: 'Email service is not configured correctly.' },
         { status: 500 }
       );
     }
 
-    // Optional: Send email notification to yourself
-    // You can integrate with a service like SendGrid, Resend, or Nodemailer here
-    // For now, we'll just log the contact details
-    console.log("Contact form submission:", {
-      firstName,
-      lastName,
-      email,
-      phone,
-      subject,
-      message,
-    });
+    // Try to add or update the contact in Mailchimp
+    try {
+      await mailchimp.lists.setListMember(
+        AUDIENCE_ID,
+        // The subscriber hash is the MD5 hash of the lowercase email address.
+        // For setListMember, Mailchimp accepts the email string directly and hashes it internally 
+        // if creating, or uses it to lookup if updating.
+        email.toLowerCase(),
+        {
+          email_address: email,
+          status_if_new: 'subscribed',
+          merge_fields: {
+            FNAME: firstName,
+            LNAME: lastName,
+            PHONE: phone || '',
+            // If you have custom fields for Subject and Message in Mailchimp, 
+            // you can add them here. Otherwise, Mailchimp doesn't natively 
+            // store "messages" on a subscriber profile well without custom tags.
+            // SUBJECT: subject,
+            // MESSAGE: message
+          },
+        }
+      );
 
-    return NextResponse.json(
-      {
-        message: "Thank you! Your message has been received successfully.",
-        success: true,
-      },
-      { status: 200 }
-    );
+      // Successfully added to Mailchimp - now store locally in Supabase
+      const supabase = await createClient();
+
+      // If they submitted a message, save it as a formal inquiry
+      if (message) {
+        await supabase.from('inquiries').insert([
+          {
+            name: `${firstName} ${lastName}`.trim(),
+            email,
+            phone: phone || null,
+            subject: subject || 'General Inquiry',
+            message,
+            type: 'general',
+            status: 'new'
+          }
+        ]);
+      }
+
+      // Also track them as a newsletter subscriber locally to ensure parity with Mailchimp
+      const { error: dbError } = await supabase.from('newsletter_subscribers').upsert(
+        {
+          email: email.toLowerCase(),
+          first_name: firstName,
+          last_name: lastName,
+          source: message ? 'contact_form' : 'footer_newsletter',
+          status: 'subscribed'
+        },
+        { onConflict: 'email' }
+      );
+
+      if (dbError) {
+        console.error('Local DB tracking error:', dbError);
+        // We do not fail the request if Mailchimp succeeded but DB failed
+      }
+
+      return NextResponse.json(
+        { message: 'Message sent and subscribed successfully!' },
+        { status: 200 }
+      );
+    } catch (mailchimpError: any) {
+      console.error('Mailchimp Error:', mailchimpError.response?.body || mailchimpError);
+
+      return NextResponse.json(
+        { error: 'Failed to add to mailing list. Please try again later.' },
+        { status: mailchimpError.status || 500 }
+      );
+    }
   } catch (error) {
-    console.error("Contact form error:", error);
+    console.error('API Route Error:', error);
     return NextResponse.json(
-      { message: "An error occurred. Please try again later." },
+      { error: 'An unexpected error occurred.' },
       { status: 500 }
     );
   }
 }
-

@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { createClient } from '../utils/supabase/client';
 
 export interface LoginCredentials {
   email: string; // Changed from username to email for Supabase default
@@ -21,6 +21,7 @@ export interface AuthResponse {
 }
 
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  const supabase = createClient();
   const { data, error } = await supabase.auth.signInWithPassword({
     email: credentials.email,
     password: credentials.password,
@@ -43,6 +44,7 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
 };
 
 export const register = async (data: RegisterData): Promise<AuthResponse> => {
+  const supabase = createClient();
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: data.email,
     password: data.password,
@@ -64,6 +66,7 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
 };
 
 export const logout = async () => {
+  const supabase = createClient();
   await supabase.auth.signOut();
   if (typeof window !== "undefined") {
     window.location.href = "/login";
@@ -73,6 +76,7 @@ export const logout = async () => {
 
 // Now Async!
 export const getUser = async () => {
+  const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
@@ -87,11 +91,13 @@ export const getUser = async () => {
 };
 
 export const isAuthenticated = async (): Promise<boolean> => {
+  const supabase = createClient();
   const { data } = await supabase.auth.getSession();
   return !!data.session;
 };
 
 export const forgotPassword = async (email: string) => {
+  const supabase = createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/reset-password`,
   });
@@ -100,6 +106,7 @@ export const forgotPassword = async (email: string) => {
 };
 
 export const resetPassword = async (password: string) => {
+  const supabase = createClient();
   const { error } = await supabase.auth.updateUser({ password });
   if (error) throw new Error(error.message);
   return true;

@@ -11,33 +11,46 @@ export default async function PackagesPage() {
     <div className="min-h-screen bg-white overflow-visible">
       {/* Hero Section */}
       <section className="w-full px-4 sm:px-6 md:px-12 py-8 md:py-12">
-        <div className="relative rounded-3xl overflow-hidden bg-[#2B7BD4]">
-          {/* Pattern Overlay */}
+        <div className="relative rounded-3xl overflow-hidden bg-[#fbebf4] min-h-[400px] md:h-[450px] flex flex-col md:flex-row items-center w-full shadow-lg">
+          
+          {/* Pattern Overlay Layer 1 */}
           <div
-            className="absolute inset-0 pointer-events-none opacity-30 mix-blend-overlay"
+            className="absolute inset-y-0 left-0 w-full md:w-[40%] pointer-events-none z-0"
             style={{
               backgroundImage: "url(/assets/pattern.svg)",
               backgroundRepeat: "repeat",
               backgroundSize: "auto",
+              opacity: 0.3,
+              mixBlendMode: "overlay",
             }}
           />
 
-          <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 md:px-12 py-16 md:py-24">
-            {/* Main Story Card */}
-            <div className="relative bg-white rounded-3xl shadow-2xl p-6 sm:p-8 md:p-12 text-center md:text-left">
+          {/* Right Image Layer */}
+          <div className="relative w-full h-[250px] md:absolute md:inset-y-0 md:right-0 md:w-[60%] md:h-full z-0 block">
+            <img
+              src="/assets/villa-monticello.png"
+              alt="Discover Ghana Packages"
+              className="object-cover w-full h-full"
+            />
+          </div>
+
+          {/* Text Card Layer */}
+          <div className="relative w-full md:absolute md:inset-0 z-10 flex items-center justify-center p-4 sm:p-8 md:p-0 h-[auto] md:h-full pointer-events-none">
+            <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10 w-full max-w-[90%] md:max-w-[400px] lg:max-w-[450px] pointer-events-auto md:absolute md:left-[40%] md:-translate-x-1/2 text-center md:text-left">
               <h1
-                className="text-[22px] sm:text-[26px] md:text-[36px] lg:text-[42px] leading-tight mb-6"
+                className="text-[20px] sm:text-[24px] md:text-[28px] lg:text-[34px] xl:text-[38px] leading-[1.2] mb-6"
                 style={{ fontFamily: "var(--font-unlimited-pie)" }}
               >
-                <span className="text-[#ff5e00] uppercase" style={{ textShadow: "3px 3px 0px #331300" }}>
+                <span className="text-[#ff5e00] uppercase block" style={{ textShadow: "1.5px 1.5px 0px #3f1a0b" }}>
                   FIND THE PERFECT PACKAGE
                 </span>
               </h1>
-              <p className="text-[#222] text-[15px] sm:text-[17px] md:text-[19px] font-bold leading-relaxed max-w-3xl mx-auto md:mx-0">
+              <p className="text-[#222] text-[13px] sm:text-[14px] md:text-[15px] font-bold leading-relaxed max-w-sm mx-auto md:mx-0">
                 Pick what you need, mix and match, and let&apos;s make it happen.
               </p>
             </div>
           </div>
+
         </div>
       </section>
 
