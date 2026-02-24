@@ -180,10 +180,9 @@ export default function Testimonial() {
             >
               {/* "AMAZING!" Text */}
               <h3 
-                className="text-[28px] uppercase h-[40px] flex items-center justify-center"
+                className="text-[28px] uppercase text-center"
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
-                  lineHeight: 'none',
                   color: '#ffffff',
                   textShadow: '1px 1px 0px #893300',
                 }}
@@ -192,7 +191,7 @@ export default function Testimonial() {
               </h3>
 
               {/* Testimonial Text */}
-              <p className="text-[#222] text-[16px] font-bold leading-[28px] h-[40px] flex items-center justify-center">
+              <p className="text-[#222] text-[16px] font-bold leading-[28px] text-center max-w-md">
                 {currentTestimonial.text}
               </p>
 

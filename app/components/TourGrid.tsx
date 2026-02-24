@@ -11,12 +11,14 @@ interface TourGridProps {
 }
 
 export default function TourGrid({ tours, categorySlug }: TourGridProps) {
+  console.log(tours);
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-7">
       {tours.map((tour) => (
         <Link
           key={tour.id}
           href={`/packages/${categorySlug}/${tour.slug}`}
+          
           className="relative group overflow-hidden rounded-xl sm:rounded-2xl border-2 border-white block cursor-pointer isolate"
           style={{
             background: 'linear-gradient(to bottom, #999, #1e1d1d)',

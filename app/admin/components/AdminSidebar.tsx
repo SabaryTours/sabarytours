@@ -19,6 +19,7 @@ import Image from "next/image";
 
 const navItems = [
   { name: "Dashboard", href: "/admin", icon: Home01Icon },
+  { name: "Hero Images", href: "/admin/hero", icon: MapsIcon }, // NEW
   { name: "Bookings", href: "/admin/bookings", icon: MapsIcon },
   { name: "Inquiries", href: "/admin/inquiries", icon: Message01Icon },
   { name: "Invoices", href: "/admin/invoices", icon: Invoice01Icon }, // NEW

@@ -60,6 +60,7 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const currencyRef = useRef<HTMLDivElement>(null);
+  const mobileCurrencyRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const currencies = [
@@ -116,9 +117,12 @@ export default function Header() {
       const target = e.target as Node;
       
       // Only close if clicking outside both the currency dropdown and its button
-      if (currencyRef.current && !currencyRef.current.contains(target)) {
+      if (
+        (currencyRef.current && !currencyRef.current.contains(target)) &&
+        (mobileCurrencyRef.current && !mobileCurrencyRef.current.contains(target))
+      ) {
         setCurrencyOpen(false);
-    }
+      }
       
       // Only close if clicking outside both the user menu and its button
       if (userMenuRef.current && !userMenuRef.current.contains(target)) {
@@ -233,7 +237,7 @@ export default function Header() {
             )}
 
             {/* Preferences Pill */}
-            <div className="flex items-center bg-gray-100 rounded-full h-[40px] p-0.5 border border-gray-200/50">
+            <div className="hidden md:flex items-center bg-gray-100 rounded-full h-[40px] p-0.5 border border-gray-200/50">
               
               {/* Currency Picker */}
               <div className="relative h-full" ref={currencyRef}>
@@ -418,6 +422,54 @@ export default function Header() {
                   {link.label}
                 </Link>
               ))}
+
+              {/* Mobile Preferences (Currency/Language) */}
+              <div className="pt-4 flex items-center gap-4 border-t border-gray-100 mt-6">
+                {/* Currency Picker */}
+                <div className="relative" ref={mobileCurrencyRef}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrencyOpen((prev) => !prev);
+                    }}
+                    className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full text-sm font-medium"
+                  >
+                    <span>{selectedCurrency.symbol} {selectedCurrency.code}</span>
+                    <ArrowDown01Icon className={`w-4 h-4 transition-transform ${currencyOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {currencyOpen && (
+                    <div className="absolute left-0 top-full mt-2 w-[140px] bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50">
+                      <div className="py-1">
+                        {currencies.map((currency) => (
+                          <button
+                            key={currency.code}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCurrency(currency);
+                              setCurrencyOpen(false);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-orange-50"
+                          >
+                            {currency.symbol} {currency.code}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Language Picker */}
+                <button
+                  type="button"
+                  onClick={() => setLanguageOpen(true)}
+                  className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full text-sm font-medium"
+                >
+                  <GlobeIcon size={16} />
+                  <span>{selectedLanguage}</span>
+                </button>
+              </div>
             </nav>
 
             {/* Mobile Auth Buttons */}

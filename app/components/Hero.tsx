@@ -1,20 +1,37 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import HeroSearchForm from "./HeroSearchForm";
 
-export default function Hero() {
-  const featuredTour = {
-    title: "Discover the Beauty of Ghana",
-    image: "/assets/waterfall.png",
-  };
+export default function Hero({ initialImages = [] }: { initialImages?: string[] }) {
+  const [images] = useState<string[]>(initialImages.length > 0 ? initialImages : ["/assets/apex-61.JPG"]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (images.length <= 1) return;
+    
+    const intervalId = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 5000); // Change image every 5 seconds
+    
+    return () => clearInterval(intervalId);
+  }, [images.length]);
 
   return (
-    <section className="relative w-full h-[800px] sm:h-[750px] md:h-[700px] lg:h-[650px] xl:h-[600px] font-sans flex items-center justify-center">
-      {/* Background Image Container */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-all duration-700"
-        style={{ backgroundImage: `url(${featuredTour.image})` }}
-      >
-        <div className="absolute inset-0 bg-black/40"></div>
-      </div>
+    <section className="relative w-full h-[800px] sm:h-[750px] md:h-[700px] lg:h-[650px] xl:h-[600px] font-sans flex items-center justify-center bg-gray-900">
+      {/* Background Image Container with Crossfade */}
+      {images.map((imgUrl, index) => (
+        <div 
+          key={imgUrl + index}
+          className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ease-in-out"
+          style={{ 
+            backgroundImage: `url(${imgUrl})`,
+            opacity: index === currentIndex ? 1 : 0
+          }}
+        >
+          <div className="absolute inset-0 bg-black/40"></div>
+        </div>
+      ))}
 
       <div className="relative z-10 container mx-auto px-4 sm:px-6 md:px-12 flex flex-col items-center justify-center mt-12 sm:mt-16 text-center">
         
@@ -32,7 +49,7 @@ export default function Hero() {
               textShadow: '0 4px 24px rgba(0,0,0,0.5)'
             }}
           >
-            {featuredTour.title}
+            Discover the Beauty of Ghana
           </h1>
           <div className="text-white text-[14px] sm:text-[16px] md:text-[18px] max-w-2xl font-sans mt-3 sm:mt-5 font-medium drop-shadow-md">
             We plan the trips, you make the memories. From waterfalls to street food, we take you beyond the brochures.

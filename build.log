@@ -1,0 +1,55 @@
+
+> sabarytours@0.1.0 build
+> next build
+
+ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\USER\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\USER\Desktop\sabarytours\package-lock.json
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./Desktop/sabarytours/app/utils/supabase/server.ts:2:1
+Ecmascript file had an error
+  1 | import { createServerClient } from '@supabase/ssr'
+> 2 | import { cookies } from 'next/headers'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export async function createClient() {
+  5 |   const cookieStore = await cookies()
+
+You're importing a component that needs "next/headers". That only works in a Server Component but one of its parents is marked with "use client", so it's a Client Component.
+Learn more: https://nextjs.org/docs/app/building-your-application/rendering
+
+
+
+Import traces:
+  App Route:
+    ./Desktop/sabarytours/app/utils/supabase/server.ts
+    ./Desktop/sabarytours/app/api/admin/bookings/invoice/route.ts
+
+  Server Component:
+    ./Desktop/sabarytours/app/utils/supabase/server.ts
+    ./Desktop/sabarytours/app/admin/packages/[id]/page.tsx
+
+  Client Component Browser:
+    ./Desktop/sabarytours/app/utils/supabase/server.ts [Client Component Browser]
+    ./Desktop/sabarytours/app/lib/api.ts [Client Component Browser]
+    ./Desktop/sabarytours/app/admin/hero/page.tsx [Client Component Browser]
+    ./Desktop/sabarytours/app/admin/hero/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/sabarytours/app/utils/supabase/server.ts [Client Component SSR]
+    ./Desktop/sabarytours/app/lib/api.ts [Client Component SSR]
+    ./Desktop/sabarytours/app/admin/hero/page.tsx [Client Component SSR]
+    ./Desktop/sabarytours/app/admin/hero/page.tsx [Server Component]
+
+
+    at <unknown> (./Desktop/sabarytours/app/utils/supabase/server.ts:2:1)

@@ -6,11 +6,15 @@ import Blog from "../components/Blog";
 import Testimonial from "../components/Testimonial";
 import Partners from "../components/Partners";
 import Footer from "../components/Footer";
+import { getHeroImages } from "../lib/api";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const images = await getHeroImages(true);
+  const imageUrls = images.map(img => img.image_url);
+
   return (
     <div className="min-h-screen bg-white">
-      <Hero />
+      <Hero initialImages={imageUrls} />
       <WhyTravel />
       <Packages />
       <WhatsHappening />

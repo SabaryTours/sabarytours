@@ -25,11 +25,14 @@ export default async function PackagesPage() {
             }}
           />
 
-          {/* Right Image Layer */}
+          {/* Right Video Layer */}
           <div className="relative w-full h-[250px] md:absolute md:inset-y-0 md:right-0 md:w-[60%] md:h-full z-0 block">
-            <img
-              src="/assets/villa-monticello.png"
-              alt="Discover Ghana Packages"
+            <video
+              src="https://res.cloudinary.com/demo/video/upload/v1689252062/elephants.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
               className="object-cover w-full h-full"
             />
           </div>
