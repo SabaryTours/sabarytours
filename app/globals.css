@@ -108,3 +108,21 @@ body {
 p {
   color: black !important;
 }
+
+/* Hide Google Translate Top Banner Annoyance */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-gadget-simple iframe {
+  display: none !important;
+}
+
+body {
+  top: 0px !important; 
+}
+
+.goog-te-gadget-icon {
+  display: none !important;
+}
+
+#goog-gt-tt {
+  display: none !important;
+}

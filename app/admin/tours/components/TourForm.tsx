@@ -38,18 +38,6 @@ export default function TourForm({ initialData }: TourFormProps) {
     is_featured: initialData?.is_featured || false,
   });
 
-  const [prices, setPrices] = useState<any[]>(
-    initialData?.tour_prices?.length > 0 
-      ? initialData.tour_prices 
-      : [{ name: "Base", amount: initialData?.price || 100, description: "" }]
-  );
-
-  const [itineraries, setItineraries] = useState<any[]>(
-    initialData?.tour_itineraries?.length > 0 
-      ? initialData.tour_itineraries 
-      : []
-  );
-
   const [packages, setPackages] = useState<any[]>([]);
 
   useEffect(() => {
@@ -128,8 +116,6 @@ export default function TourForm({ initialData }: TourFormProps) {
         location: formData.location,
         duration: formData.duration,
         status: formData.status,
-        currency: formData.currency,
-        priceValue: prices[0]?.amount || 0, // Keep legacy price column updated with the first price
         description: formData.description,
         map_url: formData.map_url,
         is_featured: formData.is_featured,
@@ -143,8 +129,6 @@ export default function TourForm({ initialData }: TourFormProps) {
         body: JSON.stringify({
           tourId: initialData?.id,
           tourInput,
-          pricesInput: prices,
-          itinerariesInput: itineraries,
           imagesInput: imageUrls,
         }),
       });
@@ -221,137 +205,6 @@ export default function TourForm({ initialData }: TourFormProps) {
         </div>
       </div>
 
-      {/* Pricing Tiers Section */}
-      <div className="mt-8 border-t border-gray-100 pt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-800 font-sans">Pricing Tiers</h3>
-          <button 
-            type="button" 
-            onClick={() => setPrices([...prices, { name: "", amount: 0, description: "" }])}
-            className="px-3 py-1.5 bg-[#ff5e00] text-white rounded-lg text-sm font-semibold transition-colors"
-          >
-            + Add Price Tier
-          </button>
-        </div>
-        
-        <div className="space-y-4">
-          {prices.map((price, index) => (
-            <div key={index} className="flex flex-col sm:flex-row gap-4 p-4 border border-gray-100 rounded-xl bg-gray-50/50 relative group">
-              <div className="flex-1">
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Tier Name</label>
-                <input 
-                  type="text" 
-                  value={price.name} 
-                  onChange={(e) => {
-                    const newPrices = [...prices];
-                    newPrices[index].name = e.target.value;
-                    setPrices(newPrices);
-                  }}
-                  className="w-full px-3 py-2 border border-white bg-white rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-sm text-black placeholder:text-gray-800" 
-                  placeholder="e.g. Adult, Child, VIP" 
-                  required 
-                />
-              </div>
-              <div className="w-full sm:w-32">
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Amount</label>
-                <input 
-                  type="number" 
-                  value={price.amount} 
-                  onChange={(e) => {
-                    const newPrices = [...prices];
-                    newPrices[index].amount = Number(e.target.value);
-                    setPrices(newPrices);
-                  }}
-                  className="w-full px-3 py-2 border border-white bg-white rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-sm text-black placeholder:text-gray-800" 
-                  required 
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Description</label>
-                <input 
-                  type="text" 
-                  value={price.description} 
-                  onChange={(e) => {
-                    const newPrices = [...prices];
-                    newPrices[index].description = e.target.value;
-                    setPrices(newPrices);
-                  }}
-                  className="w-full px-3 py-2 border border-white bg-white rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-sm text-black placeholder:text-gray-800" 
-                  placeholder="Optional details" 
-                />
-              </div>
-              {prices.length > 1 && (
-                <button 
-                  type="button" 
-                  onClick={() => setPrices(prices.filter((_, i) => i !== index))}
-                  className="absolute -top-3 -right-3 w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-200 shadow-sm"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Itinerary Section */}
-      <div className="mt-8 border-t border-gray-100 pt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-800 font-sans">Day-by-Day Itinerary</h3>
-          <button 
-            type="button" 
-            onClick={() => setItineraries([...itineraries, { title: "", description: "", day_number: itineraries.length + 1 }])}
-            className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-semibold transition-colors text-black placeholder:text-gray-800"
-          >
-            + Add Day
-          </button>
-        </div>
-        
-        <div className="space-y-4">
-          {itineraries.length === 0 && (
-            <p className="text-sm text-gray-500 italic font-sans">No itinerary added yet.</p>
-          )}
-          {itineraries.map((day, index) => (
-            <div key={index} className="flex gap-4 p-4 border border-gray-100 rounded-xl bg-gray-50/50 relative group">
-              <div className="w-12 h-12 bg-[#ff5e00]/10 text-[#ff5e00] rounded-full flex items-center justify-center font-bold font-sans shrink-0">
-                D{index + 1}
-              </div>
-              <div className="flex-1 space-y-3">
-                <input 
-                  type="text" 
-                  value={day.title} 
-                  onChange={(e) => {
-                    const newItineraries = [...itineraries];
-                    newItineraries[index].title = e.target.value;
-                    setItineraries(newItineraries);
-                  }}
-                  className="w-full px-3 py-2 border border-white bg-white rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans font-bold text-black placeholder:text-gray-800" 
-                  placeholder="Day Title (e.g. Arrival in Accra)" 
-                  required 
-                />
-                <textarea 
-                  value={day.description} 
-                  rows={2}
-                  onChange={(e) => {
-                    const newItineraries = [...itineraries];
-                    newItineraries[index].description = e.target.value;
-                    setItineraries(newItineraries);
-                  }}
-                  className="w-full px-3 py-2 border border-white bg-white rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-sm text-black placeholder:text-gray-800" 
-                  placeholder="Detailed schedule for the day..." 
-                />
-              </div>
-              <button 
-                type="button" 
-                onClick={() => setItineraries(itineraries.filter((_, i) => i !== index))}
-                className="absolute top-4 right-4 text-red-500 hover:bg-red-50 p-1.5 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all"
-              >
-                Delete
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Image URLs */}
       <div className="relative mt-8 border-t border-gray-100 pt-8">

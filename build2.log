@@ -1,0 +1,91 @@
+
+> sabarytours@0.1.0 build
+> next build
+
+ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\USER\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\USER\Desktop\sabarytours\package-lock.json
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 28.1s
+  Running TypeScript ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/51) ...
+ΓÜá metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ΓÜá metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ΓÜá metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+  Generating static pages using 7 workers (12/51) 
+  Generating static pages using 7 workers (25/51) 
+  Generating static pages using 7 workers (38/51) 
+Γ£ô Generating static pages using 7 workers (51/51) in 3.3s
+  Finalizing page optimization ...
+
+Route (app)
+Γöî ╞Æ /
+Γö£ Γùï /_not-found
+Γö£ Γùï /about-us
+Γö£ Γùï /admin
+Γö£ Γùï /admin/announcements
+Γö£ ╞Æ /admin/announcements/[id]
+Γö£ Γùï /admin/announcements/new
+Γö£ Γùï /admin/blogs
+Γö£ ╞Æ /admin/blogs/[id]
+Γö£ Γùï /admin/blogs/new
+Γö£ Γùï /admin/bookings
+Γö£ Γùï /admin/hero
+Γö£ Γùï /admin/inquiries
+Γö£ Γùï /admin/invoices
+Γö£ Γùï /admin/packages
+Γö£ ╞Æ /admin/packages/[id]
+Γö£ Γùï /admin/packages/new
+Γö£ Γùï /admin/partners
+Γö£ ╞Æ /admin/partners/[id]
+Γö£ Γùï /admin/partners/new
+Γö£ Γùï /admin/reviews
+Γö£ Γùï /admin/tours
+Γö£ ╞Æ /admin/tours/[id]
+Γö£ Γùï /admin/tours/new
+Γö£ Γùï /admin/users
+Γö£ ╞Æ /api/admin/announcements
+Γö£ ╞Æ /api/admin/blogs
+Γö£ ╞Æ /api/admin/bookings/invoice
+Γö£ ╞Æ /api/admin/packages
+Γö£ ╞Æ /api/admin/partners
+Γö£ ╞Æ /api/admin/reviews
+Γö£ ╞Æ /api/admin/reviews/[id]
+Γö£ ╞Æ /api/admin/tours
+Γö£ ╞Æ /api/admin/users
+Γö£ ╞Æ /api/bookings
+Γö£ ╞Æ /api/contact
+Γö£ ╞Æ /api/invoices
+Γö£ ╞Æ /api/reviews
+Γö£ ╞Æ /api/upload
+Γö£ ╞Æ /api/upload/sign
+Γö£ Γùï /blog
+Γö£ ╞Æ /blog/[slug]
+Γö£ ╞Æ /booking
+Γö£ Γùï /booking/error
+Γö£ Γùï /booking/success
+Γö£ Γùï /contact
+Γö£ Γùï /dashboard
+Γö£ Γùï /forgot-password
+Γö£ Γùï /login
+Γö£ ╞Æ /packages
+Γö£ ╞Æ /packages/[categorySlug]
+Γö£ ╞Æ /packages/[categorySlug]/[tourSlug]
+Γö£ Γùï /register
+Γö£ Γùï /reset-password
+Γöö Γùï /reviews
+
+
+╞Æ Proxy (Middleware)
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

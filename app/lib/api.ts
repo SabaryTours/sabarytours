@@ -110,7 +110,7 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
     id: t.id.toString(),
     title: t.title,
     slug: t.slug || generateSlug(t.title),
-    categorySlug: 'tours',
+    categorySlug: t.category || 'tours',
     image: primaryImage,
     gallery: gallery.length > 0 ? gallery : [primaryImage],
     description: t.description || '',
@@ -167,4 +167,80 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
     content: post.content || '',
     excerpt: post.summary || '',
   } as BlogPost;
+}
+
+// Hero Images
+export interface HeroImage {
+  id: string;
+  image_url: string;
+  display_order: number;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export async function getHeroImages(activeOnly: boolean = false): Promise<HeroImage[]> {
+  const supabase = await createClient();
+  let query = supabase
+    .from('hero_images')
+    .select('*')
+    .order('display_order', { ascending: true })
+    .order('created_at', { ascending: false });
+
+  if (activeOnly) {
+    query = query.eq('is_active', true);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data) {
+    console.error("Error fetching hero images:", error);
+    return [];
+  }
+
+  return data as HeroImage[];
+}
+
+export async function addHeroImage(imageUrl: string, displayOrder: number = 0): Promise<HeroImage | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('hero_images')
+    .insert([{ image_url: imageUrl, display_order: displayOrder, is_active: true }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error adding hero image:", error);
+    return null;
+  }
+  return data as HeroImage;
+}
+
+export async function updateHeroImage(id: string, updates: Partial<HeroImage>): Promise<HeroImage | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('hero_images')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating hero image:", error);
+    return null;
+  }
+  return data as HeroImage;
+}
+
+export async function deleteHeroImage(id: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('hero_images')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error("Error deleting hero image:", error);
+    return false;
+  }
+  return true;
 }
