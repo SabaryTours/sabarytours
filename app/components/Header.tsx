@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowDown01Icon, Cancel01Icon } from "hugeicons-react";
 import Logo from "./Logo";
-import { isAuthenticated, getUser, logout } from "../lib/authService";
+import { isAuthenticated, getUser, getUserRole, logout } from "../lib/authService";
 
 const GlobeIcon = ({ size = 20 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -52,6 +52,7 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState<{ first_name?: string; email?: string } | null>(null);
+  const [userRole, setUserRole] = useState<'admin' | 'subscriber'>('subscriber');
   const [selectedCurrency, setSelectedCurrency] = useState({
     symbol: "$",
     code: "USD",
@@ -78,7 +79,7 @@ export default function Header() {
 
   const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/packages", label: "Packages" },
+    { href: "/packages", label: "Tours" },
     { href: "/blog", label: "Blog and News" },
     { href: "/about-us", label: "About us" },
     { href: "/contact", label: "Contact us" },
@@ -100,8 +101,12 @@ export default function Header() {
     const checkAuth = async () => {
       const isAuth = await isAuthenticated();
       setAuthenticated(isAuth);
-      const userData = await getUser();
-      setUser(userData);
+      if (isAuth) {
+        const userData = await getUser();
+        setUser(userData);
+        const role = await getUserRole();
+        setUserRole(role);
+      }
     };
     checkAuth();
     // Re-check on route changes
@@ -200,7 +205,7 @@ export default function Header() {
                 >
                   <div className="py-1">
                     <Link
-                      href="/dashboard"
+                      href={userRole === 'admin' ? '/admin' : '/dashboard'}
                       onClick={() => setUserMenuOpen(false)}
                       className="block px-4 py-2 text-[12px] text-[#222] hover:bg-[#fff5e6] transition-colors"
                     >
@@ -480,7 +485,7 @@ export default function Header() {
                     Signed in as {user?.first_name || 'User'}
                   </div>
                   <Link
-                    href="/dashboard"
+                    href={userRole === 'admin' ? '/admin' : '/dashboard'}
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex justify-center items-center h-[50px] bg-white border-2 border-[#ff5e00] text-[#ff5e00] rounded-xl font-bold hover:bg-orange-50 transition-colors"
                   >

@@ -106,17 +106,7 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <a href="#" className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors">
-                  About us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors">
-                  Our packages
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors">
-                  Blogs and News
+                  Privacy Policy
                 </a>
               </li>
               <li>
@@ -141,15 +131,15 @@ export default function Footer() {
           <div>
             <h3 className="text-white font-bold text-[16px] leading-[24px] mb-4">Contact</h3>
             <ul className="space-y-2 text-white text-[14px] font-normal leading-[24px]">
-              <li>NO. 30 2nd Nana Kantom Street, Off El Shadai Ln, Accra-Ghana.</li>
+              <li>Greda Estate, 6th Avenue, Accra, Ghana.</li>
               <li>
                 <a href="tel:+233576093838" className="underline hover:text-[#ff5e00] transition-colors">
                   +233 576 093 838
                 </a>
               </li>
               <li>
-                <a href="mailto:info@sabarytours.com" className="underline hover:text-[#ff5e00] transition-colors">
-                  info@sabarytours.com
+                <a href="mailto:bookings@sabarytours.com" className="underline hover:text-[#ff5e00] transition-colors">
+                  bookings@sabarytours.com
                 </a>
               </li>
             </ul>

@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { createClient } from "../../utils/supabase/client";
 import { EyeIcon, CheckmarkBadge01Icon, Cancel01Icon, PlusSignIcon, MailSend01Icon, Tick02Icon } from "hugeicons-react";
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+import AdminSkeleton from '../components/AdminSkeleton';
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<any[]>([]);
@@ -19,10 +22,13 @@ export default function AdminBookingsPage() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [tourName, setTourName] = useState("");
+  const [isCustomTour, setIsCustomTour] = useState(false);
   const [date, setDate] = useState("");
   const [timeSlot, setTimeSlot] = useState("");
   const [numberOfPeople, setNumberOfPeople] = useState("1");
   const [totalCost, setTotalCost] = useState("");
+  const [includedActivities, setIncludedActivities] = useState("");
+  const [availableTours, setAvailableTours] = useState<any[]>([]);
 
   useEffect(() => {
     fetchBookings();
@@ -37,6 +43,11 @@ export default function AdminBookingsPage() {
       .order('created_at', { ascending: false });
     
     if (data) setBookings(data);
+
+    // Also fetch available tours for the dropdown
+    const { data: toursData } = await supabase.from('tours').select('id, title').eq('status', 'published').order('title');
+    if (toursData) setAvailableTours(toursData);
+
     setLoading(false);
   };
 
@@ -65,7 +76,8 @@ export default function AdminBookingsPage() {
           date,
           time_slot: timeSlot,
           number_of_people: numberOfPeople,
-          total_cost: totalCost
+          total_cost: totalCost,
+          included_activities: includedActivities
         }),
       });
 
@@ -88,6 +100,8 @@ export default function AdminBookingsPage() {
       setTimeSlot("");
       setNumberOfPeople("1");
       setTotalCost("");
+      setIncludedActivities("");
+      setIsCustomTour(false);
       
       setSuccessMsg("Walk-in Booking generated! The client has been emailed their invoice payment link.");
       setTimeout(() => setSuccessMsg(null), 6000);
@@ -138,7 +152,7 @@ export default function AdminBookingsPage() {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500 font-sans">Loading bookings...</td>
+                  <td colSpan={5} className="px-6 py-8"><AdminSkeleton variant="table" rows={5} /></td>
                 </tr>
               ) : bookings.length === 0 ? (
                 <tr>
@@ -231,7 +245,18 @@ export default function AdminBookingsPage() {
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs font-semibold text-gray-600 mb-1.5">Phone Number</label>
-                      <input type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] text-sm" placeholder="+233 24 123 4567" />
+                      <div className="phone-input-wrapper">
+                      <PhoneInput
+                          country="gh"
+                          value={customerPhone}
+                          onChange={(val: string) => setCustomerPhone(val ? `+${val}` : "")}
+                          containerClass="!w-full"
+                          inputClass="!w-full !px-4 !py-2 !rounded-lg !border !border-gray-300 focus:!ring-2 focus:!ring-[#ff5e00] !text-sm !bg-white"
+                          buttonClass="!bg-white !border !border-gray-300 !rounded-l-lg"
+                          enableSearch
+                          searchPlaceholder="Search country..."
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -242,7 +267,37 @@ export default function AdminBookingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                       <label className="block text-xs font-semibold text-gray-600 mb-1.5">Tour / Package Name *</label>
-                      <input type="text" required value={tourName} onChange={(e) => setTourName(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] text-sm" placeholder="e.g. 5-Day VIP Safari Custom Package" />
+                      <select 
+                        required={!isCustomTour}
+                        value={isCustomTour ? "custom" : tourName} 
+                        onChange={(e) => {
+                          if (e.target.value === "custom") {
+                            setIsCustomTour(true);
+                            setTourName("");
+                          } else {
+                            setIsCustomTour(false);
+                            setTourName(e.target.value);
+                          }
+                        }} 
+                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] text-sm bg-white mb-2"
+                      >
+                        <option value="" disabled>Select a Tour Package</option>
+                        {availableTours.map(t => (
+                          <option key={t.id} value={t.title}>{t.title}</option>
+                        ))}
+                        <option value="custom">-- Create Custom Package --</option>
+                      </select>
+                      
+                      {isCustomTour && (
+                        <input 
+                          type="text" 
+                          required 
+                          value={tourName} 
+                          onChange={(e) => setTourName(e.target.value)} 
+                          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] text-sm mt-2" 
+                          placeholder="Type custom package name here..." 
+                        />
+                      )}
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1.5">Date *</label>
@@ -262,6 +317,15 @@ export default function AdminBookingsPage() {
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">GHS</span>
                         <input type="number" step="0.01" min="0" required value={totalCost} onChange={(e) => setTotalCost(e.target.value)} className="w-full pl-12 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] text-sm" placeholder="0.00" />
                       </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Included Activities (for this booking)</label>
+                      <textarea 
+                        value={includedActivities} 
+                        onChange={(e) => setIncludedActivities(e.target.value)} 
+                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] text-sm min-h-[80px]" 
+                        placeholder="List any specific activities, upgrades, or notes included in this custom booking..." 
+                      />
                     </div>
                   </div>
                 </div>

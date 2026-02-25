@@ -33,6 +33,19 @@ export default function SafeHTML({
     
     let sanitized = html;
     
+    // Fix common encoding artifacts (mojibake from UTF-8 stored as Latin-1)
+    sanitized = sanitized.replace(/\uFFFD/g, "'"); // Replacement character → apostrophe
+    sanitized = sanitized.replace(/â€™/g, "\u2019"); // Right single quote
+    sanitized = sanitized.replace(/â€˜/g, "\u2018"); // Left single quote
+    sanitized = sanitized.replace(/â€œ/g, "\u201C"); // Left double quote
+    sanitized = sanitized.replace(/â€\u009D/g, "\u201D"); // Right double quote
+    sanitized = sanitized.replace(/â€"/g, "\u2014"); // Em dash
+    sanitized = sanitized.replace(/â€"/g, "\u2013"); // En dash
+    sanitized = sanitized.replace(/â€¦/g, "\u2026"); // Ellipsis
+    sanitized = sanitized.replace(/Ã©/g, "é");
+    sanitized = sanitized.replace(/Ã¨/g, "è");
+    sanitized = sanitized.replace(/Ã¢/g, "â");
+    
     // Remove script tags and their content (unless explicitly allowed)
     if (!allowScripts) {
       sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
@@ -44,9 +57,6 @@ export default function SafeHTML({
     
     // Remove javascript: protocol in href/src
     sanitized = sanitized.replace(/javascript:/gi, '');
-    
-    // Remove data: URLs that could be dangerous (optional - uncomment if needed)
-    // sanitized = sanitized.replace(/data:(?!image\/)/gi, '');
     
     return sanitized;
   }, [html, allowScripts]);

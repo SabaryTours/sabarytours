@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     // 2. Parse Request
     const body = await request.json();
-    const { customer_name, customer_email, customer_phone, tour_id, tour_name, date, time_slot, number_of_people, total_cost } = body;
+    const { customer_name, customer_email, customer_phone, tour_id, tour_name, date, time_slot, number_of_people, total_cost, included_activities } = body;
 
     if (!customer_name || !customer_email || !date || !total_cost || !tour_name) {
       return NextResponse.json({ error: 'Missing required booking fields' }, { status: 400 });
@@ -82,7 +82,8 @@ export async function POST(request: Request) {
         payment_amount: 0, // Unpaid
         payment_status: 'pending',
         booking_status: 'pending',
-        payment_reference: reference // Connect Paystack ref to booking
+        payment_reference: reference, // Connect Paystack ref to booking
+        included_activities: included_activities || '', // Walk-in custom field
       })
       .select()
       .single();
@@ -120,8 +121,8 @@ export async function POST(request: Request) {
           body: JSON.stringify({
             key: MAILCHIMP_TRANSACTIONAL_KEY,
             message: {
-              from_email: "hello@sabarytours.com", // Ensure verified domain
-              from_name: "Sabary Tours",
+              from_email: "bookings@sabarytours.com",
+              from_name: "Sabary Travel and Tours",
               to: [{ email: customer_email, name: customer_name, type: "to" }],
               subject: `Invoice for your Booking: ${tour_name}`,
               html: `

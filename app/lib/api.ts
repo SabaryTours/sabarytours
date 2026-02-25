@@ -27,12 +27,30 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
       tour_prices(amount, currency)
     `)
     .eq('category', categorySlug)
-    .eq('status', 'published');
+    .eq('status', 'published')
+    .order('created_at', { ascending: false });
 
   if (error || !tours) {
     console.error("Supabase fetch error:", error);
     return [];
   }
+
+  // Fetch review stats for all tours in this category
+  const tourSlugs = tours.map((t: any) => t.slug || generateSlug(t.title)).filter(Boolean);
+  const { data: reviewStats } = await supabase
+    .from('reviews')
+    .select('tour_slug, rating')
+    .eq('status', 'approved')
+    .in('tour_slug', tourSlugs);
+
+  // Aggregate ratings per tour
+  const ratingMap: Record<string, { total: number; count: number }> = {};
+  (reviewStats || []).forEach((r: any) => {
+    if (!r.tour_slug) return;
+    if (!ratingMap[r.tour_slug]) ratingMap[r.tour_slug] = { total: 0, count: 0 };
+    ratingMap[r.tour_slug].total += r.rating;
+    ratingMap[r.tour_slug].count += 1;
+  });
 
   // Map to frontend Tour interface
   return tours.map((t: any) => {
@@ -43,11 +61,13 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
 
     const basePrice = t.tour_prices?.[0]?.amount || 0;
     const currency = t.tour_prices?.[0]?.currency || t.currency || 'GHS';
+    const slug = t.slug || generateSlug(t.title);
+    const stats = ratingMap[slug];
 
     return {
       id: t.id.toString(), // Support UUID
       title: t.title,
-      slug: t.slug || generateSlug(t.title),
+      slug: slug,
       categorySlug: categorySlug, // keeping UI context
       image: primaryImage,
       gallery: gallery,
@@ -58,9 +78,9 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
       location: t.location || 'Ghana',
       map_url: t.map_url,
       price_tiers: t.tour_prices || [],
-      rating: 4.8, // Mock ratings until reviews are linked
-      reviewCount: Math.floor(Math.random() * 100) + 10,
-      bookedCount: Math.floor(Math.random() * 500) + 50,
+      rating: stats ? Math.round((stats.total / stats.count) * 10) / 10 : undefined,
+      reviewCount: stats?.count || 0,
+      bookedCount: 0,
       freeCancellation: true,
     } as Tour;
   });
@@ -74,9 +94,7 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
     .select(`
       *,
       tour_images(image_url, display_order),
-      tour_prices(amount, currency, name),
-      tour_itineraries(title, description, day_number),
-      tour_features(feature)
+      tour_prices(amount, currency, name)
     `)
     .eq('status', 'published');
 
@@ -95,21 +113,34 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
   const basePrice = t.tour_prices?.[0]?.amount || 0;
   const currency = t.tour_prices?.[0]?.currency || t.currency || 'GHS';
 
-  // Itinerary
-  const sortedItin = (t.tour_itineraries || []).sort((a: any, b: any) => a.day_number - b.day_number);
-  const mappedItin = sortedItin.map((i: any) => ({
-    time: `Day ${i.day_number}`,
-    activity: i.title || 'Activity',
-    description: i.description
+  // Itinerary from JSONB column
+  const rawItinerary = Array.isArray(t.itinerary) ? t.itinerary : [];
+  const mappedItin = rawItinerary.map((i: any) => ({
+    time: i.time || `Day ${i.day || ''}`,
+    activity: i.title || i.activity || 'Activity',
+    description: i.description || ''
   }));
 
-  // Features
-  const features = (t.tour_features || []).map((f: any) => f.feature);
+  // What's Included from JSONB column
+  const whatsIncluded = Array.isArray(t.whats_included) ? t.whats_included : [];
+
+  // Fetch real review stats for this tour
+  const resolvedSlug = t.slug || generateSlug(t.title);
+  const { data: reviewData } = await supabase
+    .from('reviews')
+    .select('rating')
+    .eq('status', 'approved')
+    .eq('tour_slug', resolvedSlug);
+
+  const reviewCount = reviewData?.length || 0;
+  const avgRating = reviewCount > 0
+    ? Math.round((reviewData!.reduce((sum: number, r: any) => sum + r.rating, 0) / reviewCount) * 10) / 10
+    : undefined;
 
   return {
     id: t.id.toString(),
     title: t.title,
-    slug: t.slug || generateSlug(t.title),
+    slug: resolvedSlug,
     categorySlug: t.category || 'tours',
     image: primaryImage,
     gallery: gallery.length > 0 ? gallery : [primaryImage],
@@ -120,11 +151,11 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
     location: t.location || 'Ghana',
     map_url: t.map_url,
     price_tiers: t.tour_prices || [],
-    whatsIncluded: features,
+    whatsIncluded: whatsIncluded,
     itinerary: mappedItin,
-    rating: 4.8,
-    reviewCount: 45,
-    bookedCount: 120,
+    rating: avgRating,
+    reviewCount: reviewCount,
+    bookedCount: 0,
     freeCancellation: true,
   } as Tour;
 }
