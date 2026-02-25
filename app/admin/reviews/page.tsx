@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { StarIcon, CheckmarkBadge01Icon, Cancel01Icon, Delete02Icon } from "hugeicons-react";
 import { format } from "date-fns";
+import AdminSkeleton from '../components/AdminSkeleton';
 
 interface Review {
   id: string;
@@ -79,7 +80,7 @@ export default function AdminReviewsPage() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500 font-sans">Loading reviews...</div>;
+    return <div className="p-8"><AdminSkeleton variant="table" rows={6} /></div>;
   }
 
   return (

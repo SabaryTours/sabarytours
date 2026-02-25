@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "../utils/supabase/client";
+import AdminSkeleton from "./components/AdminSkeleton";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({ tours: 0, blogs: 0, reviews: 0, bookings: 0 });
@@ -28,8 +29,8 @@ export default function AdminDashboardPage() {
   }, []);
 
   if (loading) return (
-    <div className="p-8 flex items-center justify-center font-sans text-gray-500">
-      Loading dashboard metrics...
+    <div className="p-8">
+      <AdminSkeleton variant="stats" />
     </div>
   );
 

@@ -97,8 +97,8 @@ export async function POST(request: Request) {
           body: JSON.stringify({
             key: MAILCHIMP_TRANSACTIONAL_KEY,
             message: {
-              from_email: "hello@sabarytours.com", // Ensure this domain is verified in Mailchimp
-              from_name: "Sabary Tours",
+              from_email: "bookings@sabarytours.com",
+              from_name: "Sabary Travel and Tours",
               to: [{ email: client_email, name: client_name, type: "to" }],
               subject: `Invoice from Sabary Tours: ${description}`,
               html: `

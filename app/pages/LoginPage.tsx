@@ -43,7 +43,7 @@ export default function LoginPage() {
       }
 
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: formData.username, 
         password: formData.password
       });
@@ -54,8 +54,16 @@ export default function LoginPage() {
         return;
       }
 
+      // Check role for proper redirect
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', authData.user.id)
+        .single();
+
       const redirectUri = new URLSearchParams(window.location.search).get("redirect");
-      router.push(redirectUri || "/dashboard");
+      const defaultRedirect = profile?.role === 'admin' ? '/admin' : '/dashboard';
+      router.push(redirectUri || defaultRedirect);
       router.refresh(); // Important: Refresh server state
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");

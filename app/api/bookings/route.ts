@@ -51,8 +51,8 @@ export async function POST(request: Request) {
           body: JSON.stringify({
             key: process.env.MAILCHIMP_API_KEY,
             message: {
-              from_email: "hello@sabarytours.com", // update with your verified sending domain
-              from_name: "Sabary Tours",
+              from_email: "bookings@sabarytours.com",
+              from_name: "Sabary Travel and Tours",
               to: [{ email: body.email, name: body.firstName, type: "to" }],
               subject: `Booking Confirmed: ${body.tourSlug || "Tour"}`,
               html: `

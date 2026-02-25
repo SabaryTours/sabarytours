@@ -38,6 +38,14 @@ export default function TourForm({ initialData }: TourFormProps) {
     is_featured: initialData?.is_featured || false,
   });
 
+  const [itinerary, setItinerary] = useState<any[]>(
+    initialData?.itinerary || []
+  );
+  
+  const [whatsIncluded, setWhatsIncluded] = useState<string[]>(
+    initialData?.whats_included || []
+  );
+
   const [packages, setPackages] = useState<any[]>([]);
 
   useEffect(() => {
@@ -102,6 +110,26 @@ export default function TourForm({ initialData }: TourFormProps) {
     }
   };
 
+  const addItineraryDay = () => setItinerary([...itinerary, { day: itinerary.length + 1, title: "", description: "" }]);
+  const removeItineraryDay = (index: number) => {
+    const newItinerary = itinerary.filter((_, i) => i !== index);
+    // Reassign day numbers
+    setItinerary(newItinerary.map((item, i) => ({ ...item, day: i + 1 })));
+  };
+  const updateItineraryDay = (index: number, field: string, value: string) => {
+    const newItinerary = [...itinerary];
+    newItinerary[index] = { ...newItinerary[index], [field]: value };
+    setItinerary(newItinerary);
+  };
+
+  const addIncludedItem = () => setWhatsIncluded([...whatsIncluded, ""]);
+  const removeIncludedItem = (index: number) => setWhatsIncluded(whatsIncluded.filter((_, i) => i !== index));
+  const updateIncludedItem = (index: number, value: string) => {
+    const newItems = [...whatsIncluded];
+    newItems[index] = value;
+    setWhatsIncluded(newItems);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -119,6 +147,8 @@ export default function TourForm({ initialData }: TourFormProps) {
         description: formData.description,
         map_url: formData.map_url,
         is_featured: formData.is_featured,
+        itinerary,
+        whats_included: whatsIncluded,
       };
 
       const imageUrls = formData.images.split('\n').filter((url: string) => url.trim() !== '');
@@ -202,6 +232,65 @@ export default function TourForm({ initialData }: TourFormProps) {
             onChange={handleQuillChange}
             className="h-64 mb-12"
           />
+        </div>
+      </div>
+
+      {/* What's Included Section */}
+      <div className="border-t border-gray-100 pt-8">
+        <div className="flex items-center justify-between mb-4">
+          <label className="block text-sm font-medium text-gray-700 font-sans">What's Included</label>
+          <button type="button" onClick={addIncludedItem} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold flex items-center gap-1 hover:bg-gray-200">
+            + Add Item
+          </button>
+        </div>
+        <div className="space-y-3">
+          {whatsIncluded.map((item, index) => (
+            <div key={index} className="flex gap-2">
+              <input 
+                type="text" 
+                value={item} 
+                onChange={(e) => updateIncludedItem(index, e.target.value)} 
+                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black" 
+                placeholder="e.g. Airport transfers" 
+              />
+              <button type="button" onClick={() => removeIncludedItem(index)} className="px-3 text-red-500 hover:bg-red-50 rounded-lg font-bold">X</button>
+            </div>
+          ))}
+          {whatsIncluded.length === 0 && <p className="text-gray-400 text-sm italic">No items added yet.</p>}
+        </div>
+      </div>
+
+      {/* Itinerary Section */}
+      <div className="border-t border-gray-100 pt-8">
+        <div className="flex items-center justify-between mb-4">
+          <label className="block text-sm font-medium text-gray-700 font-sans">Itinerary</label>
+          <button type="button" onClick={addItineraryDay} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold flex items-center gap-1 hover:bg-gray-200">
+            + Add Day
+          </button>
+        </div>
+        <div className="space-y-4">
+          {itinerary.map((day, index) => (
+            <div key={index} className="p-4 bg-gray-50 border border-gray-200 rounded-xl relative group">
+              <button type="button" onClick={() => removeItineraryDay(index)} className="absolute top-4 right-4 text-red-500 hover:bg-red-100 p-1 rounded font-bold opacity-0 group-hover:opacity-100 transition-opacity">X</button>
+              <h4 className="font-bold text-gray-800 mb-3">Day {day.day}</h4>
+              <div className="space-y-3">
+                <input 
+                  type="text" 
+                  value={day.title} 
+                  onChange={(e) => updateItineraryDay(index, "title", e.target.value)} 
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black" 
+                  placeholder="Day Title (e.g. Arrival & City Tour)" 
+                />
+                <textarea 
+                  value={day.description} 
+                  onChange={(e) => updateItineraryDay(index, "description", e.target.value)} 
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black min-h-[80px]" 
+                  placeholder="Describe the day's activities..." 
+                />
+              </div>
+            </div>
+          ))}
+          {itinerary.length === 0 && <p className="text-gray-400 text-sm italic">No itinerary days added yet.</p>}
         </div>
       </div>
 

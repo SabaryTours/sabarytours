@@ -4,6 +4,9 @@ import { useState } from "react";
 import { contactFormSchema, type ContactFormData } from "../lib/validations/contact";
 import type { ZodError } from "zod";
 import Footer from "../components/Footer";
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+import { Location01Icon, CallIcon, Mail01Icon } from "hugeicons-react";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState<ContactFormData>({
@@ -107,110 +110,83 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Main Banner/Call to Action Section */}
-      <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7">
-        <div
-          className="relative rounded-2xl overflow-hidden"
-          style={{ backgroundColor: "#893300" }}
-        >
-          {/* Pattern Overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage: "url(/assets/pattern.svg)",
-              backgroundRepeat: "repeat",
-              backgroundSize: "auto",
-              opacity: 0.3,
-              mixBlendMode: "overlay",
-            }}
-          />
-
-          {/* Central White Box */}
-          <div className="container mx-auto px-3 sm:px-4 md:px-6 py-12 sm:py-14 md:py-16 relative z-10">
-            <div className="max-w-3xl mx-auto">
-              <div
-                className="bg-white rounded-xl flex flex-col items-center justify-center gap-[13px] "
-                style={{
-                  border: '2px solid rgba(99,99,99,0.5)',
-                  padding: '32px 24px',
-                }}
-              >
-                <div
-                  className="flex flex-col sm:flex-row gap-[12px] items-center leading-none uppercase w-full overflow-hidden"
-                  style={{
-                    fontFamily: 'var(--font-unlimited-pie)',
-                    fontSize: '32px',
-                  }}
-                >
-                  <p className="text-[#222]">You&apos;ve got</p>
-                  <p
-                    className="text-[#ff5e00]"
-                    style={{
-                      textShadow: '1px 1px 0px #551f00',
-                    }}
-                  >
-                    questions, suggestions or feedback?
-                  </p>
-                </div>
-                <p
-                  className="text-[#222] text-[16px] font-bold text-center leading-[28px] w-full"
-                  style={{
-                    fontFamily: 'var(--font-quicksand)',
-                  }}
-                >
-                  Send us a message. We&apos;d love to hear from you :)
-                </p>
-              </div>
-            </div>
+      <section className="relative w-full pt-20 pb-20 overflow-hidden bg-gradient-to-br from-[#ff5e00] to-[#e55500]">
+        {/* Abstract Background Elements */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none"
+             style={{ backgroundImage: 'radial-gradient(circle at 20% 150%, white 0%, transparent 50%), radial-gradient(circle at 80% -50%, white 0%, transparent 50%)' }}
+        />
+        <div className="absolute inset-0 opacity-10"
+             style={{ backgroundImage: 'url("/assets/pattern.svg")', backgroundSize: '200px', mixBlendMode: 'overlay' }} 
+        />
+        
+        <div className="container mx-auto px-4 sm:px-6 md:px-12 relative z-10">
+          <div className="max-w-4xl mx-auto text-center space-y-6">
+            <h1 
+              className="text-4xl md:text-6xl text-white tracking-tight"
+              style={{ fontFamily: 'var(--font-unlimited-pie)' }}
+            >
+              Let's <span className="text-[#ffe0cc]">Connect</span>
+            </h1>
+            <p 
+              className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed"
+              style={{ fontFamily: 'var(--font-quicksand)' }}
+            >
+              Have questions about our tours or want a custom travel package? Send us a message and our team will get back to you immediately!
+            </p>
           </div>
         </div>
       </section>
 
       {/* Contact Information and Form Section */}
-      <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7">
-        <div className="container mx-auto px-3 sm:px-4 md:px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+      <section className="w-full px-4 sm:px-6 md:px-12 py-12 sm:py-16 md:py-24 bg-white relative">
+        <div className="container mx-auto max-w-6xl">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-16 items-start">
             {/* Left Column - Contact Information */}
-            <div>
-              <h2 
-                className="text-[#222] text-[32px] md:text-[40px] font-bold mb-6"
-                style={{
-                  fontFamily: 'var(--font-unlimited-pie)',
-                }}
-              >
-                Contact information
-              </h2>
-              <div className="space-y-4 mb-8">
-                <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-[#ff5e00] mt-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <p className="text-[#222] text-[16px] font-normal leading-[24px]">
-                    NO. 30 2nd Nana Kantom Street, Off El Shadai Ln,
-                    Accra-Ghana.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-[#ff5e00] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                  <a
-                    href="tel:+233543093838"
-                    className="text-[#222] text-[16px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors"
-                  >
-                    +233 543093838
-                  </a>
-                </div>
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-[#ff5e00] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <a
-                    href="mailto:info@sabarytours.com"
-                    className="text-[#222] text-[16px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors"
-                  >
-                    info@sabarytours.com
-                  </a>
+            <div className="lg:col-span-2 space-y-12">
+              <div>
+                <h2 
+                  className="text-gray-900 text-3xl md:text-4xl mb-8"
+                  style={{ fontFamily: 'var(--font-unlimited-pie)' }}
+                >
+                  Get in Touch
+                </h2>
+                <div className="space-y-6">
+                  {/* Info Cards */}
+                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-orange-50/50 border border-orange-100 hover:shadow-md transition-shadow">
+                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-[#ff5e00]">
+                      <Location01Icon size={24} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 mb-1">Office Location</h4>
+                      <p className="text-gray-600 font-medium leading-relaxed">
+                        Greda Estate, 6th Avenue,<br/>Accra, Ghana
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-orange-50/50 border border-orange-100 hover:shadow-md transition-shadow">
+                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-[#ff5e00]">
+                      <CallIcon size={24} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 mb-1">Call Us</h4>
+                      <a href="tel:+233543093838" className="text-gray-600 font-medium hover:text-[#ff5e00] transition-colors block">
+                        +233 543 093 838
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-orange-50/50 border border-orange-100 hover:shadow-md transition-shadow">
+                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-[#ff5e00]">
+                      <Mail01Icon size={24} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 mb-1">Email Support</h4>
+                      <a href="mailto:bookings@sabarytours.com" className="text-gray-600 font-medium hover:text-[#ff5e00] transition-colors block">
+                        bookings@sabarytours.com
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -273,7 +249,7 @@ export default function ContactPage() {
             </div>
 
             {/* Right Column - Contact Form */}
-            <div>
+            <div className="lg:col-span-3">
               <p className="text-[#222] text-[16px] font-normal leading-[24px] mb-6">
                 Fill out the form below, we will get back to you with more
                 information.
@@ -293,9 +269,9 @@ export default function ContactPage() {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleChange}
-                      placeholder="eg: Jane"
-                      className={`w-full px-4 text-[#222] py-3 border rounded-lg focus:outline-none focus:border-[#ff5e00] transition-colors placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px] ${
-                        errors.firstName ? "border-red-500" : "border-[#e3e3e3]"
+                      placeholder="Jane"
+                      className={`w-full px-5 py-3.5 bg-gray-50/50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff5e00]/20 focus:border-[#ff5e00] transition-all text-sm font-medium text-gray-900 ${
+                        errors.firstName ? "border-red-400 focus:border-red-400 focus:ring-red-400/20" : "border-gray-200"
                       }`}
                     />
                     {errors.firstName && (
@@ -315,9 +291,9 @@ export default function ContactPage() {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleChange}
-                      placeholder="eg: Doe"
-                      className={`w-full px-4 text-[#222] py-3 border rounded-lg focus:outline-none focus:border-[#ff5e00] transition-colors placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px] ${
-                        errors.lastName ? "border-red-500" : "border-[#e3e3e3]"
+                      placeholder="Doe"
+                      className={`w-full px-5 py-3.5 bg-gray-50/50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff5e00]/20 focus:border-[#ff5e00] transition-all text-sm font-medium text-gray-900 ${
+                        errors.lastName ? "border-red-400 focus:border-red-400 focus:ring-red-400/20" : "border-gray-200"
                       }`}
                     />
                     {errors.lastName && (
@@ -332,16 +308,24 @@ export default function ContactPage() {
                   >
                     Phone
                   </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
+                  <PhoneInput
+                    country="gh"
                     value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="eg: +233 543093838"
-                    className={`w-full px-4 text-[#222] py-3 border rounded-lg focus:outline-none focus:border-[#ff5e00] transition-colors placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px] ${
-                      errors.phone ? "border-red-500" : "border-[#e3e3e3]"
-                    }`}
+                    onChange={(val: string) => {
+                      setFormData((prev) => ({ ...prev, phone: val ? `+${val}` : "" }));
+                      if (errors.phone) {
+                        setErrors((prev) => {
+                          const newErrors = { ...prev };
+                          delete newErrors.phone;
+                          return newErrors;
+                        });
+                      }
+                    }}
+                    containerClass={`!w-full !rounded-xl !border ${errors.phone ? "!border-red-400" : "!border-gray-200"}`}
+                    inputClass="!w-full !py-3.5 !bg-gray-50/50 !rounded-xl !text-sm !font-medium !text-gray-900 !border-0 focus:!ring-2 focus:!ring-[#ff5e00]/20"
+                    buttonClass="!bg-gray-50/50 !border-0 !rounded-l-xl"
+                    enableSearch
+                    searchPlaceholder="Search country..."
                   />
                   {errors.phone && (
                     <p className="text-red-500 text-[12px] mt-1">{errors.phone}</p>
@@ -350,7 +334,7 @@ export default function ContactPage() {
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-[#222] text-[14px] font-bold mb-2"
+                    className="block text-sm font-bold text-gray-900 mb-2"
                   >
                     Email
                   </label>
@@ -360,9 +344,9 @@ export default function ContactPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="eg: janedoe@gmail.com"
-                    className={`w-full px-4 text-[#222] py-3 border rounded-lg focus:outline-none focus:border-[#ff5e00] transition-colors placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px] ${
-                      errors.email ? "border-red-500" : "border-[#e3e3e3]"
+                    placeholder="janedoe@example.com"
+                    className={`w-full px-5 py-3.5 bg-gray-50/50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff5e00]/20 focus:border-[#ff5e00] transition-all text-sm font-medium text-gray-900 ${
+                      errors.email ? "border-red-400 focus:border-red-400 focus:ring-red-400/20" : "border-gray-200"
                     }`}
                   />
                   {errors.email && (
@@ -372,7 +356,7 @@ export default function ContactPage() {
                 <div>
                   <label
                     htmlFor="subject"
-                    className="block text-[#222] text-[14px] font-bold mb-2"
+                    className="block text-sm font-bold text-gray-900 mb-2"
                   >
                     Subject
                   </label>
@@ -382,9 +366,9 @@ export default function ContactPage() {
                     name="subject"
                     value={formData.subject}
                     onChange={handleChange}
-                    placeholder="eg: Inquiry about tours"
-                    className={`w-full px-4 text-[#222] py-3 border rounded-lg focus:outline-none focus:border-[#ff5e00] transition-colors placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px] ${
-                      errors.subject ? "border-red-500" : "border-[#e3e3e3]"
+                    placeholder="How can we help?"
+                    className={`w-full px-5 py-3.5 bg-gray-50/50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff5e00]/20 focus:border-[#ff5e00] transition-all text-sm font-medium text-gray-900 ${
+                      errors.subject ? "border-red-400 focus:border-red-400 focus:ring-red-400/20" : "border-gray-200"
                     }`}
                   />
                   {errors.subject && (
@@ -394,7 +378,7 @@ export default function ContactPage() {
                 <div>
                   <label
                     htmlFor="message"
-                    className="block text-[#222] text-[14px] font-bold mb-2"
+                    className="block text-sm font-bold text-gray-900 mb-2"
                   >
                     Message
                   </label>
@@ -404,9 +388,9 @@ export default function ContactPage() {
                     value={formData.message}
                     onChange={handleChange}
                     rows={6}
-                    placeholder="Tell us how we can help you..."
-                    className={`w-full px-4 text-[#222] py-3 border rounded-lg focus:outline-none focus:border-[#ff5e00] transition-colors resize-none placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px] ${
-                      errors.message ? "border-red-500" : "border-[#e3e3e3]"
+                    placeholder="Type your message here..."
+                    className={`w-full px-5 py-3.5 bg-gray-50/50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff5e00]/20 focus:border-[#ff5e00] transition-all resize-none text-sm font-medium text-gray-900 ${
+                      errors.message ? "border-red-400 focus:border-red-400 focus:ring-red-400/20" : "border-gray-200"
                     }`}
                   />
                   {errors.message && (
@@ -429,13 +413,18 @@ export default function ContactPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`w-full bg-[#ff5e00] text-white px-6 py-3 rounded-lg font-bold text-[16px] transition-colors ${
+                  className={`w-full bg-[#ff5e00] text-white px-6 py-4 rounded-xl font-bold text-[16px] transition-all shadow-md  ${
                     isSubmitting
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:bg-[#e55500]"
+                      ? "opacity-60 cursor-not-allowed"
+                      : "hover:bg-[#e55500] hover:shadow-lg hover:-translate-y-0.5"
                   }`}
                 >
-                  {isSubmitting ? "Sending..." : "Send message"}
+                  {isSubmitting ? (
+                    <div className="flex items-center justify-center gap-2">
+                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                       Sending...
+                    </div>
+                  ) : "Send Message"}
                 </button>
               </form>
             </div>
