@@ -1,10 +1,25 @@
 "use client";
 
+import Link from "next/link";
+import { getUserRole } from "../lib/authService";
+import { useEffect, useState } from "react";
+
 interface BookingSuccessProps {
   onClose: () => void;
 }
 
 export default function BookingSuccess({ onClose }: BookingSuccessProps) {
+  const [dashboardUrl, setDashboardUrl] = useState("/login");
+
+  useEffect(() => {
+    const fetchRole = async () => {
+      const role = await getUserRole();
+      if (role === "admin") setDashboardUrl("/admin");
+      else if (role === "subscriber") setDashboardUrl("/dashboard");
+    };
+    fetchRole();
+  }, []);
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl max-w-md w-full">
@@ -97,10 +112,17 @@ export default function BookingSuccess({ onClose }: BookingSuccessProps) {
           </p>
           <a
             href="tel:+233576093838"
-            className="text-[#222] text-[16px] sm:text-[18px] font-bold font-sans hover:underline inline-block"
+            className="text-[#222] text-[16px] sm:text-[18px] font-bold font-sans hover:underline inline-block mb-6"
           >
             +233 576 093 838
           </a>
+
+          <Link
+            href={dashboardUrl}
+            className="w-full block bg-[#ff5e00] text-white py-3 rounded-lg font-bold text-[16px] hover:bg-[#e55500] transition-colors font-sans"
+          >
+            Go to My Dashboard
+          </Link>
         </div>
       </div>
     </div>

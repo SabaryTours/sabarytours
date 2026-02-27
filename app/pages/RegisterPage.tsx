@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail01Icon, LockIcon, EyeIcon, UserIcon, CallIcon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
+import WhyRegisterPopup from "../components/WhyRegisterPopup";
 import { register } from "../lib/authService";
 
 export default function RegisterPage() {
@@ -267,6 +268,8 @@ export default function RegisterPage() {
           </Link>
         </div>
       </div>
+      
+      <WhyRegisterPopup />
     </div>
   );
 }

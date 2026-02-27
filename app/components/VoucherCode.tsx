@@ -19,14 +19,6 @@ export default function VoucherCode({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Mock voucher codes - replace with API call
-  const validVouchers: Record<string, number> = {
-    "SAVE10": 10,
-    "WELCOME20": 20,
-    "SUMMER15": 15,
-    "REFERRAL25": 25,
-  };
-
   const handleApply = async () => {
     if (!code.trim()) {
       setError("Please enter a voucher code");
@@ -36,21 +28,27 @@ export default function VoucherCode({
     setIsLoading(true);
     setError("");
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const upperCode = code.toUpperCase().trim();
-    const discountPercent = validVouchers[upperCode];
-
-    if (discountPercent) {
-      onApply(upperCode, discountPercent);
-      setCode("");
-      setError("");
-    } else {
-      setError("Invalid voucher code. Please try again.");
+    try {
+      const res = await fetch('/api/vouchers/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.trim() })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setError(data.error || "Invalid voucher code. Please try again.");
+      } else if (data.valid) {
+        onApply(code.toUpperCase().trim(), data.discount_percentage);
+        setCode("");
+        setError("");
+      }
+    } catch (err: any) {
+      setError("Network error validating voucher");
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const handleRemove = () => {

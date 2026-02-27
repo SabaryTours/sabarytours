@@ -3,6 +3,8 @@ import { Metadata } from "next";
 import { getPackageBySlug, getTourBySlug, getToursByCategory } from "../../../lib/api";
 import TourDetailPage from "../../../pages/TourDetailPage";
 
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
   params: Promise<{
     categorySlug: string;

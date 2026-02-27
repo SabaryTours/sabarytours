@@ -23,38 +23,27 @@ export default function DashboardPage() {
           return;
         }
         setUser(userData);
-        
-        const { createClient } = await import('../utils/supabase/client');
-        const supabase = createClient();
-        
-        const { data: userBookings, error: bookingsError } = await supabase
-          .from('bookings')
-          .select(`
-            id,
-            booking_date,
-            status,
-            number_of_people,
-            total_price,
-            currency,
-            tours (title)
-          `)
-          .eq('user_id', userData.id)
-          .order('booking_date', { ascending: false });
 
-        if (bookingsError) {
-          console.error("Dashboard bookings fetch error:", bookingsError);
+        const res = await fetch("/api/dashboard/bookings", { credentials: "include" });
+        const userBookings = res.ok ? await res.json() : null;
+        if (!res.ok) {
+          console.error("Dashboard bookings fetch error:", res.status, await res.text());
         }
 
-        if (userBookings) {
-          const today = new Date().toISOString();
+        if (userBookings && Array.isArray(userBookings)) {
+          const today = new Date().toISOString().split('T')[0];
           const mapped = userBookings.map((b: any) => ({
             id: b.id,
-            tour: b.tours?.title || 'Custom Tour',
-            date: new Date(b.booking_date).toISOString().split('T')[0],
-            guests: b.number_of_people,
-            status: b.status || 'Pending',
-            amount: `${b.currency || 'GHS'} ${b.total_price || 0}`,
-            isPast: b.booking_date < today
+            tour: b.package_name || 'Tour Booking',
+            date: b.tour_date || '',
+            guests: b.number_of_people || 1,
+            status: b.booking_status || 'pending',
+            amount: `GHS ${b.total_cost || 0}`,
+            amountPaid: b.amount_paid || 0,
+            totalCost: b.total_cost || 0,
+            paymentStatus: b.payment_status || 'pending',
+            paymentOption: b.payment_option || 'full',
+            isPast: b.tour_date ? b.tour_date < today : false
           }));
           
           setUpcomingBookings(mapped.filter(b => !b.isPast));
@@ -129,7 +118,7 @@ export default function DashboardPage() {
               <Award05Icon className="text-[#ff5e00]" size={24} />
               <h3 className="text-[#222] font-bold text-[16px] font-sans">Sabary Miles</h3>
             </div>
-            <p className="text-[32px] font-bold text-[#222] font-sans">1,250</p>
+            <p className="text-[32px] font-bold text-[#222] font-sans">{user?.mileage_points || 0}</p>
             <p className="text-[12px] text-[#666] font-sans mt-1">Earn 100 miles per booking</p>
           </div>
 
@@ -175,31 +164,38 @@ export default function DashboardPage() {
                         <span>Guests: {booking.guests}</span>
                         <span
                           className={`font-semibold ${
-                            booking.status === "Confirmed"
+                            booking.status === "confirmed"
                               ? "text-green-600"
-                              : booking.status === "Pending"
+                              : booking.status === "pending"
                               ? "text-yellow-600"
                               : "text-gray-600"
                           }`}
                         >
-                          {booking.status}
+                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-end gap-2">
                       <span className="text-[#222] font-bold text-[18px] font-sans">
                         {booking.amount}
                       </span>
-                      <button className="flex items-center gap-2 px-4 py-2 bg-[#ff5e00] text-white rounded-full hover:bg-[#e55500] transition-colors font-sans text-[14px] font-semibold">
-                        <Download06Icon size={16} />
-                        Receipt
-                      </button>
-                      <Link
-                        href={`/packages/${booking.id}`}
-                        className="px-4 py-2 border border-[#ff5e00] text-[#ff5e00] rounded-full hover:bg-[#fff5e6] transition-colors font-sans text-[14px] font-semibold"
-                      >
-                        Rebook
-                      </Link>
+                      {booking.paymentOption === 'deposit' && booking.totalCost > booking.amountPaid && (
+                        <span className="text-red-500 text-[12px] font-semibold font-sans">
+                          Balance Due: GHS {(booking.totalCost - booking.amountPaid).toFixed(2)}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <Link href={`/dashboard/invoices/${booking.id}`} className="flex items-center gap-2 px-4 py-2 bg-[#ff5e00] text-white rounded-full hover:bg-[#e55500] transition-colors font-sans text-[14px] font-semibold">
+                          <Download06Icon size={16} />
+                          Receipt
+                        </Link>
+                        <Link
+                          href={`/packages`}
+                          className="px-4 py-2 border border-[#ff5e00] text-[#ff5e00] rounded-full hover:bg-[#fff5e6] transition-colors font-sans text-[14px] font-semibold"
+                        >
+                          Rebook
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -244,10 +240,10 @@ export default function DashboardPage() {
                       <span className="text-[#222] font-bold text-[18px] font-sans">
                         {booking.amount}
                       </span>
-                      <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-[#222] rounded-full hover:bg-gray-200 transition-colors font-sans text-[14px] font-semibold">
+                      <Link href={`/dashboard/invoices/${booking.id}`} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-[#222] rounded-full hover:bg-gray-200 transition-colors font-sans text-[14px] font-semibold">
                         <Download06Icon size={16} />
                         Invoice
-                      </button>
+                      </Link>
                       <Link
                         href={`/packages/${booking.id}`}
                         className="px-4 py-2 border border-[#ff5e00] text-[#ff5e00] rounded-full hover:bg-[#fff5e6] transition-colors font-sans text-[14px] font-semibold"

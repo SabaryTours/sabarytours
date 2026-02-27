@@ -1,21 +1,27 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '../../utils/supabase/server';
+import { createClient as createServerClient } from '../../utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 const MAILCHIMP_TRANSACTIONAL_KEY = process.env.MAILCHIMP_TRANSACTIONAL_KEY;
 
+// Service-role client for inserts that bypass RLS
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-
     // 1. Authenticate Admin User
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { data: profile } = await supabase
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profile?.role !== 'admin') {
@@ -35,8 +41,8 @@ export async function POST(request: Request) {
     }
 
     // 3. Initialize Paystack Transaction
-    // Convert amount to kobo or pesewas (smallest currency unit, e.g., multiply by 100)
     const amountInSmallestUnit = Math.round(parseFloat(amount) * 100);
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
     const paystackRes = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
@@ -47,8 +53,8 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         email: client_email,
         amount: amountInSmallestUnit,
-        // Replace with your actual frontend URL if needed
-        callback_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/booking-success`,
+        currency: 'GHS',
+        callback_url: `${baseUrl}/booking/verify`,
         metadata: {
           client_name,
           description,
@@ -67,8 +73,8 @@ export async function POST(request: Request) {
     const paymentUrl = paystackData.data.authorization_url;
     const reference = paystackData.data.reference;
 
-    // 4. Save Invoice to Database
-    const { data: newInvoice, error: dbError } = await supabase
+    // 4. Save Invoice to Database (using admin client to bypass RLS)
+    const { data: newInvoice, error: dbError } = await supabaseAdmin
       .from('invoices')
       .insert({
         client_name,
@@ -78,7 +84,7 @@ export async function POST(request: Request) {
         payment_url: paymentUrl,
         reference: reference,
         status: 'pending',
-        created_by: session.user.id
+        created_by: user.id
       })
       .select()
       .single();
@@ -91,7 +97,7 @@ export async function POST(request: Request) {
     // 5. Send Transactional Email via Mailchimp (Mandrill)
     if (MAILCHIMP_TRANSACTIONAL_KEY) {
       try {
-        const mailchimpRes = await fetch("https://mandrillapp.com/api/1.0/messages/send.json", {
+        await fetch("https://mandrillapp.com/api/1.0/messages/send.json", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -104,7 +110,7 @@ export async function POST(request: Request) {
               html: `
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
                   <h2>Hello ${client_name},</h2>
-                  <p>A new custom invoice has been generated for you by Sabary Tours.</p>
+                  <p>A new invoice has been generated for you by Sabary Tours.</p>
                   <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h3 style="margin-top: 0; color: #ff5e00;">Invoice Details</h3>
                     <p><strong>Description:</strong> ${description}</p>
@@ -121,15 +127,9 @@ export async function POST(request: Request) {
             }
           })
         });
-
-        const mailchimpStatus = await mailchimpRes.json();
-        console.log("Invoice Email Status:", mailchimpStatus);
       } catch (emailError) {
         console.error("Failed to send invoice email:", emailError);
-        // We still return success since the link was generated and saved
       }
-    } else {
-      console.warn("MAILCHIMP_TRANSACTIONAL_KEY is missing. Invoice saved, but email not sent.");
     }
 
     return NextResponse.json(newInvoice, { status: 201 });
@@ -141,24 +141,23 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-
     // Authenticate Admin User
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { data: profile } = await supabase
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profile?.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Fetch Invoices
-    const { data: invoices, error } = await supabase
+    // Fetch Invoices using admin client
+    const { data: invoices, error } = await supabaseAdmin
       .from('invoices')
       .select('*')
       .order('created_at', { ascending: false });

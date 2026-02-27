@@ -46,6 +46,18 @@ export default function TourForm({ initialData }: TourFormProps) {
     initialData?.whats_included || []
   );
 
+  const [availableDays, setAvailableDays] = useState<string[]>(
+    initialData?.available_days || []
+  );
+  
+  const [blockedDates, setBlockedDates] = useState<string[]>(
+    initialData?.blocked_dates || []
+  );
+  
+  const [timeSlots, setTimeSlots] = useState<string[]>(
+    initialData?.time_slots || []
+  );
+
   const [packages, setPackages] = useState<any[]>([]);
 
   useEffect(() => {
@@ -130,6 +142,28 @@ export default function TourForm({ initialData }: TourFormProps) {
     setWhatsIncluded(newItems);
   };
 
+  const handleAvailableDayToggle = (day: string) => {
+    setAvailableDays(prev => 
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    );
+  };
+
+  const addBlockedDate = () => setBlockedDates([...blockedDates, ""]);
+  const removeBlockedDate = (index: number) => setBlockedDates(blockedDates.filter((_, i) => i !== index));
+  const updateBlockedDate = (index: number, value: string) => {
+    const newDates = [...blockedDates];
+    newDates[index] = value;
+    setBlockedDates(newDates);
+  };
+
+  const addTimeSlot = () => setTimeSlots([...timeSlots, "09:00 AM"]);
+  const removeTimeSlot = (index: number) => setTimeSlots(timeSlots.filter((_, i) => i !== index));
+  const updateTimeSlot = (index: number, value: string) => {
+    const newSlots = [...timeSlots];
+    newSlots[index] = value;
+    setTimeSlots(newSlots);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -149,6 +183,9 @@ export default function TourForm({ initialData }: TourFormProps) {
         is_featured: formData.is_featured,
         itinerary,
         whats_included: whatsIncluded,
+        available_days: availableDays,
+        blocked_dates: blockedDates.filter(d => d.trim() !== ""),
+        time_slots: timeSlots.filter(t => t.trim() !== ""),
       };
 
       const imageUrls = formData.images.split('\n').filter((url: string) => url.trim() !== '');
@@ -160,6 +197,7 @@ export default function TourForm({ initialData }: TourFormProps) {
           tourId: initialData?.id,
           tourInput,
           imagesInput: imageUrls,
+          priceInput: { amount: parseFloat(formData.price), currency: formData.currency }
         }),
       });
 
@@ -305,6 +343,85 @@ export default function TourForm({ initialData }: TourFormProps) {
           </label>
         </div>
         <textarea name="images" rows={4} value={formData.images} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black placeholder:text-gray-800" placeholder="https://..." />
+      </div>
+
+      {/* Availability Section */}
+      <div className="border-t border-gray-100 pt-8 pb-4">
+        <h3 className="text-lg font-bold text-gray-800 font-sans mb-4">Availability & Calendar Rules</h3>
+        <p className="text-sm text-gray-500 mb-6 font-sans">Set the days and times this tour is available. If no days are selected, the tour runs every day.</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Available Days */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 font-sans mb-3">Available Days of the Week</label>
+            <div className="flex flex-wrap gap-2">
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => handleAvailableDayToggle(day)}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                    availableDays.includes(day) 
+                      ? 'bg-[#ff5e00] text-white border-[#ff5e00]' 
+                      : 'bg-white text-gray-600 border border-gray-200 hover:border-[#ff5e00] hover:text-[#ff5e00]'
+                  }`}
+                >
+                  {day}
+                </button>
+              ))}
+            </div>
+            {availableDays.length === 0 && <p className="text-xs text-gray-400 mt-2 italic">Tour runs every day</p>}
+          </div>
+
+          {/* Time Slots */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-gray-700 font-sans">Tour Time Slots</label>
+              <button type="button" onClick={addTimeSlot} className="px-3 py-1 bg-gray-100 text-[#ff5e00] rounded-lg text-xs font-semibold hover:bg-gray-200">
+                + Add Time Slot
+              </button>
+            </div>
+            <div className="space-y-2">
+              {timeSlots.map((slot, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    type="time"
+                    value={slot}
+                    onChange={(e) => updateTimeSlot(index, e.target.value)}
+                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black"
+                  />
+                  <button type="button" onClick={() => removeTimeSlot(index)} className="px-3 text-red-500 hover:bg-red-50 rounded-lg font-bold">X</button>
+                </div>
+              ))}
+              {timeSlots.length === 0 && <p className="text-xs text-gray-400 italic">Guests can pick any time</p>}
+            </div>
+          </div>
+        </div>
+
+        {/* Blocked Dates */}
+        <div className="mt-8">
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-gray-700 font-sans">Blocked / Blackout Dates</label>
+              <button type="button" onClick={addBlockedDate} className="px-3 py-1 bg-gray-100 text-red-500 rounded-lg text-xs font-semibold hover:bg-gray-200">
+                + Add Blocked Date
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">Specific dates when this tour will not run (e.g. Holidays).</p>
+            <div className="flex flex-wrap gap-2">
+              {blockedDates.map((date, index) => (
+                <div key={index} className="flex items-center gap-1 bg-red-50 border border-red-100 rounded-lg p-1 pr-2">
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => updateBlockedDate(index, e.target.value)}
+                    className="px-3 py-1.5 bg-transparent border-none focus:ring-0 outline-none font-sans text-red-700 text-sm"
+                  />
+                  <button type="button" onClick={() => removeBlockedDate(index)} className="w-6 h-6 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-100 rounded-full font-bold text-xs">X</button>
+                </div>
+              ))}
+              {blockedDates.length === 0 && <p className="text-xs text-gray-400 italic py-2">No blackout dates added</p>}
+            </div>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

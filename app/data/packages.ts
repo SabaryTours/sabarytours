@@ -43,6 +43,9 @@ export interface Tour {
     activity: string;
     description?: string;
   }>;
+  availableDays?: string[];
+  blockedDates?: string[];
+  timeSlots?: string[];
 }
 
 // Package (legacy - for backward compatibility)

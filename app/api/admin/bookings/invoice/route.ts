@@ -1,21 +1,27 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '../../../../utils/supabase/server';
+import { createClient as createServerClient } from '../../../../utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 const MAILCHIMP_TRANSACTIONAL_KEY = process.env.MAILCHIMP_TRANSACTIONAL_KEY;
 
+// Service-role client for inserts that bypass RLS
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
+    // 1. Authenticate Admin User using server client (cookie-based auth)
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // 1. Authenticate Admin User
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const { data: profile } = await supabase
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profile?.role !== 'admin') {
@@ -37,6 +43,7 @@ export async function POST(request: Request) {
     // 3. Initialize Paystack Transaction
     const amountInSmallestUnit = Math.round(parseFloat(total_cost) * 100);
     const invoiceDescription = `Booking: ${tour_name} on ${date}`;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
     const paystackRes = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
@@ -47,11 +54,19 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         email: customer_email,
         amount: amountInSmallestUnit,
-        callback_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/booking-success`,
+        currency: 'GHS',
+        callback_url: `${baseUrl}/booking/verify`,
         metadata: {
-          client_name: customer_name,
-          description: invoiceDescription,
-          is_walk_in_booking: true
+          tourId: tour_id || null,
+          customerName: customer_name,
+          customerPhone: customer_phone,
+          packageName: tour_name,
+          numberOfPeople: parseInt(number_of_people) || 1,
+          date,
+          timeSlot: time_slot || null,
+          totalCost: parseFloat(total_cost),
+          paymentAmount: parseFloat(total_cost),
+          is_walk_in_booking: true,
         }
       })
     });
@@ -66,11 +81,11 @@ export async function POST(request: Request) {
     const paymentUrl = paystackData.data.authorization_url;
     const reference = paystackData.data.reference;
 
-    // 4. Save Booking to Database
-    const { data: newBooking, error: bookingError } = await supabase
+    // 4. Save Booking to Database (using admin client to bypass RLS)
+    const { data: newBooking, error: bookingError } = await supabaseAdmin
       .from('bookings')
       .insert({
-        tour_id: tour_id || null, // null if custom completely
+        tour_id: tour_id || null,
         customer_name,
         customer_email,
         customer_phone,
@@ -79,11 +94,10 @@ export async function POST(request: Request) {
         time_slot: time_slot || null,
         number_of_people: parseInt(number_of_people) || 1,
         total_cost: parseFloat(total_cost),
-        payment_amount: 0, // Unpaid
+        amount_paid: 0, // Unpaid — waiting for Paystack payment
         payment_status: 'pending',
         booking_status: 'pending',
-        payment_reference: reference, // Connect Paystack ref to booking
-        included_activities: included_activities || '', // Walk-in custom field
+        payment_reference: reference,
       })
       .select()
       .single();
@@ -94,7 +108,7 @@ export async function POST(request: Request) {
     }
 
     // 5. Also Save as an Invoice for dual-tracking
-    const { error: invoiceError } = await supabase
+    const { error: invoiceError } = await supabaseAdmin
       .from('invoices')
       .insert({
         client_name: customer_name,
@@ -102,20 +116,19 @@ export async function POST(request: Request) {
         description: invoiceDescription,
         amount: parseFloat(total_cost),
         payment_url: paymentUrl,
-        reference: reference, // Same reference links them
+        reference: reference,
         status: 'pending',
-        created_by: session.user.id
+        created_by: user.id
       });
 
     if (invoiceError) {
       console.error("Warning: Failed to dual-record into invoices table.", invoiceError);
-      // We don't fail the whole request just because tracking invoice record failed, the booking is the main source of truth here.
     }
 
     // 6. Send Transactional Email via Mailchimp (Mandrill)
     if (MAILCHIMP_TRANSACTIONAL_KEY) {
       try {
-        const mailchimpRes = await fetch("https://mandrillapp.com/api/1.0/messages/send.json", {
+        await fetch("https://mandrillapp.com/api/1.0/messages/send.json", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -148,9 +161,6 @@ export async function POST(request: Request) {
             }
           })
         });
-
-        const mailchimpStatus = await mailchimpRes.json();
-        console.log("Walk-in Invoice Email Status:", mailchimpStatus);
       } catch (emailError) {
         console.error("Failed to send walk-in invoice email:", emailError);
       }

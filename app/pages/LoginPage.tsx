@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserIcon, LockIcon, EyeIcon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
+import WhyRegisterPopup from "../components/WhyRegisterPopup";
 import Logo from "../components/Logo";
 import { createClient } from "../utils/supabase/client";
 
@@ -227,6 +228,8 @@ export default function LoginPage() {
           </Link>
         </div>
       </div>
+
+      <WhyRegisterPopup />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import PaymentOptions from "./PaymentOptions";
 import VoucherCode from "./VoucherCode";
 import PickupLocation from "./PickupLocation";
 import PaystackPayment from "./PaystackPayment";
+import { getUser } from "../lib/authService";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -35,29 +36,47 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
 
-  // Mock available dates with slots
+  // Generate available dates based on real tour rules
   const availableDates = useMemo(() => {
     const dates = [];
     const today = new Date();
-    for (let i = 1; i <= 30; i++) {
+    
+    // Default time slots if none are defined
+    const defaultSlots = [
+      { time: "09:00 AM", available: true },
+      { time: "02:00 PM", available: true }
+    ];
+
+    const slotsToUse = (tour.timeSlots && tour.timeSlots.length > 0)
+      ? tour.timeSlots.map(t => ({ time: t, available: true }))
+      : defaultSlots;
+
+    for (let i = 1; i <= 60; i++) { // Generate next 60 days
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       const dateString = date.toISOString().split('T')[0];
       
-      const hasSlots = i % 3 !== 0;
+      const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
+
+      // Check if blocked by admin
+      const isBlocked = tour.blockedDates?.includes(dateString) || false;
+      
+      // Check if day of week is allowed
+      const isAllowedDay = (!tour.availableDays || tour.availableDays.length === 0) 
+                            ? true 
+                            : tour.availableDays.includes(dayName);
+
+      const isAvailable = isAllowedDay && !isBlocked;
+
       dates.push({
         date: dateString,
-        available: true,
-        slots: hasSlots ? [
-          { time: "09:00 AM", available: true },
-          { time: "02:00 PM", available: true },
-          { time: "05:00 PM", available: i % 2 === 0 },
-        ] : [],
+        available: isAvailable,
+        slots: isAvailable ? slotsToUse : [],
         price: tour.priceValue || 100,
       });
     }
     return dates;
-  }, [tour.priceValue]);
+  }, [tour.priceValue, tour.availableDays, tour.blockedDates, tour.timeSlots]);
 
   // Calculate base price based on date and group size
   const basePrice = useMemo(() => {
@@ -102,6 +121,8 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
 
   const handlePaymentSuccess = async (reference: string) => {
     try {
+      const currentUser = await getUser();
+      
       const bookingData = {
         ...formData,
         paymentReference: reference,
@@ -112,6 +133,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
         paymentAmount,
         tourId: tour.id,
         tourSlug: tour.slug,
+        userId: currentUser?.id || null,
       };
 
       const response = await fetch("/api/bookings", {
@@ -464,12 +486,17 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
                   metadata={{
                     tourId: tour.id,
                     tourSlug: tour.slug,
+                    packageName: tour.title,
+                    customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+                    customerPhone: formData.phone,
                     numberOfPeople: formData.numberOfPeople,
                     date: formData.date,
                     timeSlot: formData.timeSlot,
                     pickupLocation: formData.pickupLocation,
                     paymentOption,
                     voucherCode: voucherCode || null,
+                    totalCost: totalPrice,
+                    paymentAmount: paymentAmount,
                   }}
                 />
               </div>

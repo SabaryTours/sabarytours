@@ -14,16 +14,7 @@ interface PageProps {
 
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
-export async function generateStaticParams() {
-  const supabase = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-  const { data: packages } = await supabase.from('packages').select('slug');
-  return (packages || []).map((category) => ({
-    categorySlug: category.slug,
-  }));
-}
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = params instanceof Promise ? await params : params;
