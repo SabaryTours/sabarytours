@@ -12,7 +12,26 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [upcomingBookings, setUpcomingBookings] = useState<any[]>([]);
   const [pastBookings, setPastBookings] = useState<any[]>([]);
+  const [topupLoadingId, setTopupLoadingId] = useState<string | null>(null);
   const router = useRouter();
+
+  const handlePayRemaining = async (bookingId: string) => {
+    setTopupLoadingId(bookingId);
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}/topup`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to get payment link");
+      if (data.payment_url) window.location.href = data.payment_url;
+      else throw new Error("No payment URL returned");
+    } catch (err: any) {
+      alert(err.message || "Could not start payment");
+    } finally {
+      setTopupLoadingId(null);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -180,9 +199,19 @@ export default function DashboardPage() {
                         {booking.amount}
                       </span>
                       {booking.paymentOption === 'deposit' && booking.totalCost > booking.amountPaid && (
-                        <span className="text-red-500 text-[12px] font-semibold font-sans">
-                          Balance Due: GHS {(booking.totalCost - booking.amountPaid).toFixed(2)}
-                        </span>
+                        <>
+                          <span className="text-red-500 text-[12px] font-semibold font-sans">
+                            Balance Due: GHS {(booking.totalCost - booking.amountPaid).toFixed(2)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handlePayRemaining(booking.id)}
+                            disabled={topupLoadingId === booking.id}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors font-sans text-[14px] font-semibold disabled:opacity-70"
+                          >
+                            {topupLoadingId === booking.id ? "Loading…" : "Pay remaining balance"}
+                          </button>
+                        </>
                       )}
                       <div className="flex items-center gap-2">
                         <Link href={`/dashboard/invoices/${booking.id}`} className="flex items-center gap-2 px-4 py-2 bg-[#ff5e00] text-white rounded-full hover:bg-[#e55500] transition-colors font-sans text-[14px] font-semibold">
@@ -236,10 +265,20 @@ export default function DashboardPage() {
                         <span className="font-semibold text-green-600">{booking.status}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-[#222] font-bold text-[18px] font-sans">
                         {booking.amount}
                       </span>
+                      {booking.paymentOption === "deposit" && booking.totalCost > booking.amountPaid && (
+                        <button
+                          type="button"
+                          onClick={() => handlePayRemaining(booking.id)}
+                          disabled={topupLoadingId === booking.id}
+                          className="px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 font-sans text-[14px] font-semibold disabled:opacity-70"
+                        >
+                          {topupLoadingId === booking.id ? "Loading…" : "Pay remaining balance"}
+                        </button>
+                      )}
                       <Link href={`/dashboard/invoices/${booking.id}`} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-[#222] rounded-full hover:bg-gray-200 transition-colors font-sans text-[14px] font-semibold">
                         <Download06Icon size={16} />
                         Invoice

@@ -160,66 +160,76 @@ export default function AdminVouchersPage() {
           <p className="text-gray-500 font-sans text-sm">Create your first promo code to boost sales.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left font-sans">
-              <thead className="bg-gray-50/80 border-b border-gray-100 uppercase text-[10px] tracking-wider text-gray-500 font-bold">
-                <tr>
-                  <th className="px-6 py-4">Code</th>
-                  <th className="px-6 py-4">Discount</th>
-                  <th className="px-6 py-4">Uses</th>
-                  <th className="px-6 py-4">Expiry</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {vouchers.map((voucher) => (
-                  <tr key={voucher.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#ff5e00]">
-                          <Ticket01Icon size={16} />
-                        </div>
-                        <span className="font-bold text-gray-900 text-sm">{voucher.code}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600 text-sm font-semibold">
-                      {voucher.discount_percentage}% OFF
-                    </td>
-                    <td className="px-6 py-4 text-gray-600 text-sm">
-                      {voucher.usage_count}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 text-sm">
-                      {voucher.expiry_date ? new Date(voucher.expiry_date).toLocaleDateString() : 'Never'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <button 
-                        onClick={() => handleToggle(voucher.id, voucher.active)}
-                        className={`px-3 py-1 rounded-full text-xs font-bold uppercase transition-colors ${
-                          voucher.active 
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                            : 'bg-red-100 text-red-700 hover:bg-red-200'
-                        }`}
-                      >
-                        {voucher.active ? 'Active' : 'Disabled'}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => handleDelete(voucher.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete Voucher"
-                      >
-                        <Delete01Icon size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* Mobile: cards */}
+          <div className="md:hidden flex flex-col gap-4">
+            {vouchers.map((voucher) => (
+              <div key={voucher.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm font-sans flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#ff5e00] shrink-0">
+                    <Ticket01Icon size={16} />
+                  </div>
+                  <span className="font-bold text-gray-900 text-sm">{voucher.code}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-gray-600 text-sm font-semibold">{voucher.discount_percentage}% OFF</span>
+                  <span className="text-gray-600 text-sm">Uses: {voucher.usage_count ?? 0}</span>
+                  <span className="text-gray-500 text-sm">{voucher.expiry_date ? new Date(voucher.expiry_date).toLocaleDateString() : "Never"}</span>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                  <button
+                    onClick={() => handleToggle(voucher.id, voucher.active)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${voucher.active ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-red-100 text-red-700 hover:bg-red-200"}`}
+                  >
+                    {voucher.active ? "Active" : "Disabled"}
+                  </button>
+                  <button onClick={() => handleDelete(voucher.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Delete"><Delete01Icon size={18} /></button>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+
+          {/* Desktop: table */}
+          <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left font-sans min-w-[640px]">
+                <thead className="bg-gray-50/80 border-b border-gray-100 uppercase text-[10px] tracking-wider text-gray-500 font-bold">
+                  <tr>
+                    <th className="px-6 py-4">Code</th>
+                    <th className="px-6 py-4">Discount</th>
+                    <th className="px-6 py-4">Uses</th>
+                    <th className="px-6 py-4">Expiry</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {vouchers.map((voucher) => (
+                    <tr key={voucher.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#ff5e00]">
+                            <Ticket01Icon size={16} />
+                          </div>
+                          <span className="font-bold text-gray-900 text-sm">{voucher.code}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 text-sm font-semibold">{voucher.discount_percentage}% OFF</td>
+                      <td className="px-6 py-4 text-gray-600 text-sm">{voucher.usage_count}</td>
+                      <td className="px-6 py-4 text-gray-500 text-sm">{voucher.expiry_date ? new Date(voucher.expiry_date).toLocaleDateString() : "Never"}</td>
+                      <td className="px-6 py-4">
+                        <button onClick={() => handleToggle(voucher.id, voucher.active)} className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${voucher.active ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-red-100 text-red-700 hover:bg-red-200"}`}>{voucher.active ? "Active" : "Disabled"}</button>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => handleDelete(voucher.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Delete Voucher"><Delete01Icon size={18} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

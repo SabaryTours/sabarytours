@@ -10,7 +10,6 @@ import {
   Logout05Icon,
   Cancel01Icon,
   UserCircleIcon,
-  File01Icon, // Added for 'Pages'
   Comment01Icon, // NEW
   Invoice01Icon, // NEW
   Ticket01Icon // NEW
@@ -27,7 +26,6 @@ const navItems = [
   { name: "Vouchers", href: "/admin/vouchers", icon: Ticket01Icon },
   { name: "Users", href: "/admin/users", icon: UserCircleIcon },
   { name: "Packages", href: "/admin/packages", icon: MapsIcon },
-  { name: 'Pages', href: '/admin/pages', icon: File01Icon },
   { name: 'Reviews', href: '/admin/reviews', icon: Comment01Icon },
   { name: "Tours", href: "/admin/tours", icon: MapsIcon },
   { name: "Blogs", href: "/admin/blogs", icon: Edit02Icon },

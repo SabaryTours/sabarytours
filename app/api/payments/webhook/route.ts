@@ -37,6 +37,35 @@ export async function POST(req: Request) {
 
       console.log(`[Webhook] Processing successful payment: ${reference}`);
 
+      // Top-up: update existing booking
+      if (metadata?.type === 'booking_topup' && metadata?.booking_id) {
+        const bookingId = String(metadata.booking_id);
+        const { data: existing } = await supabaseAdmin
+          .from('bookings')
+          .select('id, total_cost')
+          .eq('id', bookingId)
+          .single();
+
+        if (existing) {
+          const totalCost = Number(existing.total_cost) ?? 0;
+          const { error: updateErr } = await supabaseAdmin
+            .from('bookings')
+            .update({
+              amount_paid: totalCost,
+              payment_status: 'paid',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', bookingId);
+
+          if (updateErr) {
+            console.error(`[Webhook] Top-up update failed for ${bookingId}:`, updateErr);
+            return NextResponse.json({ message: 'Update error' }, { status: 500 });
+          }
+          console.log(`[Webhook] Top-up applied for booking ${bookingId}`);
+          return NextResponse.json({ message: 'Top-up processed' }, { status: 200 });
+        }
+      }
+
       // Check if booking already exists (from frontend callback race condition)
       const { data: existingBooking } = await supabaseAdmin
         .from('bookings')
