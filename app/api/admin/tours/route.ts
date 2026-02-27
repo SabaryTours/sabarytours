@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tourInput, imagesInput, tourId } = body;
+    const { tourInput, imagesInput, tourId, priceInput } = body;
 
     let finalTourId = tourId;
 
@@ -21,6 +21,21 @@ export async function POST(request: Request) {
       const { data: newTour, error: tourError } = await supabaseAdmin.from("tours").insert(tourInput).select().single();
       if (tourError) throw tourError;
       finalTourId = newTour.id;
+    }
+
+    // 2. Upsert Tour Prices
+    if (priceInput && priceInput.amount !== undefined) {
+      // For simplicity, we keep 1 base price per tour for now.
+      // Delete existing prices to ensure clean state
+      await supabaseAdmin.from("tour_prices").delete().eq("tour_id", finalTourId);
+
+      const { error: priceError } = await supabaseAdmin.from("tour_prices").insert({
+        tour_id: finalTourId,
+        amount: priceInput.amount,
+        currency: priceInput.currency || "GHS",
+        name: "Base Price"
+      });
+      if (priceError) throw priceError;
     }
 
 
@@ -40,6 +55,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, tourId: finalTourId });
   } catch (error: any) {
     console.error("Error creating/updating tour via Admin API:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: "Missing tour ID" }, { status: 400 });
+    }
+
+    // Cascade delete: images, prices, then tour
+    await supabaseAdmin.from("tour_images").delete().eq("tour_id", id);
+    await supabaseAdmin.from("tour_prices").delete().eq("tour_id", id);
+
+    const { error } = await supabaseAdmin.from("tours").delete().eq("id", id);
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("Error deleting tour via Admin API:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

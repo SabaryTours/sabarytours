@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 
 interface PaystackPaymentProps {
@@ -11,6 +11,50 @@ interface PaystackPaymentProps {
   metadata?: Record<string, string | number | null>;
 }
 
+declare global {
+  interface Window {
+    PaystackPop?: {
+      setup: (config: {
+        key: string;
+        email: string;
+        amount: number;
+        ref: string;
+        metadata?: Record<string, string | number | null>;
+        callback: (response: { reference: string }) => void;
+        onClose: () => void;
+      }) => { openIframe: () => void };
+    };
+  }
+}
+
+function loadPaystackScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // Already loaded
+    if (window.PaystackPop) {
+      resolve();
+      return;
+    }
+
+    // Check if script tag already exists but hasn't loaded yet
+    const existing = document.querySelector('script[src*="js.paystack.co"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () => reject(new Error("Failed to load Paystack script")));
+      // If it's already loaded (readyState check for edge cases)
+      if (window.PaystackPop) resolve();
+      return;
+    }
+
+    // Inject the script
+    const script = document.createElement("script");
+    script.src = "https://js.paystack.co/v2/inline.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Paystack script"));
+    document.head.appendChild(script);
+  });
+}
+
 export default function PaystackPayment({
   amount,
   email,
@@ -19,75 +63,62 @@ export default function PaystackPayment({
   metadata,
 }: PaystackPaymentProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [scriptReady, setScriptReady] = useState(false);
+
+  useEffect(() => {
+    loadPaystackScript()
+      .then(() => setScriptReady(true))
+      .catch(() => {
+        console.warn("Paystack inline script could not be loaded, will use redirect fallback");
+      });
+  }, []);
 
   const handlePayment = async () => {
     setIsProcessing(true);
 
     try {
-      // Initialize Paystack payment
-      // This is a placeholder - you'll need to integrate with Paystack API
-      // For now, we'll simulate the payment process
-      
-      // In production, you would:
-      // 1. Call your backend API to initialize Paystack payment
-      // 2. Get the payment reference
-      // 3. Redirect to Paystack checkout or use Paystack inline popup
-      
+      // 1. Initialize the transaction on the server
       const response = await fetch("/api/payments/initialize", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          amount: amount * 100, // Convert to kobo/pesewas
+          amount: Math.round(amount * 100), // Convert to pesewas/kobo
           email,
           metadata,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Payment initialization failed");
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Payment initialization failed");
       }
 
       const data = await response.json();
 
-      // Load Paystack inline script
-      if (typeof window !== "undefined") {
-        const windowWithPaystack = window as unknown as {
-          PaystackPop?: {
-            setup: (config: {
-              key: string;
-              email: string;
-              amount: number;
-              ref: string;
-              metadata?: Record<string, string | number | null>;
-              callback: (response: { reference: string }) => void;
-              onClose: () => void;
-            }) => { openIframe: () => void };
-          };
-        };
-
-        if (windowWithPaystack.PaystackPop) {
-          const handler = windowWithPaystack.PaystackPop.setup({
-            key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
-            email,
-            amount: amount * 100,
-            ref: data.reference,
-            metadata,
-            callback: function (response: { reference: string }) {
-              onSuccess(response.reference);
-              setIsProcessing(false);
-            },
-            onClose: function () {
-              onError("Payment window closed");
-              setIsProcessing(false);
-            },
-          });
-          handler.openIframe();
-        } else {
-          // Fallback: redirect to Paystack checkout
-          window.location.href = data.authorization_url;
-        }
+      // 2. Try inline popup first, fallback to redirect
+      if (window.PaystackPop) {
+        const handler = window.PaystackPop.setup({
+          key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
+          email,
+          amount: Math.round(amount * 100), // Paystack expects pesewas/kobo
+          ref: data.reference,
+          metadata,
+          callback: function (response: { reference: string }) {
+            onSuccess(response.reference);
+            setIsProcessing(false);
+          },
+          onClose: function () {
+            onError("Payment window closed");
+            setIsProcessing(false);
+          },
+        });
+        handler.openIframe();
+      } else {
+        // Fallback: redirect to Paystack hosted checkout
+        // The callback_url is set server-side in the initialize route
+        window.location.href = data.authorization_url;
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Payment failed. Please try again.";
@@ -119,7 +150,7 @@ export default function PaystackPayment({
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-4">
           <span className="text-[#222] text-[14px] font-semibold font-sans">Amount to Pay</span>
           <span className="text-[#ff5e00] text-[20px] font-bold font-sans">
-            ${amount.toFixed(2)}
+            GHS {amount.toFixed(2)}
           </span>
         </div>
 
@@ -183,4 +214,3 @@ export default function PaystackPayment({
     </div>
   );
 }
-

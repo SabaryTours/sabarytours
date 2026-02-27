@@ -35,11 +35,23 @@ export default function AdminToursPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this tour?')) return;
-    const supabase = createClient();
-    // Cascade delete handles related images and prices
-    await supabase.from('tours').delete().eq('id', id);
-    fetchTours();
+    if (!confirm('Are you sure you want to delete this tour? This will also remove all its images and pricing.')) return;
+    
+    try {
+      const res = await fetch(`/api/admin/tours?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete tour");
+      }
+
+      fetchTours();
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      alert(`Failed to delete the tour: ${error.message}`);
+    }
   };
 
   return (

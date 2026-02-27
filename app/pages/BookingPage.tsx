@@ -44,6 +44,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
   const [voucherCode, setVoucherCode] = useState<string>("");
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Mock available dates with slots
   const availableDates = useMemo(() => {
@@ -134,6 +135,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
       // Pre-fill user data
       const userData = await getUser();
       if (userData) {
+        setUserId(userData.id);
         setFormData(prev => ({
           ...prev,
           firstName: prev.firstName || userData.first_name || "",
@@ -157,10 +159,13 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
 
   const handlePaymentSuccess = async (reference: string) => {
     try {
+      // Get current user to set user_id on booking
+      const userData = await getUser();
+      
       const bookingData = {
         ...formData,
         numberOfPeople: totalPeople,
-        tierSelections, // Pass precise breakdown if needed
+        tierSelections,
         paymentReference: reference,
         paymentOption,
         voucherCode: voucherCode || null,
@@ -169,6 +174,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
         paymentAmount,
         tourId: tour.id,
         tourSlug: tour.slug,
+        userId: userData?.id || null,
       };
 
       const response = await fetch("/api/bookings", {
@@ -560,11 +566,18 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                           metadata={{
                             tourId: tour.id,
                             tourSlug: tour.slug,
+                            userId: userId,
+                            packageName: tour.title,
+                            customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+                            customerPhone: formData.phone,
                             numberOfPeople: totalPeople,
                             date: formData.date,
                             timeSlot: formData.timeSlot,
                             pickupLocation: formData.pickupLocation,
                             paymentOption,
+                            totalCost: totalPrice,
+                            paymentAmount: paymentAmount,
+                            voucherCode: voucherCode || null,
                           }}
                         />
                       </div>

@@ -9,11 +9,48 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
+    // 0. Verify with Paystack (Source of Truth)
+    if (body.paymentReference && body.paymentReference !== 'cash') {
+      const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
+      if (!paystackSecretKey) throw new Error("Missing Paystack secret key");
+
+      const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${body.paymentReference}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${paystackSecretKey}`,
+        },
+      });
+
+      const verifyData = await verifyRes.json();
+      if (!verifyData.status || verifyData.data.status !== "success") {
+        throw new Error("Payment verification failed. The transaction was not successful according to Paystack.");
+      }
+
+      // Optional: Check if amount matches. Paystack returns amount in pesewas
+      const expectedPesewas = Math.round(body.paymentAmount * 100);
+      if (verifyData.data.amount < expectedPesewas) {
+        console.warn(`Payment amount mismatch. Expected: ${expectedPesewas}, Paid: ${verifyData.data.amount}`);
+      }
+    }
+
+    // 0.5 Check if booking already exists (Webhooks might have raced us)
+    const { data: existingBooking } = await supabaseAdmin
+      .from("bookings")
+      .select("id")
+      .eq("payment_reference", body.paymentReference)
+      .maybeSingle();
+
+    if (existingBooking) {
+      return NextResponse.json({ success: true, booking: existingBooking, note: "Already processed by webhook" });
+    }
+
     // 1. Save to Supabase
     const { data: booking, error } = await supabaseAdmin
       .from("bookings")
       .insert({
-        tour_id: body.tourId,
+        // Only assign tour_id if it's a valid UUID string
+        tour_id: typeof body.tourId === 'string' ? body.tourId : null,
+        user_id: body.userId || null,
         // Using legacy_id or tour_id depending on database setup. We'll map what we have.
         legacy_id: typeof body.tourId === 'number' ? body.tourId : null,
         customer_name: `${body.firstName} ${body.lastName}`.trim(),
@@ -39,6 +76,50 @@ export async function POST(request: Request) {
     if (error) {
       console.error("Supabase insert error:", error);
       throw error;
+    }
+
+    // 1.5 Give Sabary Miles (1 point per $10 spent)
+    if (body.userId) {
+      try {
+        const pointsEarned = Math.floor(body.totalPrice / 10);
+
+        // Fetch current points
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("mileage_points")
+          .eq("id", body.userId)
+          .single();
+
+        if (profile !== null) {
+          const newPoints = (profile.mileage_points || 0) + pointsEarned;
+          await supabaseAdmin
+            .from("profiles")
+            .update({ mileage_points: newPoints })
+            .eq("id", body.userId);
+        }
+      } catch (pointsErr) {
+        console.error("Failed to award points:", pointsErr);
+      }
+    }
+
+    // 1.8 Increment Voucher usage count
+    if (body.voucherCode) {
+      try {
+        const { data: voucher } = await supabaseAdmin
+          .from("vouchers")
+          .select("id, usage_count")
+          .eq("code", (body.voucherCode as string).toUpperCase())
+          .single();
+
+        if (voucher) {
+          await supabaseAdmin
+            .from("vouchers")
+            .update({ usage_count: (voucher.usage_count || 0) + 1 })
+            .eq("id", voucher.id);
+        }
+      } catch (voucherErr) {
+        console.error("Failed to increment voucher usage:", voucherErr);
+      }
     }
 
     // 2. Send Email via Mailchimp Transactional (Mandrill)

@@ -92,8 +92,10 @@ export const getUser = async () => {
 
 export const isAuthenticated = async (): Promise<boolean> => {
   const supabase = createClient();
-  const { data } = await supabase.auth.getSession();
-  return !!data.session;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return !!user;
 };
 
 export const forgotPassword = async (email: string) => {

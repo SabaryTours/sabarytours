@@ -28,9 +28,19 @@ export default function AdminPackagesPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this package?')) return;
-    const supabase = createClient();
-    await supabase.from('packages').delete().eq('id', id);
-    fetchPackages();
+    
+    try {
+      const res = await fetch(`/api/admin/packages?id=${id}`, {
+        method: "DELETE",
+      });
+      
+      if (!res.ok) throw new Error("Failed to delete package");
+      
+      fetchPackages();
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Failed to delete the package. Make sure it has no tours attached to it.");
+    }
   };
 
   return (
