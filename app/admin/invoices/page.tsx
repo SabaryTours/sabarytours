@@ -129,72 +129,81 @@ export default function AdminInvoicesPage() {
         </div>
       )}
 
-      {/* Invoices Table */}
-      <div className="bg-white border text-sm font-sans border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        {invoices.length === 0 ? (
-          <div className="p-16 text-center text-gray-500 font-sans border-dashed border-2 m-8 rounded-xl border-gray-200 bg-gray-50">
-            <MailSend01Icon size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-bold text-gray-900 mb-1">No Invoices Yet</h3>
-            <p>Click the button above to generate and send your first custom Paystack invoice.</p>
+      {/* Mobile: cards */}
+      {invoices.length === 0 ? (
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-16 text-center text-gray-500 font-sans">
+          <MailSend01Icon size={48} className="mx-auto text-gray-400 mb-4" />
+          <h3 className="text-lg font-bold text-gray-900 mb-1">No Invoices Yet</h3>
+          <p>Click the button above to generate and send your first custom Paystack invoice.</p>
+        </div>
+      ) : (
+        <>
+          <div className="md:hidden flex flex-col gap-4">
+            {invoices.map((inv) => (
+              <div key={inv.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm font-sans flex flex-col gap-3">
+                <div className="font-bold text-gray-900">{inv.client_name}</div>
+                <div className="text-gray-500 text-xs truncate">{inv.client_email}</div>
+                <p className="text-sm text-gray-700 line-clamp-2">{inv.description}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium text-gray-900">GHS {inv.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${inv.status === "paid" ? "bg-green-100 text-green-800" : inv.status === "cancelled" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}`}>{inv.status}</span>
+                </div>
+                <p className="text-gray-500 text-xs">{format(new Date(inv.created_at), "MMM d, yyyy")}</p>
+                {inv.payment_url ? (
+                  <button onClick={() => copyToClipboard(inv.payment_url)} className="w-full inline-flex items-center justify-center gap-1.5 text-xs text-[#ff5e00] font-bold bg-orange-50 hover:bg-orange-100 px-3 py-2 rounded-lg border border-orange-200">
+                    <Link01Icon size={14} /> Copy payment link
+                  </button>
+                ) : (
+                  <span className="text-gray-400 text-xs italic">No link</span>
+                )}
+              </div>
+            ))}
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 border-b border-gray-200 text-gray-500 uppercase text-xs tracking-wider font-semibold">
-                <tr>
-                  <th className="py-4 px-6">Client</th>
-                  <th className="py-4 px-6">Description</th>
-                  <th className="py-4 px-6">Amount</th>
-                  <th className="py-4 px-6">Status</th>
-                  <th className="py-4 px-6">Date</th>
-                  <th className="py-4 px-6 text-right">Payment Link</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-gray-700">
-                {invoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="py-4 px-6">
-                      <div className="font-bold text-gray-900">{inv.client_name}</div>
-                      <div className="text-gray-500 text-xs mt-0.5">{inv.client_email}</div>
-                    </td>
-                    <td className="py-4 px-6 max-w-xs truncate" title={inv.description}>
-                      {inv.description}
-                    </td>
-                    <td className="py-4 px-6 font-medium text-gray-900">
-                      GHS {inv.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
-                        ${inv.status === 'paid' ? 'bg-green-100 text-green-800' : 
-                          inv.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
-                          'bg-amber-100 text-amber-800'}
-                      `}>
-                        {inv.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-gray-500 text-xs">
-                      {format(new Date(inv.created_at), "MMM d, yyyy")}
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      {inv.payment_url ? (
-                        <button
-                          onClick={() => copyToClipboard(inv.payment_url)}
-                          className="inline-flex items-center gap-1.5 text-xs text-[#ff5e00] font-bold hover:text-[#e55500] bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded transition-colors border border-orange-200"
-                        >
-                          <Link01Icon size={14} />
-                          Copy Link
-                        </button>
-                      ) : (
-                        <span className="text-gray-400 text-xs italic">N/A</span>
-                      )}
-                    </td>
+
+          {/* Desktop: table */}
+          <div className="hidden md:block bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left min-w-[640px]">
+                <thead className="bg-slate-50 border-b border-gray-200 text-gray-500 uppercase text-xs tracking-wider font-semibold">
+                  <tr>
+                    <th className="py-4 px-6">Client</th>
+                    <th className="py-4 px-6">Description</th>
+                    <th className="py-4 px-6">Amount</th>
+                    <th className="py-4 px-6">Status</th>
+                    <th className="py-4 px-6">Date</th>
+                    <th className="py-4 px-6 text-right">Payment Link</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-gray-700">
+                  {invoices.map((inv) => (
+                    <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="py-4 px-6">
+                        <div className="font-bold text-gray-900">{inv.client_name}</div>
+                        <div className="text-gray-500 text-xs mt-0.5">{inv.client_email}</div>
+                      </td>
+                      <td className="py-4 px-6 max-w-xs truncate" title={inv.description}>{inv.description}</td>
+                      <td className="py-4 px-6 font-medium text-gray-900">GHS {inv.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td className="py-4 px-6">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${inv.status === "paid" ? "bg-green-100 text-green-800" : inv.status === "cancelled" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}`}>{inv.status}</span>
+                      </td>
+                      <td className="py-4 px-6 text-gray-500 text-xs">{format(new Date(inv.created_at), "MMM d, yyyy")}</td>
+                      <td className="py-4 px-6 text-right">
+                        {inv.payment_url ? (
+                          <button onClick={() => copyToClipboard(inv.payment_url)} className="inline-flex items-center gap-1.5 text-xs text-[#ff5e00] font-bold hover:text-[#e55500] bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded border border-orange-200">
+                            <Link01Icon size={14} /> Copy Link
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-xs italic">N/A</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* New Invoice Modal */}
       {isModalOpen && (

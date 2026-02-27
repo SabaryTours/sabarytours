@@ -70,9 +70,45 @@ export default function AdminToursPage() {
         </Link>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100/50 overflow-hidden">
+      {/* Mobile: cards */}
+      <div className="md:hidden flex flex-col gap-4">
+        {loading ? (
+          <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-500 font-sans">Loading tours...</div>
+        ) : tours.length === 0 ? (
+          <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-500 font-sans">No tours found.</div>
+        ) : (
+          tours.map((tour) => {
+            const primaryImage = tour.tour_images?.[0]?.image_url || "/assets/placeholder-tour.jpg";
+            const price = tour.tour_prices?.[0]?.amount || 0;
+            return (
+              <div key={tour.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm font-sans flex flex-col gap-3">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 relative rounded-lg overflow-hidden bg-gray-100 shrink-0">
+                    <Image src={primaryImage} alt="" fill className="object-cover" unoptimized />
+                  </div>
+                  <p className="text-sm font-bold text-gray-800 font-sans line-clamp-2 flex-1 min-w-0">{tour.title}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-gray-600 font-sans capitalize">{tour.category?.replace(/_/g, " ") || "Unknown"}</span>
+                  <span className="text-sm font-semibold text-gray-800 font-sans">{tour.currency || "GHS"} {price}</span>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-sans border ${tour.status === "published" ? "bg-green-50 text-green-700 border-green-200" : "bg-yellow-50 text-yellow-700 border-yellow-200"}`}>
+                    {tour.status === "published" ? "Published" : "Draft"}
+                  </span>
+                </div>
+                <div className="flex gap-2 pt-2 border-t border-gray-100">
+                  <Link href={`/admin/tours/${tour.id}`} className="p-2 text-gray-400 hover:text-[#0060cc] hover:bg-[#0060cc]/10 rounded-lg" title="Edit"><Edit02Icon size={18} /></Link>
+                  <button onClick={() => handleDelete(tour.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Delete"><Delete01Icon size={18} /></button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100/50 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[640px]">
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider font-sans">Tour</th>
@@ -84,60 +120,33 @@ export default function AdminToursPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500 font-sans">Loading tours...</td>
-                </tr>
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500 font-sans">Loading tours...</td></tr>
               ) : tours.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500 font-sans">No tours found.</td>
-                </tr>
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500 font-sans">No tours found.</td></tr>
               ) : tours.map((tour) => {
-                const primaryImage = tour.tour_images?.[0]?.image_url || '/assets/placeholder-tour.jpg';
+                const primaryImage = tour.tour_images?.[0]?.image_url || "/assets/placeholder-tour.jpg";
                 const price = tour.tour_prices?.[0]?.amount || 0;
-                
                 return (
                   <tr key={tour.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 relative rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                        <div className="h-10 w-10 relative rounded-lg overflow-hidden bg-gray-100 shrink-0">
                           <Image src={primaryImage} alt="" fill className="object-cover" unoptimized />
                         </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-800 font-sans">{tour.title}</p>
-                        </div>
+                        <p className="text-sm font-bold text-gray-800 font-sans">{tour.title}</p>
                       </div>
                     </td>
+                    <td className="px-6 py-4"><span className="text-sm text-gray-600 font-sans capitalize">{tour.category?.replace(/_/g, " ") || "Unknown"}</span></td>
+                    <td className="px-6 py-4"><span className="text-sm font-semibold text-gray-800 font-sans">{tour.currency || "GHS"} {price}</span></td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600 font-sans capitalize">{tour.category?.replace(/_/g, ' ') || 'Unknown'}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-semibold text-gray-800 font-sans">{tour.currency || 'GHS'} {price}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-sans border ${
-                        tour.status === 'published' 
-                          ? 'bg-green-50 text-green-700 border-green-200' 
-                          : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                      }`}>
-                        {tour.status === 'published' ? 'Published' : 'Draft'}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-sans border ${tour.status === "published" ? "bg-green-50 text-green-700 border-green-200" : "bg-yellow-50 text-yellow-700 border-yellow-200"}`}>
+                        {tour.status === "published" ? "Published" : "Draft"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        <Link 
-                          href={`/admin/tours/${tour.id}`}
-                          className="p-2 text-gray-400 hover:text-[#0060cc] hover:bg-[#0060cc]/10 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Edit02Icon size={18} />
-                        </Link>
-                        <button 
-                          onClick={() => handleDelete(tour.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Delete01Icon size={18} />
-                        </button>
+                        <Link href={`/admin/tours/${tour.id}`} className="p-2 text-gray-400 hover:text-[#0060cc] hover:bg-[#0060cc]/10 rounded-lg" title="Edit"><Edit02Icon size={18} /></Link>
+                        <button onClick={() => handleDelete(tour.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Delete"><Delete01Icon size={18} /></button>
                       </div>
                     </td>
                   </tr>

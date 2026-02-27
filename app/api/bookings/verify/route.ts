@@ -46,6 +46,35 @@ export async function GET(request: Request) {
 
     const { amount, customer, metadata } = verifyData.data;
 
+    // 2b. Top-up: update existing booking instead of creating
+    if (metadata?.type === "booking_topup" && metadata?.booking_id) {
+      const bookingId = String(metadata.booking_id);
+      const { data: existing } = await supabaseAdmin
+        .from("bookings")
+        .select("id, total_cost")
+        .eq("id", bookingId)
+        .single();
+
+      if (existing) {
+        const totalCost = Number(existing.total_cost) ?? 0;
+        const paidNow = amount / 100;
+        const { error: updateErr } = await supabaseAdmin
+          .from("bookings")
+          .update({
+            amount_paid: totalCost,
+            payment_status: "paid",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", bookingId);
+
+        if (updateErr) {
+          console.error("[Verify] Top-up update error:", updateErr);
+          return NextResponse.json({ success: false, error: updateErr.message }, { status: 500 });
+        }
+        return NextResponse.json({ success: true, booking: { id: bookingId }, note: "Top-up applied" });
+      }
+    }
+
     // 3. Create the booking
     const { data: booking, error } = await supabaseAdmin
       .from("bookings")

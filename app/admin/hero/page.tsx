@@ -181,75 +181,76 @@ export default function HeroAdminPage() {
           </label>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 font-semibold text-gray-600 font-sans text-sm">Order</th>
-                <th className="px-6 py-4 font-semibold text-gray-600 font-sans text-sm">Image</th>
-                <th className="px-6 py-4 font-semibold text-gray-600 font-sans text-sm">Status</th>
-                <th className="px-6 py-4 font-semibold text-gray-600 font-sans text-sm text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {images.map((img, index) => (
-                <tr key={img.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col items-center gap-1 w-min">
-                      <button 
-                        onClick={() => moveOrder(index, 'up')}
-                        disabled={index === 0}
-                        className={`p-1 rounded text-gray-500 hover:bg-gray-200 ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}`}
-                      >
-                        <ArrowUp01Icon size={16} />
-                      </button>
-                      <span className="font-semibold text-gray-700">{img.display_order}</span>
-                      <button 
-                        onClick={() => moveOrder(index, 'down')}
-                        disabled={index === images.length - 1}
-                        className={`p-1 rounded text-gray-500 hover:bg-gray-200 ${index === images.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
-                      >
-                        <ArrowDown01Icon size={16} />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="relative w-32 h-20 rounded-lg overflow-hidden border border-gray-200">
-                      <Image 
-                        src={img.image_url} 
-                        alt="Hero Image" 
-                        fill 
-                        className="object-cover" 
-                        unoptimized 
-                      />
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => toggleActive(img.id, img.is_active)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        img.is_active 
-                          ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      } transition-colors`}
-                    >
-                      {img.is_active ? 'Active' : 'Inactive'}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => handleDelete(img.id)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors inline-block"
-                      title="Delete Image"
-                    >
-                      <Delete01Icon size={20} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {/* Mobile: cards */}
+          <div className="md:hidden flex flex-col gap-4">
+            {images.map((img, index) => (
+              <div key={img.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm font-sans flex flex-col gap-3">
+                <div className="relative w-full aspect-2/1 rounded-lg overflow-hidden border border-gray-200">
+                  <Image src={img.image_url} alt="Hero Image" fill className="object-cover" unoptimized />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-gray-700">Order {img.display_order}</span>
+                  <button
+                    onClick={() => toggleActive(img.id, img.is_active)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${img.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}
+                  >
+                    {img.is_active ? "Active" : "Inactive"}
+                  </button>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                  <div className="flex gap-1">
+                    <button onClick={() => moveOrder(index, "up")} disabled={index === 0} className={`p-2 rounded-lg text-gray-500 hover:bg-gray-200 ${index === 0 ? "opacity-30 cursor-not-allowed" : ""}`}><ArrowUp01Icon size={18} /></button>
+                    <button onClick={() => moveOrder(index, "down")} disabled={index === images.length - 1} className={`p-2 rounded-lg text-gray-500 hover:bg-gray-200 ${index === images.length - 1 ? "opacity-30 cursor-not-allowed" : ""}`}><ArrowDown01Icon size={18} /></button>
+                  </div>
+                  <button onClick={() => handleDelete(img.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Delete"><Delete01Icon size={20} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left min-w-[560px]">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 font-semibold text-gray-600 font-sans text-sm">Order</th>
+                    <th className="px-6 py-4 font-semibold text-gray-600 font-sans text-sm">Image</th>
+                    <th className="px-6 py-4 font-semibold text-gray-600 font-sans text-sm">Status</th>
+                    <th className="px-6 py-4 font-semibold text-gray-600 font-sans text-sm text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {images.map((img, index) => (
+                    <tr key={img.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col items-center gap-1 w-min">
+                          <button onClick={() => moveOrder(index, "up")} disabled={index === 0} className={`p-1 rounded text-gray-500 hover:bg-gray-200 ${index === 0 ? "opacity-30 cursor-not-allowed" : ""}`}><ArrowUp01Icon size={16} /></button>
+                          <span className="font-semibold text-gray-700">{img.display_order}</span>
+                          <button onClick={() => moveOrder(index, "down")} disabled={index === images.length - 1} className={`p-1 rounded text-gray-500 hover:bg-gray-200 ${index === images.length - 1 ? "opacity-30 cursor-not-allowed" : ""}`}><ArrowDown01Icon size={16} /></button>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="relative w-32 h-20 rounded-lg overflow-hidden border border-gray-200">
+                          <Image src={img.image_url} alt="Hero Image" fill className="object-cover" unoptimized />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button onClick={() => toggleActive(img.id, img.is_active)} className={`px-3 py-1 rounded-full text-xs font-semibold ${img.is_active ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-100 text-gray-600 hover:bg-gray-200"} transition-colors`}>
+                          {img.is_active ? "Active" : "Inactive"}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => handleDelete(img.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors inline-block" title="Delete Image"><Delete01Icon size={20} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

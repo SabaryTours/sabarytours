@@ -28,9 +28,14 @@ export async function GET() {
       return {
         id: u.id,
         email: u.email,
-        phone: u.phone || profile?.phone_number || 'No phone',
-        full_name: profile?.full_name || u.user_metadata?.full_name || u.user_metadata?.name || 'Anonymous',
-        role: profile?.role || 'user',
+        phone: u.phone || profile?.phone_number || "No phone",
+        full_name:
+          profile?.full_name ||
+          u.user_metadata?.full_name ||
+          u.user_metadata?.name ||
+          u.email ||
+          "No name",
+        role: profile?.role || "user",
         created_at: u.created_at,
         avatar_url: profile?.avatar_url || u.user_metadata?.avatar_url
       };

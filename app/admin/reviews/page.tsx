@@ -98,14 +98,50 @@ export default function AdminReviewsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Mobile: cards */}
+      <div className="md:hidden flex flex-col gap-4">
         {reviews.length === 0 ? (
-          <div className="p-12 text-center text-gray-500 font-sans">
-            No reviews found.
-          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-12 text-center text-gray-500 font-sans">No reviews found.</div>
+        ) : (
+          reviews.map((review) => (
+            <div key={review.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm font-sans flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-bold text-gray-900">{review.name}</div>
+                  <div className="text-xs text-gray-500">{format(new Date(review.created_at), "MMM d, yyyy")}</div>
+                </div>
+                <span className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium uppercase ${review.status === "approved" ? "bg-green-100 text-green-800" : review.status === "rejected" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}`}>{review.status}</span>
+              </div>
+              <div className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <StarIcon key={star} size={16} fill={review.rating >= star ? "#ffb400" : "none"} color={review.rating >= star ? "#ffb400" : "#d1d5db"} />
+                ))}
+              </div>
+              <p className="text-gray-700 text-sm line-clamp-3" title={review.message}>"{review.message}"</p>
+              {review.source === "tour_comment" && (
+                <span className="inline-block w-fit text-[10px] uppercase font-bold tracking-wider text-[#ff5e00] bg-orange-50 px-2 py-0.5 rounded">Tour Page</span>
+              )}
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                {review.status !== "approved" && (
+                  <button onClick={() => updateStatus(review.id, "approved")} title="Approve" className="p-1.5 text-green-600 hover:bg-green-50 rounded"><CheckmarkBadge01Icon size={18} /></button>
+                )}
+                {review.status !== "rejected" && (
+                  <button onClick={() => updateStatus(review.id, "rejected")} title="Reject" className="p-1.5 text-amber-600 hover:bg-amber-50 rounded"><Cancel01Icon size={18} /></button>
+                )}
+                <button onClick={() => deleteReview(review.id)} title="Delete" className="p-1.5 text-red-600 hover:bg-red-50 rounded ml-auto"><Delete02Icon size={18} /></button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {reviews.length === 0 ? (
+          <div className="p-12 text-center text-gray-500 font-sans">No reviews found.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left font-sans text-sm">
+            <table className="w-full text-left font-sans text-sm min-w-[640px]">
               <thead className="bg-gray-50 text-gray-600 border-b border-gray-200 uppercase text-xs">
                 <tr>
                   <th className="py-4 px-6 font-medium">Author</th>
@@ -119,82 +155,34 @@ export default function AdminReviewsPage() {
                 {reviews.map((review) => (
                   <tr key={review.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        {/* <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-200">
-                          {review.image_url && review.image_url.startsWith('data:image') ? (
-                            <img src={review.image_url} alt={review.name} className="w-full h-full object-cover" />
-                          ) : review.image_url ? (
-                            <Image src={review.image_url} alt={review.name} width={40} height={40} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500 font-bold">
-                              {review.name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                        </div> */}
-                        <div>
-                          <div className="font-bold text-gray-900">{review.name}</div>
-                          <div className="text-xs text-gray-500">{format(new Date(review.created_at), 'MMM d, yyyy')}</div>
-                        </div>
-                      </div>
+                      <div className="font-bold text-gray-900">{review.name}</div>
+                      <div className="text-xs text-gray-500">{format(new Date(review.created_at), "MMM d, yyyy")}</div>
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((star) => (
-                          <StarIcon
-                            key={star}
-                            size={16}
-                            fill={review.rating >= star ? "#ffb400" : "none"}
-                            color={review.rating >= star ? "#ffb400" : "#d1d5db"}
-                          />
+                          <StarIcon key={star} size={16} fill={review.rating >= star ? "#ffb400" : "none"} color={review.rating >= star ? "#ffb400" : "#d1d5db"} />
                         ))}
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <p className="text-gray-700 line-clamp-2 md:line-clamp-3" title={review.message}>
-                        "{review.message}"
-                      </p>
-                      {review.source === 'tour_comment' && (
-                        <span className="inline-block mt-2 text-[10px] uppercase font-bold tracking-wider text-[#ff5e00] bg-orange-50 px-2 py-0.5 rounded">
-                          Tour Page
-                        </span>
+                      <p className="text-gray-700 line-clamp-2 md:line-clamp-3" title={review.message}>"{review.message}"</p>
+                      {review.source === "tour_comment" && (
+                        <span className="inline-block mt-2 text-[10px] uppercase font-bold tracking-wider text-[#ff5e00] bg-orange-50 px-2 py-0.5 rounded">Tour Page</span>
                       )}
                     </td>
                     <td className="py-4 px-6">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium uppercase tracking-wider
-                        ${review.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                          review.status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                          'bg-amber-100 text-amber-800'}
-                      `}>
-                        {review.status}
-                      </span>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium uppercase ${review.status === "approved" ? "bg-green-100 text-green-800" : review.status === "rejected" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}`}>{review.status}</span>
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center justify-end gap-2">
-                        {review.status !== 'approved' && (
-                          <button
-                            onClick={() => updateStatus(review.id, 'approved')}
-                            title="Approve Review"
-                            className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
-                          >
-                            <CheckmarkBadge01Icon size={18} />
-                          </button>
+                        {review.status !== "approved" && (
+                          <button onClick={() => updateStatus(review.id, "approved")} title="Approve Review" className="p-1.5 text-green-600 hover:bg-green-50 rounded"><CheckmarkBadge01Icon size={18} /></button>
                         )}
-                        {review.status !== 'rejected' && (
-                          <button
-                            onClick={() => updateStatus(review.id, 'rejected')}
-                            title="Reject Review"
-                            className="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition-colors"
-                          >
-                            <Cancel01Icon size={18} />
-                          </button>
+                        {review.status !== "rejected" && (
+                          <button onClick={() => updateStatus(review.id, "rejected")} title="Reject Review" className="p-1.5 text-amber-600 hover:bg-amber-50 rounded"><Cancel01Icon size={18} /></button>
                         )}
-                        <button
-                          onClick={() => deleteReview(review.id)}
-                          title="Delete Permanently"
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors ml-2"
-                        >
-                          <Delete02Icon size={18} />
-                        </button>
+                        <button onClick={() => deleteReview(review.id)} title="Delete Permanently" className="p-1.5 text-red-600 hover:bg-red-50 rounded ml-2"><Delete02Icon size={18} /></button>
                       </div>
                     </td>
                   </tr>
