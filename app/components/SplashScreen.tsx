@@ -81,28 +81,15 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
               backgroundColor: '#ff5e00',
             }}
           >
-            {/* Hero SVG Overlay */}
-            <div className="absolute inset-0">
-              <Image
-                src="/assets/pattern.svg"
-                alt="Hero overlay"
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
 
             {/* Pattern Overlay */}
             <div 
               className="absolute inset-0"
               style={{
-                backgroundImage: 'url(/assets/waterfall.png)',
+                backgroundImage: 'url(/assets/pattern.svg)',
                 backgroundRepeat: 'repeat',
                 backgroundSize: 'auto',
-                opacity: 0.9,
-                mixBlendMode: 'overlay',
-                pointerEvents: 'none',
-              }}
+         }}
             />
 
             {/* Content */}

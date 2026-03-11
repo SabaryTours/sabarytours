@@ -108,20 +108,132 @@ export async function POST(request: Request) {
               to: [{ email: client_email, name: client_name, type: "to" }],
               subject: `Invoice from Sabary Tours: ${description}`,
               html: `
-                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-                  <h2>Hello ${client_name},</h2>
-                  <p>A new invoice has been generated for you by Sabary Tours.</p>
-                  <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="margin-top: 0; color: #ff5e00;">Invoice Details</h3>
-                    <p><strong>Description:</strong> ${description}</p>
-                    <p><strong>Amount Due:</strong> GHS ${parseFloat(amount).toFixed(2)}</p>
-                  </div>
-                  <p>You can pay securely online using the link below:</p>
-                  <div style="margin: 30px 0; text-align: center;">
-                    <a href="${paymentUrl}" style="background-color: #ff5e00; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Pay Invoice Now</a>
-                  </div>
-                  <p>If you have any questions, please reply to this email.</p>
-                  <p>Thank you,<br><strong>The Sabary Tours Team</strong></p>
+                <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 640px; margin: 0 auto; background-color: #f5f7fb; padding: 24px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; background-color: #ffffff; border-radius: 16px; overflow: hidden;">
+                    <tr>
+                      <td style="padding: 24px 24px 16px 24px; border-bottom: 4px solid #0060cc;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                          <tr>
+                            <td style="vertical-align: top;">
+                              <div style="font-weight: 700; font-size: 18px; color: #111827; margin-bottom: 4px;">Sabary Travel and Tours</div>
+                              <div style="font-size: 12px; color: #6b7280; line-height: 1.5;">
+                                Greda Estate, 6th Avenue<br/>
+                                Accra, Ghana<br/>
+                                bookings@sabarytours.com<br/>
+                                +233 576 093 838
+                              </div>
+                            </td>
+                            <td style="text-align: right; vertical-align: top;">
+                              <div style="font-size: 24px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #0060cc; margin-bottom: 8px;">Invoice</div>
+                              <table cellpadding="0" cellspacing="0" style="font-size: 12px; color: #4b5563; margin-left: auto;">
+                                <tr>
+                                  <td style="padding: 2px 8px;">Date:</td>
+                                  <td style="padding: 2px 0;">${new Date().toLocaleDateString()}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 2px 8px;">Invoice #:</td>
+                                  <td style="padding: 2px 0;">${reference}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 2px 8px;">Customer:</td>
+                                  <td style="padding: 2px 0;">${client_name}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 2px 8px;">Due date:</td>
+                                  <td style="padding: 2px 0;">Upon receipt</td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="padding: 20px 24px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                          <tr>
+                            <td style="vertical-align: top; padding-right: 16px;">
+                              <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: #9ca3af; margin-bottom: 4px;">Bill To</div>
+                              <div style="font-size: 14px; font-weight: 600; color: #111827;">${client_name}</div>
+                              <div style="font-size: 13px; color: #6b7280; margin-top: 2px;">${client_email}</div>
+                            </td>
+                            <td style="vertical-align: top; padding-left: 16px; border-left: 1px solid #e5e7eb;">
+                              <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: #9ca3af; margin-bottom: 4px;">Invoice Details</div>
+                              <div style="font-size: 13px; color: #374151; line-height: 1.6;">
+                                <div><span style="color:#6b7280;">Description:</span> <strong>${description}</strong></div>
+                                <div><span style="color:#6b7280;">Status:</span> <strong>Pending payment</strong></div>
+                              </div>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="padding: 0 24px 20px 24px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border-top: 1px solid #e5e7eb;">
+                          <thead>
+                            <tr>
+                              <th align="left" style="padding: 12px 0; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6b7280;">Description</th>
+                              <th align="right" style="padding: 12px 0; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6b7280;">Amount (GHS)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td style="padding: 10px 0; font-size: 13px; color: #374151; border-top: 1px solid #e5e7eb;">
+                                <div style="font-weight: 600;">${description}</div>
+                                <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">
+                                  Custom invoice issued by Sabary Tours.
+                                </div>
+                              </td>
+                              <td style="padding: 10px 0; font-size: 13px; color: #111827; font-weight: 600; border-top: 1px solid #e5e7eb;" align="right">
+                                ${parseFloat(amount).toFixed(2)}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="padding: 0 24px 24px 24px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                          <tr>
+                            <td></td>
+                            <td width="220" style="font-size: 13px; color: #374151;">
+                              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                                <tr>
+                                  <td align="left" style="padding: 4px 0; color:#6b7280;">Subtotal</td>
+                                  <td align="right" style="padding: 4px 0;">GHS ${parseFloat(amount).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                  <td align="left" style="padding: 4px 0; font-weight:700; border-top:1px solid #e5e7eb; padding-top:8px;">Total Due</td>
+                                  <td align="right" style="padding: 4px 0; font-weight:700; border-top:1px solid #e5e7eb; padding-top:8px;">GHS ${parseFloat(amount).toFixed(2)}</td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="padding: 0 24px 28px 24px; text-align: center;">
+                        <a href="${paymentUrl}" style="background-color: #ff5e00; color: #ffffff; padding: 12px 32px; border-radius: 9999px; font-size: 14px; font-weight: 700; text-decoration: none; display: inline-block; box-shadow: 0 10px 25px rgba(255,94,0,0.35);">
+                          Pay Invoice Now
+                        </a>
+                        <p style="font-size: 12px; color: #6b7280; margin-top: 12px;">
+                          If the button does not work, copy and paste this link into your browser:<br/>
+                          <span style="color:#0060cc; word-break: break-all;">${paymentUrl}</span>
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <p style="margin-top: 16px; font-size: 11px; color: #9ca3af; text-align: center;">
+                    Thank you for choosing Sabary Tours. If you have any questions about this invoice, please reply to this email.
+                  </p>
                 </div>
               `
             }

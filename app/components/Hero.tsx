@@ -62,7 +62,7 @@ export default function Hero({ initialImages = [] }: { initialImages?: string[] 
         {/* Popular searches tags */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <span className="text-white/80 text-sm font-medium font-sans">Popular:</span>
-          {["Kakum National Park", "Boti Falls", "Cape Coast Castle", "Accra City Tour"].map((tag) => (
+          {["Kakum", "Quad Bike", "Cape Coast & Elmina", "Accra City Tour", "Safari Valley"].map((tag) => (
             <button key={tag} className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-medium backdrop-blur-sm transition-all whitespace-nowrap">
               {tag}
             </button>

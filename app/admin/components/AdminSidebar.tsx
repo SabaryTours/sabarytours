@@ -10,9 +10,9 @@ import {
   Logout05Icon,
   Cancel01Icon,
   UserCircleIcon,
-  Comment01Icon, // NEW
-  Invoice01Icon, // NEW
-  Ticket01Icon // NEW
+  Comment01Icon,
+  Invoice01Icon,
+  Ticket01Icon,
 } from "hugeicons-react";
 import { logout } from "../../lib/authService";
 import Image from "next/image";
@@ -29,6 +29,7 @@ const navItems = [
   { name: 'Reviews', href: '/admin/reviews', icon: Comment01Icon },
   { name: "Tours", href: "/admin/tours", icon: MapsIcon },
   { name: "Blogs", href: "/admin/blogs", icon: Edit02Icon },
+  { name: "What's Happening", href: "/admin/happenings", icon: Message01Icon },
   { name: "Announcements", href: "/admin/announcements", icon: Message01Icon },
   { name: "Partners", href: "/admin/partners", icon: Message01Icon },
 ];
