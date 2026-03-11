@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import SplashScreen from "./SplashScreen";
+import { CurrencyProvider } from "../context/CurrencyContext";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -12,7 +13,6 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   useEffect(() => {
     // Only show splash on initial page load
     if (isInitialLoad) {
-      // Check if we're on the home page
       if (pathname === "/") {
         setShowSplash(true);
       }
@@ -20,11 +20,15 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     }
   }, [pathname, isInitialLoad]);
 
-  // Show splash screen on initial home page load
-  if (showSplash && pathname === "/") {
-    return <SplashScreen>{children}</SplashScreen>;
-  }
-
-  return <>{children}</>;
+  return (
+    <CurrencyProvider>
+      {showSplash && pathname === "/" ? (
+        <SplashScreen>{children}</SplashScreen>
+      ) : (
+        children
+      )}
+    </CurrencyProvider>
+  );
 }
+
 

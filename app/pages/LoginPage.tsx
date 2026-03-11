@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserIcon, LockIcon, EyeIcon } from "hugeicons-react";
+import { UserIcon, LockIcon, EyeIcon, Mail01Icon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
 import WhyRegisterPopup from "../components/WhyRegisterPopup";
 import Logo from "../components/Logo";
@@ -12,7 +12,7 @@ import { createClient } from "../utils/supabase/client";
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
   });
   const [loading, setLoading] = useState(false);
@@ -37,7 +37,7 @@ export default function LoginPage() {
     setFieldErrors({});
 
     try {
-      if (!formData.username || !formData.password) {
+      if (!formData.email || !formData.password) {
         setError("Please enter both email and password.");
         setLoading(false);
         return;
@@ -45,7 +45,7 @@ export default function LoginPage() {
 
       const supabase = createClient();
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: formData.username, 
+        email: formData.email,
         password: formData.password
       });
       
@@ -132,12 +132,6 @@ export default function LoginPage() {
               </div>
             )}
 
-            {fieldErrors.username && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {fieldErrors.username}
-              </div>
-            )}
-
             {fieldErrors.password && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                 {fieldErrors.password}
@@ -146,15 +140,15 @@ export default function LoginPage() {
 
             <div className="space-y-3">
               <div className="relative">
-                <UserIcon
+                <Mail01Icon
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                   size={18}
                 />
                 <input
-                  type="text"
-                  name="username"
-                  placeholder="Username"
-                  value={formData.username}
+                  type="email"
+                  name="email"
+                  placeholder="Email"
+                  value={formData.email}
                   onChange={handleChange}
                   className="w-full p-3 pl-10 pr-4 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-[#ff5e00] text-black shadow-sm hover:shadow-md hover:bg-gray-50 transition-all border border-gray-200 font-sans text-[14px]"
                   required

@@ -13,10 +13,20 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
   const minDisplayTime = 3000; // Minimum 3 seconds after typing completes
 
   useEffect(() => {
-    let typingTimeout: NodeJS.Timeout;
-    let cursorInterval: NodeJS.Timeout;
-    let fadeTimeout: NodeJS.Timeout;
+    let typingTimeout: NodeJS.Timeout | undefined;
+    let fadeTimeout: NodeJS.Timeout | undefined;
     const startTime = Date.now();
+
+    // If we've already shown the splash in this session, skip animation
+    if (typeof window !== "undefined") {
+      const alreadyShown = window.sessionStorage.getItem("sabary_splash_shown");
+      if (alreadyShown === "1") {
+        setIsLoading(false);
+        setDisplayText(fullText);
+        setShowCursor(false);
+        return;
+      }
+    }
 
     // Typing animation
     let currentIndex = 0;
@@ -29,8 +39,11 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
         // After typing is complete, wait for minimum display time
         const elapsed = Date.now() - startTime;
         const remaining = Math.max(0, minDisplayTime - elapsed);
-        
+
         fadeTimeout = setTimeout(() => {
+          if (typeof window !== "undefined") {
+            window.sessionStorage.setItem("sabary_splash_shown", "1");
+          }
           setIsLoading(false);
         }, remaining);
       }
@@ -40,13 +53,13 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
     typeNextChar();
 
     // Cursor blink animation
-    cursorInterval = setInterval(() => {
+    const cursorIntervalLocal = setInterval(() => {
       setShowCursor((prev) => !prev);
     }, 530);
 
     return () => {
       if (typingTimeout) clearTimeout(typingTimeout);
-      if (cursorInterval) clearInterval(cursorInterval);
+      clearInterval(cursorIntervalLocal);
       if (fadeTimeout) clearTimeout(fadeTimeout);
     };
   }, []);
@@ -63,7 +76,7 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
               scale: 1.1,
               transition: { duration: 0.8, ease: "easeInOut" }
             }}
-            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
+            className="fixed inset-0 z-9999 flex flex-col items-center justify-center"
             style={{
               backgroundColor: '#ff5e00',
             }}
@@ -71,7 +84,7 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
             {/* Hero SVG Overlay */}
             <div className="absolute inset-0">
               <Image
-                src="/assets/hero_svg.png"
+                src="/assets/pattern.svg"
                 alt="Hero overlay"
                 fill
                 className="object-cover"

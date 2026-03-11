@@ -14,7 +14,6 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    username: "",
     email: "",
     phone: "",
     password: "",
@@ -138,22 +137,6 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
-              </div>
-
-              <div className="relative">
-                <UserIcon
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-                  size={18}
-                />
-                <input
-                  type="text"
-                  name="username"
-                  placeholder="Username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  className="w-full p-3 pl-10 pr-4 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-[#ff5e00] text-black shadow-sm hover:shadow-md hover:bg-gray-50 transition-all border border-gray-200 font-sans text-[14px]"
-                  required
-                />
               </div>
 
               <div className="relative">

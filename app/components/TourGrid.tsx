@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Tour } from "../data/packages";
 import StarRating from "./StarRating";
+import { useCurrency } from "../context/CurrencyContext";
 
 interface TourGridProps {
   tours: Tour[];
@@ -11,7 +12,7 @@ interface TourGridProps {
 }
 
 export default function TourGrid({ tours, categorySlug }: TourGridProps) {
-  console.log(tours);
+  const { symbol, convert } = useCurrency();
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-7">
       {tours.map((tour) => (
@@ -85,7 +86,7 @@ export default function TourGrid({ tours, categorySlug }: TourGridProps) {
             {/* Price and Booked Count */}
             <div className="flex items-center justify-between mt-auto">
               <span className="text-white text-[14px] sm:text-[16px] font-bold font-sans">
-                {tour.price}
+                {symbol} {convert(tour.priceValue ?? 0, "GHS").toFixed(2)}
               </span>
               {tour.bookedCount && (
                 <span className="text-white/80 text-[12px] font-sans">

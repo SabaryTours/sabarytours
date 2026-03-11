@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '../../utils/supabase/server';
+import { rateLimit } from '../../lib/rateLimit';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -43,6 +44,18 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+    const { ok } = rateLimit({ key: `review:${ip}`, limit: 5, windowMs: 60_000 });
+    if (!ok) {
+      return NextResponse.json(
+        { error: 'Too many reviews submitted. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const supabase = await createClient();
     const body = await request.json();
     const { tourSlug, name, rating, content } = body;

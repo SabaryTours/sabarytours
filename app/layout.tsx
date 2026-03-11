@@ -7,6 +7,7 @@ import TawkToChat from "./components/TawkToChat";
 import AnnouncementModal from "./components/AnnouncementModal";
 import { Toaster } from "react-hot-toast";
 import GoogleTranslate from "./components/GoogleTranslate";
+import SplashScreen from "./components/SplashScreen";
 
 // Remove next/font/google to prevent build-time fetch errors
 // const quicksand = Quicksand({
@@ -82,7 +83,9 @@ export default function RootLayout({
         <GoogleTranslate />
         <LayoutWrapper>
           <ConditionalHeader />
-        {children}
+          <SplashScreen>
+            {children}
+          </SplashScreen>
         </LayoutWrapper>
         <TawkToChat />
         <AnnouncementModal />

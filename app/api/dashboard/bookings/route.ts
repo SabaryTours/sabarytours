@@ -18,7 +18,10 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: bookings, error } = await supabaseAdmin
+    const email = user.email;
+
+    // Fetch bookings where this auth user is linked by user_id
+    const { data: bookingsByUser, error: byUserError } = await supabaseAdmin
       .from("bookings")
       .select(
         `
@@ -31,21 +34,65 @@ export async function GET() {
         payment_status,
         payment_option,
         package_name,
-        tour_id
+        tour_id,
+        customer_email,
+        user_id
       `
       )
-      .eq("user_id", user.id)
-      .order("tour_date", { ascending: false });
+      .eq("user_id", user.id);
 
-    if (error) {
-      console.error("Dashboard bookings API error:", error);
+    if (byUserError) {
+      console.error("Dashboard bookings API error (by user):", byUserError);
       return NextResponse.json(
-        { error: error.message || "Failed to fetch bookings" },
+        { error: byUserError.message || "Failed to fetch bookings" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(bookings ?? [], { status: 200 });
+    let combined = bookingsByUser || [];
+
+    // Also include legacy bookings that match the user's email but have no user_id
+    if (email) {
+      const { data: bookingsByEmail, error: byEmailError } = await supabaseAdmin
+        .from("bookings")
+        .select(
+          `
+          id,
+          tour_date,
+          booking_status,
+          number_of_people,
+          total_cost,
+          amount_paid,
+          payment_status,
+          payment_option,
+          package_name,
+          tour_id,
+          customer_email,
+          user_id
+        `
+        )
+        .eq("customer_email", email)
+        .is("user_id", null);
+
+      if (byEmailError) {
+        console.error("Dashboard bookings API error (by email):", byEmailError);
+      } else if (bookingsByEmail && bookingsByEmail.length > 0) {
+        const existingIds = new Set(combined.map((b: any) => b.id));
+        combined = combined.concat(
+          bookingsByEmail.filter((b: any) => !existingIds.has(b.id))
+        );
+      }
+    }
+
+    // Sort by tour_date descending (nulls last)
+    combined.sort((a: any, b: any) => {
+      if (!a.tour_date && !b.tour_date) return 0;
+      if (!a.tour_date) return 1;
+      if (!b.tour_date) return -1;
+      return a.tour_date < b.tour_date ? 1 : -1;
+    });
+
+    return NextResponse.json(combined ?? [], { status: 200 });
   } catch (err: any) {
     console.error("Dashboard bookings API:", err);
     return NextResponse.json(

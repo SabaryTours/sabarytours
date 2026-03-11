@@ -214,7 +214,7 @@ export default function PickupLocation({ value, onChange }: PickupLocationProps)
   return (
     <div className="space-y-3">
       <label className="block text-[#222] text-[14px] font-bold mb-2 font-sans">
-        Pick-up Location <span className="text-red-500">*</span>
+        Pick-up Location <span className="text-xs text-gray-500 font-normal">(optional)</span>
       </label>
 
       {/* Mode Selector */}
@@ -299,10 +299,9 @@ export default function PickupLocation({ value, onChange }: PickupLocationProps)
             onChange={(e) => handleCustomLocationChange(e.target.value)}
             placeholder="Enter your pick-up address (e.g., 123 Main Street, Accra)"
             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] font-sans text-[#222] placeholder:text-gray-400"
-            required
           />
           <p className="text-[#666] text-[11px] font-normal font-sans">
-            Enter the full address where you&apos;d like to be picked up
+            Enter the full address if you&apos;d like to be picked up from a specific location.
           </p>
         </div>
       )}

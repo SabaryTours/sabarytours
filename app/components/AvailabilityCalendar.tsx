@@ -224,8 +224,8 @@ export default function AvailabilityCalendar({
                   return <div key={index} className="aspect-square" />;
                 }
 
-                const disabled = isDateDisabled(day);
                 const available = isDateAvailable(day);
+                const disabled = !available || isDateDisabled(day);
                 const selected = isDateSelected(day);
                 const todayDate = isToday(day);
 
