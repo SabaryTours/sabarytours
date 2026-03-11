@@ -51,18 +51,40 @@ export async function GET(request: Request) {
       const bookingId = String(metadata.booking_id);
       const { data: existing } = await supabaseAdmin
         .from("bookings")
-        .select("id, total_cost")
+        .select("id, total_cost, amount_paid, payment_status")
         .eq("id", bookingId)
         .single();
 
       if (existing) {
         const totalCost = Number(existing.total_cost) ?? 0;
+        const alreadyPaid = Number(existing.amount_paid) || 0;
         const paidNow = amount / 100;
+
+        // If already fully paid, treat as idempotent
+        if (alreadyPaid >= totalCost || existing.payment_status === "paid") {
+          return NextResponse.json({
+            success: true,
+            booking: { id: bookingId },
+            note: "Top-up already applied",
+          });
+        }
+
+        // Log any suspicious underpayment without blocking the user
+        const remainingBefore = totalCost - alreadyPaid;
+        if (paidNow + 0.01 < remainingBefore) {
+          console.warn(
+            `[Verify] Top-up underpayment detected for booking ${bookingId}. Remaining=${remainingBefore}, paidNow=${paidNow}`
+          );
+        }
+
+        const newAmountPaid = Math.min(totalCost, alreadyPaid + paidNow);
+        const newStatus = newAmountPaid >= totalCost ? "paid" : "partial";
+
         const { error: updateErr } = await supabaseAdmin
           .from("bookings")
           .update({
-            amount_paid: totalCost,
-            payment_status: "paid",
+            amount_paid: newAmountPaid,
+            payment_status: newStatus,
             updated_at: new Date().toISOString(),
           })
           .eq("id", bookingId);

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ArrowDown01Icon, Cancel01Icon } from "hugeicons-react";
 import Logo from "./Logo";
 import { isAuthenticated, getUser, getUserRole, logout } from "../lib/authService";
+import { useCurrency } from "../context/CurrencyContext";
 
 const GlobeIcon = ({ size = 20 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -53,10 +54,7 @@ export default function Header() {
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState<{ first_name?: string; email?: string } | null>(null);
   const [userRole, setUserRole] = useState<'admin' | 'subscriber'>('subscriber');
-  const [selectedCurrency, setSelectedCurrency] = useState({
-    symbol: "$",
-    code: "USD",
-  });
+  const { currency, symbol, setCurrency } = useCurrency();
 
   const pathname = usePathname();
   const router = useRouter();
@@ -65,8 +63,8 @@ export default function Header() {
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const currencies = [
-    { symbol: "$", code: "USD" },
-    { symbol: "₵", code: "CEDIS" },
+    { symbol: "$", code: "USD" as const },
+    { symbol: "₵", code: "GHS" as const },
   ];
 
   const languages = [
@@ -150,7 +148,7 @@ export default function Header() {
   };
 
   return (
-    <header className="w-full border-b border-[#ffdfcc] sticky top-0 z-[100] bg-white overflow-visible transition-all duration-300">
+    <header className="w-full border-b border-[#ffdfcc] sticky top-0 z-100 bg-white overflow-visible transition-all duration-300">
       <div className="container mx-auto px-4 sm:px-6 md:px-12 py-3 sm:py-4 md:py-[18px] overflow-visible">
         <div className="flex items-center justify-between w-full overflow-visible">
 
@@ -255,7 +253,7 @@ export default function Header() {
                   className="flex items-center gap-1.5 h-full px-3 rounded-full transition-colors hover:bg-white"
                 >
                   <span className="text-[12px] text-[#222] font-medium">
-                    {selectedCurrency.symbol} {selectedCurrency.code}
+                    {symbol} {currency}
                   </span>
                   <ArrowDown01Icon
                     className={`w-4 h-4 text-[#222] transition-transform duration-200 ${
@@ -275,22 +273,22 @@ export default function Header() {
                       Change currency
                     </div>
                     <div className="py-1">
-                      {currencies.map((currency) => (
+                      {currencies.map((c) => (
                         <button
-                          key={currency.code}
+                          key={c.code}
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedCurrency(currency);
+                            setCurrency(c.code);
                             setCurrencyOpen(false);
                           }}
                           className={`w-full text-left px-3 py-2 text-[12px] transition-colors ${
-                            selectedCurrency.code === currency.code
+                            currency === c.code
                               ? "bg-[#fff5e6] text-[#ff5e00] font-semibold"
                               : "hover:bg-[#fff5e6] text-[#222]"
                           }`}
                         >
-                          {currency.symbol} {currency.code}
+                          {c.symbol} {c.code}
                         </button>
                       ))}
                     </div>
@@ -299,7 +297,7 @@ export default function Header() {
               </div>
 
               {/* Divider */}
-              <div className="w-[1px] h-4 bg-gray-300 mx-0.5"></div>
+              <div className="w-px h-4 bg-gray-300 mx-0.5"></div>
 
               {/* Language Picker */}
               <button
@@ -315,7 +313,7 @@ export default function Header() {
             {/* Language Modal */}
             {languageOpen && (
               <div 
-                className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"
+                className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 p-4"
                 onClick={() => setLanguageOpen(false)}
               >
                 <div 
@@ -381,7 +379,7 @@ export default function Header() {
 
       {/* Mobile Menu Overlay */}
       <div
-        className={`md:hidden fixed inset-0 z-[200] transition-opacity duration-500 ease-in-out ${
+        className={`md:hidden fixed inset-0 z-200 transition-opacity duration-500 ease-in-out ${
           mobileMenuOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
@@ -392,9 +390,9 @@ export default function Header() {
           onClick={() => setMobileMenuOpen(false)}
         />
 
-        {/* Drawer */}
-        <div
-          className={`absolute right-0 top-0 h-[100dvh] w-80 max-w-[85vw] bg-white shadow-2xl transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1) ${
+            {/* Drawer */}
+            <div
+          className={`absolute right-0 top-0 h-dvh w-80 max-w-[85vw] bg-white shadow-2xl transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1) ${
             mobileMenuOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
@@ -440,24 +438,24 @@ export default function Header() {
                     }}
                     className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full text-sm font-medium"
                   >
-                    <span>{selectedCurrency.symbol} {selectedCurrency.code}</span>
+                    <span>{symbol} {currency}</span>
                     <ArrowDown01Icon className={`w-4 h-4 transition-transform ${currencyOpen ? "rotate-180" : ""}`} />
                   </button>
                   {currencyOpen && (
                     <div className="absolute left-0 top-full mt-2 w-[140px] bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50">
                       <div className="py-1">
-                        {currencies.map((currency) => (
+                        {currencies.map((c) => (
                           <button
-                            key={currency.code}
+                            key={c.code}
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedCurrency(currency);
+                              setCurrency(c.code);
                               setCurrencyOpen(false);
                             }}
                             className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-orange-50"
                           >
-                            {currency.symbol} {currency.code}
+                            {c.symbol} {c.code}
                           </button>
                         ))}
                       </div>

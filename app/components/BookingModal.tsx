@@ -10,6 +10,7 @@ import VoucherCode from "./VoucherCode";
 import PickupLocation from "./PickupLocation";
 import PaystackPayment from "./PaystackPayment";
 import { getUser } from "../lib/authService";
+import { useCurrency } from "../context/CurrencyContext";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
   const [voucherCode, setVoucherCode] = useState<string>("");
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
+  const { symbol, convert } = useCurrency();
 
   // Generate available dates based on real tour rules
   const availableDates = useMemo(() => {
@@ -110,12 +112,6 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.pickupLocation) {
-      alert("Please select a pick-up location");
-      return;
-    }
-
     setShowPayment(true);
   };
 
@@ -394,14 +390,15 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
           />
 
           {/* Live Pricing Breakdown */}
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 space-y-3 border border-gray-200 shadow-md">
+          <div className="bg-linear-to-br from-gray-50 to-gray-100 rounded-xl p-5 space-y-3 border border-gray-200 shadow-md">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[#666] text-[14px] font-sans">
-                  Base Price × {formData.numberOfPeople} {formData.numberOfPeople === 1 ? "person" : "people"}
+                  Base Price × {formData.numberOfPeople}{" "}
+                  {formData.numberOfPeople === 1 ? "person" : "people"}
                 </span>
                 <span className="text-[#222] text-[14px] font-bold font-sans">
-                  ${subtotal.toFixed(2)}
+                  {symbol} {convert(subtotal, "GHS").toFixed(2)}
                 </span>
               </div>
               
@@ -424,19 +421,23 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
               {voucherDiscount > 0 && (
                 <div className="flex items-center justify-between text-[12px] text-green-600 font-sans">
                   <span>Voucher discount ({voucherDiscount}%)</span>
-                  <span>-${discountAmount.toFixed(2)}</span>
+                  <span>
+                    -{symbol} {convert(discountAmount, "GHS").toFixed(2)}
+                  </span>
                 </div>
               )}
             </div>
 
-            <div className="border-t border-gray-300 pt-3 mt-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[#222] text-[16px] font-bold font-sans">Subtotal</span>
-                <span className="text-[#ff5e00] text-[20px] font-bold font-sans">
-                  ${totalPrice.toFixed(2)}
-                </span>
+              <div className="border-t border-gray-300 pt-3 mt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#222] text-[16px] font-bold font-sans">
+                    Subtotal
+                  </span>
+                  <span className="text-[#ff5e00] text-[20px] font-bold font-sans">
+                    {symbol} {convert(totalPrice, "GHS").toFixed(2)}
+                  </span>
+                </div>
               </div>
-            </div>
           </div>
 
           {/* Payment Options */}
@@ -513,7 +514,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
               type="submit"
               className="w-full bg-[#ff5e00] text-white py-3 rounded-lg font-bold text-[16px] hover:bg-[#e55500] transition-colors font-sans"
             >
-              Continue to Payment - ${paymentAmount.toFixed(2)}
+              Continue to Payment - {symbol} {convert(paymentAmount, "GHS").toFixed(2)}
             </button>
           )}
         </form>

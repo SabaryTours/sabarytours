@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import mailchimp from '@mailchimp/mailchimp_marketing';
 import { createClient } from '../../utils/supabase/server';
+import { rateLimit } from '../../lib/rateLimit';
 
 // Initialize Mailchimp
 const API_KEY = process.env.MAILCHIMP_API_KEY;
@@ -17,8 +18,20 @@ if (API_KEY) {
 
 export async function POST(request: Request) {
   try {
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+    const { ok } = rateLimit({ key: `contact:${ip}`, limit: 10, windowMs: 60_000 });
+    if (!ok) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
-    const { firstName, lastName, email, phone, subject, message, source = 'website' } = body;
+    const { firstName, lastName, email, phone, subject, message } = body;
 
     // Validate required fields
     if (!email || !firstName || !lastName) {
@@ -99,12 +112,13 @@ export async function POST(request: Request) {
         { message: 'Message sent and subscribed successfully!' },
         { status: 200 }
       );
-    } catch (mailchimpError: any) {
-      console.error('Mailchimp Error:', mailchimpError.response?.body || mailchimpError);
+    } catch (mailchimpError: unknown) {
+      const mc = mailchimpError as { response?: { body?: unknown }; status?: number };
+      console.error('Mailchimp Error:', mc.response?.body || mc);
 
       return NextResponse.json(
         { error: 'Failed to add to mailing list. Please try again later.' },
-        { status: mailchimpError.status || 500 }
+        { status: mc.status || 500 }
       );
     }
   } catch (error) {

@@ -216,26 +216,6 @@ export default function Footer() {
               Secured by <b>paystack</b>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-              {/* Visa */}
-              <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
-                <Image
-                  src="/assets/payments/visa.svg"
-                  alt="Visa"
-                  fill
-                  className="object-contain opacity-80 hover:opacity-100 transition-opacity"
-                  unoptimized
-                />
-              </div>
-              {/* Mastercard */}
-              <div className="relative w-16 h-10 sm:w-20 sm:h-12 flex items-center justify-center">
-                <Image
-                  src="/assets/payments/mastercard.svg"
-                  fill
-                  alt="Mastercard"
-                  className="object-contain opacity-80 hover:opacity-100 transition-opacity"
-                  unoptimized
-                />
-              </div>
 
               <div className="relative w-20 h-12 sm:w-24 sm:h-14 flex items-center justify-center">
                 <Image

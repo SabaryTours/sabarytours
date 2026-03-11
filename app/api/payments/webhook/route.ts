@@ -42,17 +42,36 @@ export async function POST(req: Request) {
         const bookingId = String(metadata.booking_id);
         const { data: existing } = await supabaseAdmin
           .from('bookings')
-          .select('id, total_cost')
+          .select('id, total_cost, amount_paid, payment_status')
           .eq('id', bookingId)
           .single();
 
         if (existing) {
           const totalCost = Number(existing.total_cost) ?? 0;
+          const alreadyPaid = Number(existing.amount_paid) || 0;
+          const paidNow = amount / 100;
+
+          // If already fully paid, make this idempotent
+          if (alreadyPaid >= totalCost || existing.payment_status === 'paid') {
+            console.log(`[Webhook] Top-up already applied for booking ${bookingId}`);
+            return NextResponse.json({ message: 'Top-up already applied' }, { status: 200 });
+          }
+
+          const remainingBefore = totalCost - alreadyPaid;
+          if (paidNow + 0.01 < remainingBefore) {
+            console.warn(
+              `[Webhook] Top-up underpayment detected for booking ${bookingId}. Remaining=${remainingBefore}, paidNow=${paidNow}`
+            );
+          }
+
+          const newAmountPaid = Math.min(totalCost, alreadyPaid + paidNow);
+          const newStatus = newAmountPaid >= totalCost ? 'paid' : 'partial';
+
           const { error: updateErr } = await supabaseAdmin
             .from('bookings')
             .update({
-              amount_paid: totalCost,
-              payment_status: 'paid',
+              amount_paid: newAmountPaid,
+              payment_status: newStatus,
               updated_at: new Date().toISOString(),
             })
             .eq('id', bookingId);
@@ -90,6 +109,7 @@ export async function POST(req: Request) {
         .insert({
           tour_id: typeof metadata.tourId === 'string' ? metadata.tourId : null,
           legacy_id: typeof metadata.tourId === 'number' ? metadata.tourId : null,
+          user_id: metadata.userId || null,
           customer_name: metadata.customerName || customer.first_name || 'Guest',
           customer_email: customer.email,
           customer_phone: metadata.customerPhone || customer.phone || '',

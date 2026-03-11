@@ -40,14 +40,22 @@ export default async function TourRoute({ params }: PageProps) {
   const { categorySlug, tourSlug } = resolvedParams;
   
   const tour = await getTourBySlug(tourSlug);
-  const category = await getPackageBySlug(categorySlug);
-  const categoryTours = await getToursByCategory(categorySlug);
-  const similarTours = categoryTours.filter(t => t.slug !== tour?.slug).slice(0, 3);
-
-  if (!tour || !category) {
+  if (!tour) {
     notFound();
   }
 
-  return <TourDetailPage tour={tour} categoryTitle={category.title} similarTours={similarTours} />;
+  // Prefer the tour's own categorySlug for resilience against mismatched URLs
+  const resolvedCategorySlug = tour.categorySlug || categorySlug;
+  const category = await getPackageBySlug(resolvedCategorySlug);
+  const categoryTours = await getToursByCategory(resolvedCategorySlug);
+  const similarTours = categoryTours.filter((t) => t.slug !== tour.slug).slice(0, 3);
+
+  return (
+    <TourDetailPage
+      tour={tour}
+      categoryTitle={category?.title ?? "Other Tours"}
+      similarTours={similarTours}
+    />
+  );
 }
 

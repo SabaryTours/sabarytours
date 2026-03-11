@@ -12,6 +12,7 @@ import VoucherCode from "../components/VoucherCode";
 import PickupLocation from "../components/PickupLocation";
 import PaystackPayment from "../components/PaystackPayment";
 import TourGrid from "../components/TourGrid";
+import { useCurrency } from "../context/CurrencyContext";
 
 interface BookingPageProps {
   tour: Tour;
@@ -45,30 +46,48 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const { symbol, convert } = useCurrency();
 
-  // Mock available dates with slots
+  // Available dates driven by tour's availableDays, blockedDates, and timeSlots
   const availableDates = useMemo(() => {
     const dates = [];
     const today = new Date();
-    for (let i = 1; i <= 30; i++) {
+
+    const defaultSlots = [
+      { time: "09:00 AM", available: true },
+      { time: "02:00 PM", available: true },
+    ];
+
+    const slotsToUse =
+      tour.timeSlots && tour.timeSlots.length > 0
+        ? tour.timeSlots.map((t) => ({ time: t, available: true }))
+        : defaultSlots;
+
+    for (let i = 1; i <= 60; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      const dateString = date.toISOString().split('T')[0];
-      
-      const hasSlots = i % 3 !== 0;
+      const dateString = date.toISOString().split("T")[0];
+
+      const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
+
+      const isBlocked = tour.blockedDates?.includes(dateString) || false;
+      const isAllowedDay =
+        !tour.availableDays || tour.availableDays.length === 0
+          ? true
+          : tour.availableDays.includes(dayName);
+
+      const isAvailable = isAllowedDay && !isBlocked;
+
       dates.push({
         date: dateString,
-        available: true,
-        slots: hasSlots ? [
-          { time: "09:00 AM", available: true },
-          { time: "02:00 PM", available: true },
-          { time: "05:00 PM", available: i % 2 === 0 },
-        ] : [],
+        available: isAvailable,
+        slots: isAvailable ? slotsToUse : [],
         price: tour.priceValue || 100,
       });
     }
+
     return dates;
-  }, [tour.priceValue]);
+  }, [tour.priceValue, tour.availableDays, tour.blockedDates, tour.timeSlots]);
 
   // Calculate total price based on selected tiers or fallback basePrice
   const subtotal = useMemo(() => {
@@ -148,8 +167,8 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
       setStep(2);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (step === 2) {
-      if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.pickupLocation) {
-        alert("Please fill in all personal details and pick-up location.");
+      if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+        alert("Please fill in all personal details.");
         return;
       }
       setStep(3);
@@ -287,7 +306,13 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                       <div key={tier.name} className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-100">
                         <div>
                           <p className="font-bold text-gray-900 font-sans">{tier.name}</p>
-                          <p className="text-sm text-gray-500 font-sans">{tier.currency || 'GHS'} {tier.amount}</p>
+                          <p className="text-sm text-gray-500 font-sans">
+                            {symbol}{" "}
+                            {convert(
+                              tier.amount,
+                              (tier.currency as "USD" | "GHS") || "GHS"
+                            ).toFixed(2)}
+                          </p>
                           {tier.description && <p className="text-xs text-gray-400 font-sans mt-0.5">{tier.description}</p>}
                         </div>
                         <div className="flex items-center gap-4">
@@ -447,7 +472,6 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                 </div>
 
                 <div>
-                  <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">Pick-up Location <span className="text-red-500">*</span></label>
                   <PickupLocation
                     value={formData.pickupLocation}
                     onChange={(location) => setFormData({ ...formData, pickupLocation: location })}
@@ -515,7 +539,9 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                   <div className="border-t border-gray-200 mt-6 pt-4 space-y-2">
                     <div className="flex justify-between text-sm text-gray-600 font-sans">
                       <span>Subtotal</span>
-                      <span>${subtotal.toFixed(2)}</span>
+                      <span>
+                        {symbol} {convert(subtotal, "GHS").toFixed(2)}
+                      </span>
                     </div>
                     {voucherDiscount > 0 && (
                       <div className="flex justify-between text-sm text-green-600 font-sans">
@@ -525,7 +551,9 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                     )}
                     <div className="flex justify-between text-xl font-bold font-sans text-gray-900 pt-2">
                       <span>Total</span>
-                      <span className="text-[#ff5e00]">${totalPrice.toFixed(2)}</span>
+                      <span className="text-[#ff5e00]">
+                        {symbol} {convert(totalPrice, "GHS").toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -545,7 +573,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                         onClick={() => setShowPayment(true)}
                         className="w-full bg-[#ff5e00] text-white py-4 rounded-xl font-bold text-[16px] hover:bg-[#e55500] hover:shadow-xl transition-all font-sans"
                       >
-                        Confirm & Pay ${paymentAmount.toFixed(2)}
+                        Confirm & Pay {symbol} {convert(paymentAmount, "GHS").toFixed(2)}
                       </button>
                       <button
                         type="button"
