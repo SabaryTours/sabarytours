@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import Logo from "./Logo";
 import { useState } from "react";
 
@@ -105,24 +106,28 @@ export default function Footer() {
             <h3 className="text-white font-bold text-[16px] leading-[24px] mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors">
-                  Privacy Policy
-                </a>
+                <Link
+                  href="/privacy"
+                  className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors"
+                >
+                  Privacy &amp; terms
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors">
-                  Refund Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors">
+                <Link
+                  href="/faq"
+                  className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors"
+                >
                   FAQs
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/faq#cancellations-refunds"
+                  className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors"
+                >
+                  Cancellations &amp; refunds
+                </Link>
               </li>
             </ul>
           </div>

@@ -10,7 +10,7 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
   const [showCursor, setShowCursor] = useState(true);
 
   const fullText = "WELCOME TO SABARY TOURS";
-  const minDisplayTime = 3000; // Minimum 3 seconds after typing completes
+  const minDisplayTime = 3000; 
 
   useEffect(() => {
     let typingTimeout: NodeJS.Timeout | undefined;
@@ -76,20 +76,21 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
               scale: 1.1,
               transition: { duration: 0.8, ease: "easeInOut" }
             }}
-            className="fixed inset-0 z-9999 flex flex-col items-center justify-center"
+            className="fixed inset-0 z-9999 flex min-h-dvh w-full flex-col items-center justify-center bg-[#ff5e00]"
             style={{
-              backgroundColor: '#ff5e00',
+              backgroundColor: "#ff5e00",
             }}
           >
 
-            {/* Pattern Overlay */}
-            <div 
-              className="absolute inset-0"
+            {/* Dark-tint pattern for orange splash only (see public/assets/pattern-splash.svg). */}
+            <div
+              className="pointer-events-none absolute inset-0 min-h-dvh"
               style={{
-                backgroundImage: 'url(/assets/pattern.svg)',
-                backgroundRepeat: 'repeat',
-                backgroundSize: 'auto',
-         }}
+                backgroundImage: "url(/assets/pattern-splash.svg)",
+                backgroundRepeat: "repeat",
+                backgroundSize: "auto",
+              }}
+              aria-hidden
             />
 
             {/* Content */}
