@@ -278,3 +278,33 @@ export async function deleteHeroImage(id: string): Promise<boolean> {
   }
   return true;
 }
+
+// What's Happening Now
+export interface NowHappening {
+  id: string;
+  name: string;
+  status: string;
+  image_url: string;
+  link_url?: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at?: string;
+}
+
+export async function getHappenings(): Promise<NowHappening[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("now_happenings")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (error || !data) {
+    console.error("Error fetching happenings:", error);
+    return [];
+  }
+
+  return data as NowHappening[];
+}
+

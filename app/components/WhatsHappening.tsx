@@ -1,27 +1,18 @@
 import Image from "next/image";
+import Link from "next/link";
+import type { NowHappening } from "../lib/api";
 
-const events = [
-  {
-    category: "Ongoing",
-    title: "CapeCoast City Tour",
-    image: "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&h=600&fit=crop",
-    dotColor: "#FF0000", // Red for Ongoing
-  },
-  {
-    category: "Ongoing",
-    title: "Volta Tour",
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
-    dotColor: "#FF0000", // Red for Ongoing
-  },
-  {
-    category: "Upcoming",
-    title: "Eastern Day Trip",
-    image: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&h=600&fit=crop",
-    dotColor: "#FF5E00", // Orange for Upcoming
-  },
-];
+interface WhatsHappeningProps {
+  events: NowHappening[];
+}
 
-export default function WhatsHappening() {
+const statusDotColor: Record<string, string> = {
+  ongoing: "#FF0000",
+  upcoming: "#FF5E00",
+  ended: "#999999",
+};
+
+export default function WhatsHappening({ events }: WhatsHappeningProps) {
   return (
     <section className="w-full bg-[#0060CC] relative py-8 sm:py-12 md:py-16 overflow-visible">
       {/* Pattern background */}
@@ -37,9 +28,9 @@ export default function WhatsHappening() {
       </div>
 
       <div className="container mx-auto px-6 relative z-10">
-      <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center mb-12 overflow-visible px-2">
+      <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center mb-12 overflow-visible px-2 text-center md:text-left">
               <h2 
-                className="text-[32px] text-[#ffffff] relative"
+                className="text-[26px] md:text-[32px] text-[#ffffff] relative"
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
                   lineHeight: 1
@@ -48,7 +39,7 @@ export default function WhatsHappening() {
                 what&apos;s 
               </h2>
               <h2 
-                className="text-[32px] text-[#ff5e00] relative"
+                className="text-[26px] md:text-[32px] text-[#ff5e00] relative"
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
                   lineHeight: 1,
@@ -60,9 +51,11 @@ export default function WhatsHappening() {
             </div>
 
         <div className="flex flex-wrap justify-center" style={{ gap: '40px' }}>
-          {events.map((event, index) => (
+          {events.map((event) => {
+            const dotColor = statusDotColor[event.status] || "#FF5E00";
+            const cardContent = (
             <div
-              key={index}
+              key={event.id}
               className="relative overflow-hidden rounded-[20px] border-[3px] border-[rgba(255,255,255,0.5)]"
               style={{
                 width: '342px',
@@ -72,8 +65,8 @@ export default function WhatsHappening() {
               {/* Background Image */}
               <div className="absolute inset-0">
                 <Image
-                  src={event.image}
-                  alt={event.title}
+                  src={event.image_url}
+                  alt={event.name}
                   fill
                   className="object-cover rounded-[20px]"
                   unoptimized
@@ -105,30 +98,47 @@ export default function WhatsHappening() {
                     <div 
                       className="absolute inset-0 rounded-full"
                       style={{
-                        backgroundColor: event.dotColor,
+                        backgroundColor: dotColor,
                         opacity: 0.8,
                       }}
                     />
                     <div 
                       className="absolute inset-0 rounded-full animate-pulse"
                       style={{
-                        backgroundColor: event.dotColor,
+                        backgroundColor: dotColor,
                         opacity: 0.4,
                       }}
                     />
                   </div>
                   <span className="text-[#222] text-[12px] font-bold leading-none">
-                    {event.category}
+                    {event.status.toUpperCase()}
                   </span>
                 </div>
                 
                 {/* Title */}
                 <h3 className="text-white text-[16px] font-bold leading-[28px]">
-                  {event.title}
+                  {event.name}
                 </h3>
               </div>
             </div>
-          ))}
+            );
+
+            return event.link_url ? (
+              <Link
+                key={event.id}
+                href={event.link_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-transform hover:scale-[1.02]"
+              >
+                {cardContent}
+              </Link>
+            ) : (
+              <div key={event.id} className="transition-transform hover:scale-[1.02]">
+                {cardContent}
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

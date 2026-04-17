@@ -77,6 +77,21 @@ export default function InvoicePage() {
     );
   }
 
+  const currency = booking.currency || "GHS";
+  const totalAmount: number = Number(
+    booking.total_price ?? booking.total_cost ?? 0
+  );
+  const amountPaid: number = Number(booking.amount_paid ?? 0);
+  const balanceDue = Math.max(totalAmount - amountPaid, 0);
+  const fullyPaid = totalAmount > 0 && balanceDue === 0;
+  const partiallyPaid = amountPaid > 0 && balanceDue > 0;
+
+  const statusLabel = fullyPaid
+    ? "PAID IN FULL"
+    : partiallyPaid
+    ? "PARTIALLY PAID"
+    : "PAYMENT PENDING";
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 print:py-0 print:px-0 print:bg-white overflow-hidden">
       
@@ -111,11 +126,28 @@ export default function InvoicePage() {
             </div>
           </div>
           <div className="text-right">
-            <h1 className="text-3xl font-bold uppercase text-gray-800 tracking-wider mb-2" style={{ fontFamily: "var(--font-unlimited-pie)" }}>Invoice</h1>
-            <p className="text-gray-500 font-sans text-sm font-medium">Receipt #: INV-{booking.id.substring(0, 8).toUpperCase()}</p>
-            <p className="text-gray-500 font-sans text-sm mt-1">Date Issued: {new Date().toLocaleDateString()}</p>
-            <div className="mt-4 inline-block px-3 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-bold uppercase tracking-wider">
-              {booking.payment_status === "paid" ? "PAID IN FULL" : booking.payment_status === "deposit" ? "DEPOSIT PAID" : "PENDING"}
+            <h1
+              className="text-3xl font-bold uppercase text-gray-800 tracking-wider mb-2"
+              style={{ fontFamily: "var(--font-unlimited-pie)" }}
+            >
+              Invoice
+            </h1>
+            <p className="text-gray-500 font-sans text-sm font-medium">
+              Receipt #: INV-{booking.id.substring(0, 8).toUpperCase()}
+            </p>
+            <p className="text-gray-500 font-sans text-sm mt-1">
+              Date Issued: {new Date().toLocaleDateString()}
+            </p>
+            <div
+              className={`mt-4 inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
+                fullyPaid
+                  ? "bg-green-50 text-green-700 border-green-200"
+                  : partiallyPaid
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                  : "bg-gray-50 text-gray-700 border-gray-200"
+              }`}
+            >
+              {statusLabel}
             </div>
           </div>
         </div>
@@ -131,7 +163,12 @@ export default function InvoicePage() {
           <div className="flex-1">
             <h3 className="text-xs font-bold text-gray-400 font-sans uppercase tracking-wider mb-2">Booking Details</h3>
             <div className="text-sm font-sans space-y-1.5 border-l-2 border-[#ff5e00] pl-4">
-              <p><span className="text-gray-500">Tour Date:</span> <span className="font-semibold text-gray-800">{new Date(booking.booking_date).toLocaleDateString()}</span></p>
+              <p>
+                <span className="text-gray-500">Tour Date:</span>{" "}
+                <span className="font-semibold text-gray-800">
+                  {new Date(booking.booking_date ?? booking.tour_date).toLocaleDateString()}
+                </span>
+              </p>
               <p><span className="text-gray-500">Guests:</span> <span className="font-semibold text-gray-800">{booking.number_of_people}</span></p>
               <p><span className="text-gray-500">Status:</span> <span className="font-semibold text-gray-800">{booking.status}</span></p>
             </div>
@@ -154,7 +191,7 @@ export default function InvoicePage() {
                   <span className="text-sm text-gray-500">Booking for {booking.number_of_people} people</span>
                 </td>
                 <td className="py-5 text-gray-800 text-right font-semibold">
-                  {booking.currency} {booking.total_price.toFixed(2)}
+                  {currency} {totalAmount.toFixed(2)}
                 </td>
               </tr>
             </tbody>
@@ -166,23 +203,31 @@ export default function InvoicePage() {
           <div className="w-64 space-y-3 font-sans">
             <div className="flex justify-between items-center text-gray-600 text-sm">
               <span>Subtotal</span>
-              <span>{booking.currency} {booking.total_price.toFixed(2)}</span>
+              <span>
+                {currency} {totalAmount.toFixed(2)}
+              </span>
             </div>
             {/* You can add tax/discount rows here later if needed */}
             <div className="flex justify-between items-center text-lg font-bold text-gray-900 border-t border-gray-200 pt-3">
               <span>Total</span>
-              <span>{booking.currency} {booking.total_price.toFixed(2)}</span>
+              <span>
+                {currency} {totalAmount.toFixed(2)}
+              </span>
             </div>
-            {booking.payment_status === "deposit" && (
+            {amountPaid > 0 && (
               <div className="flex justify-between items-center text-sm font-bold text-[#ff5e00] pt-1">
-                <span>Amount Paid (Deposit)</span>
-                <span>{booking.currency} {(booking.total_price * 0.3).toFixed(2)}</span>
+                <span>Amount Paid</span>
+                <span>
+                  {currency} {amountPaid.toFixed(2)}
+                </span>
               </div>
             )}
-             {booking.payment_status === "deposit" && (
+            {balanceDue > 0 && (
               <div className="flex justify-between items-center text-sm font-bold text-gray-500 pt-1">
                 <span>Balance Due</span>
-                <span>{booking.currency} {(booking.total_price * 0.7).toFixed(2)}</span>
+                <span>
+                  {currency} {balanceDue.toFixed(2)}
+                </span>
               </div>
             )}
           </div>

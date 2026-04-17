@@ -28,17 +28,29 @@ export default function AdminInquiriesPage() {
   const markAsRead = async (id: string, currentStatus: string) => {
     if (currentStatus === 'read') return;
     const supabase = createClient();
-    await supabase.from('inquiries').update({ status: 'read' }).eq('id', id);
+    const { error } = await supabase.from('inquiries').update({ status: 'read' }).eq('id', id);
+    if (error) {
+      toast.error("Failed to mark as read");
+      return;
+    }
+    // Optimistically update local state instead of re-fetching from the database
+    setInquiries((prev) =>
+      prev.map((inq) => (inq.id === id ? { ...inq, status: 'read' } : inq))
+    );
     toast.success("Marked as read");
-    fetchInquiries();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this inquiry?')) return;
     const supabase = createClient();
-    await supabase.from('inquiries').delete().eq('id', id);
+    const { error } = await supabase.from('inquiries').delete().eq('id', id);
+    if (error) {
+      toast.error("Failed to delete inquiry");
+      return;
+    }
+    // Optimistically update local state instead of re-fetching from the database
+    setInquiries((prev) => prev.filter((inq) => inq.id !== id));
     toast.success("Deleted");
-    fetchInquiries();
   };
 
   return (
