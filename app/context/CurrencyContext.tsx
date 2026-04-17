@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { getExchangeRates } from "../lib/exchangeRates";
 
 type CurrencyCode = "USD" | "GHS";
 
@@ -34,7 +33,15 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     async function loadRates() {
       try {
-        const data = await getExchangeRates("USD");
+        const res = await fetch("/api/exchange-rates?base=USD");
+        if (!res.ok) {
+          throw new Error(`Failed to fetch rates (${res.status})`);
+        }
+        const payload = (await res.json()) as { rates?: Record<string, number> };
+        const data = payload.rates;
+        if (!data) {
+          throw new Error("No rates returned from exchange-rates API");
+        }
         if (!cancelled) {
           setRates(data);
         }

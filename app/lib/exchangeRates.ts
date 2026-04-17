@@ -1,4 +1,4 @@
-const EXCHANGE_TTL_MS = 2 * 24 * 60 * 60 * 1000; // ~ every 2 days (~3x/week)
+export const EXCHANGE_TTL_MS = 2 * 24 * 60 * 60 * 1000; // ~ every 2 days (~3x/week)
 
 interface ExchangeRateApiResponse {
   result: string;
@@ -7,39 +7,12 @@ interface ExchangeRateApiResponse {
   conversion_rates: Record<string, number>;
 }
 
-let serverCache: {
-  base: string;
-  fetchedAt: number;
-  rates: Record<string, number>;
-} | null = null;
-
-export async function getExchangeRates(base: string = "USD") {
-  const now = Date.now();
-
-  // Server-side in-memory cache
-  if (typeof window === "undefined") {
-    if (serverCache && serverCache.base === base && now - serverCache.fetchedAt < EXCHANGE_TTL_MS) {
-      return serverCache.rates;
-    }
-  } else {
-    // Client-side localStorage cache
-    const key = `exchange_rates_${base}`;
-    try {
-      const stored = window.localStorage.getItem(key);
-      if (stored) {
-        const parsed = JSON.parse(stored) as { fetchedAt: number; rates: Record<string, number> };
-        if (now - parsed.fetchedAt < EXCHANGE_TTL_MS) {
-          return parsed.rates;
-        }
-      }
-    } catch {
-      // ignore JSON / storage issues
-    }
-  }
-
-  const apiKey = process.env.NEXT_PUBLIC_EXCHANGE_RATE_API_KEY;
+export async function fetchLiveExchangeRates(base: string = "USD") {
+  // Prefer server-only key; keep NEXT_PUBLIC fallback for compatibility.
+  const apiKey =
+    process.env.EXCHANGE_RATE_API_KEY || process.env.NEXT_PUBLIC_EXCHANGE_RATE_API_KEY;
   if (!apiKey) {
-    throw new Error("Missing NEXT_PUBLIC_EXCHANGE_RATE_API_KEY");
+    throw new Error("Missing EXCHANGE_RATE_API_KEY");
   }
 
   const url = `https://v6.exchangerate-api.com/v6/${apiKey}/latest/${base}`;
@@ -53,21 +26,7 @@ export async function getExchangeRates(base: string = "USD") {
     throw new Error("Exchange rate API returned non-success result");
   }
 
-  const rates = data.conversion_rates;
-
-  // Update caches
-  if (typeof window === "undefined") {
-    serverCache = { base, fetchedAt: now, rates };
-  } else {
-    try {
-      const key = `exchange_rates_${base}`;
-      window.localStorage.setItem(key, JSON.stringify({ fetchedAt: now, rates }));
-    } catch {
-      // ignore storage failures
-    }
-  }
-
-  return rates;
+  return data.conversion_rates;
 }
 
 export function convertAmount(
