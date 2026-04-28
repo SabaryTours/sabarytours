@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "../../utils/supabase/client";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,6 +9,9 @@ import { Edit02Icon, Delete01Icon, PlusSignIcon } from "hugeicons-react";
 export default function AdminToursPage() {
   const [tours, setTours] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
 
   useEffect(() => {
     fetchTours();
@@ -54,6 +57,39 @@ export default function AdminToursPage() {
     }
   };
 
+  const filteredTours = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let data = [...tours];
+
+    if (q) {
+      data = data.filter((tour) => {
+        const title = String(tour.title || "").toLowerCase();
+        const category = String(tour.category || "").toLowerCase();
+        return title.includes(q) || category.includes(q);
+      });
+    }
+
+    if (statusFilter !== "all") {
+      data = data.filter((tour) => tour.status === statusFilter);
+    }
+
+    if (sortBy === "oldest") {
+      data.sort(
+        (a, b) =>
+          new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
+      );
+    } else if (sortBy === "a-z") {
+      data.sort((a, b) => String(a.title || "").localeCompare(String(b.title || "")));
+    } else {
+      data.sort(
+        (a, b) =>
+          new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      );
+    }
+
+    return data;
+  }, [tours, query, statusFilter, sortBy]);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -70,14 +106,51 @@ export default function AdminToursPage() {
         </Link>
       </div>
 
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100/50 p-4 sm:p-5">
+        <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+          <div className="w-full lg:max-w-lg">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search tour title or category..."
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#ff5e00] focus:border-[#ff5e00] outline-none font-sans text-sm text-black"
+            />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-sm bg-white text-black"
+            >
+              <option value="all">All statuses</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-sm bg-white text-black"
+            >
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="a-z">A to Z</option>
+            </select>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 font-sans mt-3">
+          Showing {filteredTours.length} {filteredTours.length === 1 ? "tour" : "tours"}
+        </p>
+      </div>
+
       {/* Mobile: cards */}
       <div className="md:hidden flex flex-col gap-4">
         {loading ? (
           <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-500 font-sans">Loading tours...</div>
-        ) : tours.length === 0 ? (
+        ) : filteredTours.length === 0 ? (
           <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-500 font-sans">No tours found.</div>
         ) : (
-          tours.map((tour) => {
+          filteredTours.map((tour) => {
             const primaryImage = tour.tour_images?.[0]?.image_url || "/assets/placeholder-tour.jpg";
             const price = tour.tour_prices?.[0]?.amount || 0;
             return (
@@ -121,9 +194,9 @@ export default function AdminToursPage() {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500 font-sans">Loading tours...</td></tr>
-              ) : tours.length === 0 ? (
+              ) : filteredTours.length === 0 ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500 font-sans">No tours found.</td></tr>
-              ) : tours.map((tour) => {
+              ) : filteredTours.map((tour) => {
                 const primaryImage = tour.tour_images?.[0]?.image_url || "/assets/placeholder-tour.jpg";
                 const price = tour.tour_prices?.[0]?.amount || 0;
                 return (

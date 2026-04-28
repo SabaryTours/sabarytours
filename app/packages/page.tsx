@@ -13,7 +13,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Packages() {
-  return <PackagesPage />;
+interface PackagesRouteProps {
+  searchParams?: Promise<{
+    q?: string;
+    date?: string;
+  }>;
+}
+
+export default async function Packages({ searchParams }: PackagesRouteProps) {
+  const resolved = (await searchParams) || {};
+  return <PackagesPage searchQuery={resolved.q || ""} searchDate={resolved.date || ""} />;
 }
 

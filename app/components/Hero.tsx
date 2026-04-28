@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import HeroSearchForm from "./HeroSearchForm";
 
 export default function Hero({ initialImages = [] }: { initialImages?: string[] }) {
-  const [images] = useState<string[]>(initialImages.length > 0 ? initialImages : ["/assets/apex-61.JPG"]);
+  const [images] = useState<string[]>(
+    Array.from(new Set(initialImages.filter(Boolean))).length > 0
+      ? Array.from(new Set(initialImages.filter(Boolean)))
+      : ["/assets/apex-61.JPG"]
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -33,25 +37,25 @@ export default function Hero({ initialImages = [] }: { initialImages?: string[] 
         </div>
       ))}
 
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 md:px-12 flex flex-col items-center justify-center mt-12 sm:mt-16 text-center">
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 md:px-12 flex flex-col items-center justify-center mt-10 sm:mt-14 text-center">
         
         {/* Main Headline */}
-        <div className="max-w-4xl mx-auto flex flex-col items-center gap-4 sm:gap-6 mb-10 sm:mb-14 animate-fade-in-up">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-semibold tracking-wider font-sans mb-2">
+        <div className="max-w-3xl mx-auto flex flex-col items-center gap-3 sm:gap-5 mb-8 sm:mb-10 animate-fade-in-up">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/25 backdrop-blur-md border border-white/15 text-white/90 text-[11px] sm:text-xs font-semibold tracking-wider font-sans mb-1">
             <span className="w-2 h-2 rounded-full bg-[#ff5e00] animate-pulse"></span>
             DISCOVER THE UNDISCOVERED
           </div>
           
           <h1 
-            className="text-[28px] sm:text-[40px] md:text-[56px] lg:text-[64px] xl:text-[72px] text-white leading-[1] tracking-tight uppercase"
+            className="text-[26px] sm:text-[36px] md:text-[48px] lg:text-[54px] xl:text-[60px] text-white leading-[1.04] tracking-tight uppercase"
             style={{ 
               fontFamily: 'var(--font-unlimited-pie)',
-              textShadow: '0 4px 24px rgba(0,0,0,0.5)'
+              textShadow: '0 3px 20px rgba(0,0,0,0.45)'
             }}
           >
             Discover the Beauty of Ghana
           </h1>
-          <div className="text-white text-[14px] sm:text-[16px] md:text-[18px] max-w-2xl font-sans mt-3 sm:mt-5 font-medium drop-shadow-md">
+          <div className="text-white/90 text-[14px] sm:text-[15px] md:text-[17px] max-w-xl font-sans mt-2 sm:mt-3 font-medium drop-shadow-md">
             We plan the trips, you make the memories. From waterfalls to street food, we take you beyond the brochures.
           </div>
         </div>
@@ -60,7 +64,7 @@ export default function Hero({ initialImages = [] }: { initialImages?: string[] 
         <HeroSearchForm />
 
         {/* Popular searches tags */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+        <div className="hidden sm:flex mt-6 flex-wrap items-center justify-center gap-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <span className="text-white/80 text-sm font-medium font-sans">Popular:</span>
           {["Kakum", "Quad Bike", "Cape Coast & Elmina", "Accra City Tour", "Safari Valley"].map((tag) => (
             <button key={tag} className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-medium backdrop-blur-sm transition-all whitespace-nowrap">

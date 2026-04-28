@@ -106,7 +106,7 @@ export async function POST(request: Request) {
               from_email: "bookings@sabarytours.com",
               from_name: "Sabary Travel and Tours",
               to: [{ email: client_email, name: client_name, type: "to" }],
-              subject: `Invoice from Sabary Tours: ${description}`,
+              subject: `Invoice & Receipt from Sabary Tours: ${description}`,
               html: `
                 <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 640px; margin: 0 auto; background-color: #f5f7fb; padding: 24px;">
                   <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; background-color: #ffffff; border-radius: 16px; overflow: hidden;">
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
                               </div>
                             </td>
                             <td style="text-align: right; vertical-align: top;">
-                              <div style="font-size: 24px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #0060cc; margin-bottom: 8px;">Invoice</div>
+                              <div style="font-size: 24px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #0060cc; margin-bottom: 8px;">Invoice & Receipt</div>
                               <table cellpadding="0" cellspacing="0" style="font-size: 12px; color: #4b5563; margin-left: auto;">
                                 <tr>
                                   <td style="padding: 2px 8px;">Date:</td>
@@ -133,6 +133,10 @@ export async function POST(request: Request) {
                                 <tr>
                                   <td style="padding: 2px 8px;">Invoice #:</td>
                                   <td style="padding: 2px 0;">${reference}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 2px 8px;">Receipt #:</td>
+                                  <td style="padding: 2px 0;">RCPT-${reference}</td>
                                 </tr>
                                 <tr>
                                   <td style="padding: 2px 8px;">Customer:</td>

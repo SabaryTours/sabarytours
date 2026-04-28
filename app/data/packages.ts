@@ -26,6 +26,11 @@ export interface Tour {
   freeCancellation?: boolean;
   activities?: string[];
   whatsIncluded?: string[];
+  exclusions?: string[];
+  whatToBring?: string[];
+  groupSizeOptions?: string[];
+  ageCategories?: string[];
+  languages?: string[];
   whyBook?: string[];
   gallery?: string[];
   location?: string;

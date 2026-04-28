@@ -21,8 +21,21 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
   const router = useRouter();
   const [showAllGallery, setShowAllGallery] = useState(false);
 
-  const displayImages = [tour.image, ...(tour.gallery || [])].filter(Boolean);
+  const displayImages = Array.from(
+    new Set([tour.image, ...(tour.gallery || [])].filter(Boolean))
+  );
   const heroImages = displayImages.slice(0, 3);
+  const groupSizeOptions =
+    (tour.groupSizeOptions && tour.groupSizeOptions.length > 0
+      ? tour.groupSizeOptions
+      : (tour.price_tiers || []).map((tier: any) => tier?.name).filter(Boolean)) || [];
+  const ageCategories = tour.ageCategories && tour.ageCategories.length > 0
+    ? tour.ageCategories
+    : ["Infant", "Child", "Adult"];
+  const languages =
+    tour.languages && tour.languages.length > 0 ? tour.languages : ["English"];
+  const exclusions = tour.exclusions && tour.exclusions.length > 0 ? tour.exclusions : [];
+  const whatToBring = tour.whatToBring && tour.whatToBring.length > 0 ? tour.whatToBring : [];
 
   return (
     <div className="min-h-screen bg-white">
@@ -170,16 +183,50 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
             </section>
           )}
 
-          {/* Included / Excluded (Side by side on desktop) */}
+          {/* Inclusions */}
           {(tour.whatsIncluded && tour.whatsIncluded.length > 0) && (
             <section className="bg-white border text-black border-gray-100 rounded-2xl p-6 shadow-sm">
               <h2 className="text-xl font-bold font-sans text-gray-900 mb-6 uppercase" style={{ fontFamily: 'var(--font-unlimited-pie)'}}>
-                What&apos;s Included
+                Inclusions
               </h2>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
                 {tour.whatsIncluded.map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-gray-700 font-sans">
                     <Tick02Icon size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* Exclusions */}
+          {exclusions.length > 0 && (
+            <section className="bg-white border text-black border-gray-100 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-xl font-bold font-sans text-gray-900 mb-6 uppercase" style={{ fontFamily: 'var(--font-unlimited-pie)'}}>
+                Exclusions
+              </h2>
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
+                {exclusions.map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 text-gray-700 font-sans">
+                    <Cancel01Icon size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* What to bring */}
+          {whatToBring.length > 0 && (
+            <section className="bg-white border text-black border-gray-100 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-xl font-bold font-sans text-gray-900 mb-6 uppercase" style={{ fontFamily: 'var(--font-unlimited-pie)'}}>
+                What to Bring
+              </h2>
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
+                {whatToBring.map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 text-gray-700 font-sans">
+                    <InformationCircleIcon size={20} className="text-[#0060cc] flex-shrink-0 mt-0.5" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -280,6 +327,46 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
                   {tour.price}
                 </span>
                 <span className="text-gray-500 font-sans text-sm pb-1">per person</span>
+              </div>
+            </div>
+
+            {/* Structured Pricing / Preferences */}
+            <div className="space-y-4">
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <p className="text-xs text-gray-500 font-sans uppercase font-semibold tracking-wide mb-2">Group size options</p>
+                {groupSizeOptions.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {groupSizeOptions.map((option, idx) => (
+                      <span key={`${option}-${idx}`} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-sans text-gray-700">
+                        {option}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600 font-sans">Available on request.</p>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <p className="text-xs text-gray-500 font-sans uppercase font-semibold tracking-wide mb-2">Age categories</p>
+                <div className="flex flex-wrap gap-2">
+                  {ageCategories.map((option, idx) => (
+                    <span key={`${option}-${idx}`} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-sans text-gray-700">
+                      {option}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <p className="text-xs text-gray-500 font-sans uppercase font-semibold tracking-wide mb-2">Language preferences</p>
+                <div className="flex flex-wrap gap-2">
+                  {languages.map((option, idx) => (
+                    <span key={`${option}-${idx}`} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-sans text-gray-700">
+                      {option}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 

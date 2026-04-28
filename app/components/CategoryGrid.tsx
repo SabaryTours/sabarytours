@@ -2,12 +2,83 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import type { PackageCategory } from "./PackagesGrid";
 
-export default function CategoryGrid({ packages = [] }: { packages: PackageCategory[] }) {
+interface CategoryGridProps {
+  packages?: PackageCategory[];
+  initialQuery?: string;
+}
+
+export default function CategoryGrid({
+  packages = [],
+  initialQuery = "",
+}: CategoryGridProps) {
+  const [query, setQuery] = useState(initialQuery);
+  const [sortBy, setSortBy] = useState("newest");
+
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
+
+  const visiblePackages = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let data = [...packages];
+
+    if (q) {
+      data = data.filter((item) => item.title?.toLowerCase().includes(q));
+    }
+
+    if (sortBy === "a-z") {
+      data.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortBy === "oldest") {
+      data.sort(
+        (a, b) =>
+          new Date((a as PackageCategory & { created_at?: string }).created_at || 0).getTime() -
+          new Date((b as PackageCategory & { created_at?: string }).created_at || 0).getTime()
+      );
+    } else {
+      data.sort(
+        (a, b) =>
+          new Date((b as PackageCategory & { created_at?: string }).created_at || 0).getTime() -
+          new Date((a as PackageCategory & { created_at?: string }).created_at || 0).getTime()
+      );
+    }
+
+    return data;
+  }, [packages, query, sortBy]);
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-      {packages.map((category) => (
+    <>
+      <div className="mb-6 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+        <div className="flex-1 max-w-xl">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search packages by name..."
+            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-sans text-gray-800 outline-none focus:border-[#ff5e00] focus:ring-2 focus:ring-[#ff5e00]/20"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500 font-sans">Sort:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-sans text-gray-800 outline-none focus:border-[#ff5e00]"
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="a-z">A to Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="mb-4 text-sm text-gray-500 font-sans">
+        Showing {visiblePackages.length} {visiblePackages.length === 1 ? "package" : "packages"}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      {visiblePackages.map((category) => (
         <Link
           key={category.id}
           href={`/packages/${category.slug}`}
@@ -65,6 +136,7 @@ export default function CategoryGrid({ packages = [] }: { packages: PackageCateg
           </div>
         </Link>
       ))}
-    </div>
+      </div>
+    </>
   );
 }

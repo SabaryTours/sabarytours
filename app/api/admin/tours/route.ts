@@ -44,19 +44,29 @@ export async function POST(request: Request) {
       finalTourId = newTour.id;
     }
 
-    // 2. Upsert Tour Prices
-    if (priceInput && priceInput.amount !== undefined) {
-      // For simplicity, we keep 1 base price per tour for now.
-      // Delete existing prices to ensure clean state
+    // 2. Upsert Tour Prices (supports multiple tiers)
+    if (priceInput) {
       await supabaseAdmin.from("tour_prices").delete().eq("tour_id", finalTourId);
 
-      const { error: priceError } = await supabaseAdmin.from("tour_prices").insert({
-        tour_id: finalTourId,
-        amount: priceInput.amount,
-        currency: priceInput.currency || "GHS",
-        name: "Base Price"
-      });
-      if (priceError) throw priceError;
+      const tiers = Array.isArray(priceInput)
+        ? priceInput
+        : priceInput.amount !== undefined
+        ? [{ amount: priceInput.amount, currency: priceInput.currency || "GHS", name: "Base Price" }]
+        : [];
+
+      const normalizedTiers = tiers
+        .map((tier: any) => ({
+          tour_id: finalTourId,
+          amount: Number(tier.amount),
+          currency: tier.currency || "GHS",
+          name: (tier.name || "Base Price").toString().trim(),
+        }))
+        .filter((tier: any) => Number.isFinite(tier.amount) && tier.amount >= 0);
+
+      if (normalizedTiers.length > 0) {
+        const { error: priceError } = await supabaseAdmin.from("tour_prices").insert(normalizedTiers);
+        if (priceError) throw priceError;
+      }
     }
 
 
