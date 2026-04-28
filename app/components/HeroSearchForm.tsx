@@ -12,9 +12,11 @@ export default function HeroSearchForm() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (location) params.append("q", location);
+    const trimmedLocation = location.trim();
+    if (trimmedLocation) params.append("q", trimmedLocation);
     if (date) params.append("date", date);
-    router.push(`/packages?${params.toString()}`);
+    const query = params.toString();
+    router.push(query ? `/packages?${query}` : "/packages");
   };
 
   return (

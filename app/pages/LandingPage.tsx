@@ -10,7 +10,9 @@ import { getHeroImages, getHappenings } from "../lib/api";
 
 export default async function LandingPage() {
   const images = await getHeroImages(true);
-  const imageUrls = images.map((img) => img.image_url);
+  const imageUrls = Array.from(
+    new Set(images.map((img) => img.image_url).filter(Boolean))
+  );
   const happenings = await getHappenings();
 
   return (

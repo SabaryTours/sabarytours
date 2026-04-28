@@ -3,9 +3,34 @@ import CategoryGrid from "../components/CategoryGrid";
 import Footer from "../components/Footer";
 import { createClient } from "../utils/supabase/server";
 
-export default async function PackagesPage() {
+interface PackagesPageProps {
+  searchQuery?: string;
+  searchDate?: string;
+}
+
+export default async function PackagesPage({
+  searchQuery = "",
+  searchDate = "",
+}: PackagesPageProps) {
   const supabase = await createClient();
-  const { data: packages } = await supabase.from('packages').select('*').order('created_at', { ascending: true });
+  const { data: packages } = await supabase
+    .from("packages")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredPackages = normalizedQuery
+    ? (packages || []).filter((pkg: any) => {
+        const title = String(pkg.title || "").toLowerCase();
+        const description = String(pkg.description || "").toLowerCase();
+        const slug = String(pkg.slug || "").toLowerCase();
+        return (
+          title.includes(normalizedQuery) ||
+          description.includes(normalizedQuery) ||
+          slug.includes(normalizedQuery)
+        );
+      })
+    : packages || [];
 
   return (
     <div className="min-h-screen bg-white overflow-visible">
@@ -111,7 +136,12 @@ export default async function PackagesPage() {
             </div>
           </div>
 
-          <CategoryGrid packages={packages || []} />
+          {searchDate ? (
+            <p className="mb-4 text-sm text-gray-500 font-sans text-center">
+              Showing package results for date <span className="font-semibold">{searchDate}</span>.
+            </p>
+          ) : null}
+          <CategoryGrid packages={filteredPackages} initialQuery={searchQuery} />
         </div>
       </section>
       <Footer />

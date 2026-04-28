@@ -123,6 +123,11 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
 
   // What's Included from JSONB column
   const whatsIncluded = Array.isArray(t.whats_included) ? t.whats_included : [];
+  const exclusions = Array.isArray(t.exclusions) ? t.exclusions : [];
+  const whatToBring = Array.isArray(t.what_to_bring) ? t.what_to_bring : [];
+  const groupSizeOptions = Array.isArray(t.group_size_options) ? t.group_size_options : [];
+  const ageCategories = Array.isArray(t.age_categories) ? t.age_categories : [];
+  const languages = Array.isArray(t.languages) ? t.languages : [];
 
   // Fetch real review stats for this tour
   const resolvedSlug = t.slug || generateSlug(t.title);
@@ -155,6 +160,11 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
     map_url: t.map_url,
     price_tiers: t.tour_prices || [],
     whatsIncluded: whatsIncluded,
+    exclusions,
+    whatToBring,
+    groupSizeOptions,
+    ageCategories,
+    languages,
     itinerary: mappedItin,
     rating: avgRating,
     reviewCount: reviewCount,
