@@ -6,34 +6,60 @@ import { useEffect, useState } from "react";
 import { EyeIcon, Message01Icon } from "hugeicons-react";
 import TourLoader from "./TourLoader";
 
+const PAGE_SIZE = 6;
+
 export default function BlogGrid() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+
+  const fetchPosts = async (pageNumber: number, append: boolean) => {
+    const { createClient } = await import("../utils/supabase/client");
+    const supabase = createClient();
+    const from = pageNumber * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    const { data, error } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      console.error("Failed to fetch blog posts:", error);
+      return;
+    }
+
+    const mapped =
+      data?.map((p) => ({
+        ...p,
+        image: p.image_url || "/assets/placeholder-blog.jpg",
+        views: Math.floor(Math.random() * 1000) + 100,
+        comments: Math.floor(Math.random() * 50),
+      })) || [];
+
+    setHasMore(mapped.length === PAGE_SIZE);
+    setPosts((prev) => (append ? [...prev, ...mapped] : mapped));
+  };
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      const { createClient } = await import('../utils/supabase/client');
-      const supabase = createClient();
-      
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-        .limit(6);
-        
-      if (data) {
-        setPosts(data.map(p => ({
-          ...p,
-          image: p.image_url || '/assets/placeholder-blog.jpg',
-          views: Math.floor(Math.random() * 1000) + 100,
-          comments: Math.floor(Math.random() * 50)
-        })));
-      }
+    const init = async () => {
+      await fetchPosts(0, false);
       setLoading(false);
     };
-    fetchPosts();
+    init();
   }, []);
+
+  const handleLoadMore = async () => {
+    const nextPage = page + 1;
+    setLoadingMore(true);
+    await fetchPosts(nextPage, true);
+    setPage(nextPage);
+    setLoadingMore(false);
+  };
 
   if (loading) {
     return (
@@ -52,7 +78,8 @@ export default function BlogGrid() {
   }
 
   return (
-    <div className="flex flex-wrap justify-center" style={{ gap: '20px' }}>
+    <div className="space-y-8">
+      <div className="flex flex-wrap justify-center" style={{ gap: "20px" }}>
       {posts.map((post) => (
           <Link
             key={post.id}
@@ -115,6 +142,19 @@ export default function BlogGrid() {
           </h3>
         </Link>
       ))}
+      </div>
+
+      {hasMore && (
+        <div className="flex justify-center">
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="px-6 py-3 rounded-xl bg-[#ff5e00] text-white font-sans font-semibold hover:bg-[#e55500] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            {loadingMore ? "Loading..." : "Load older blogs"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
