@@ -38,11 +38,12 @@ export default function BlogPage() {
               >
                 <span className="text-[#222] uppercase mr-2">WELCOME TO</span>
                 <span className="text-[#ff5e00] uppercase" style={{ textShadow: "1.5px 1.5px 0px #3f1a0b" }}>
-                  OUR TRAVEL BLOG
+                  YOUR GO-TO GUIDE
                 </span>
               </h1>
               <p className="text-[#222] text-[13px] sm:text-[14px] md:text-[15px] font-bold leading-relaxed max-w-sm">
-                its dedicated to providing you travel tips ,and amazing places you can tour or lodge within Ghana.
+              for exploring Ghana’s beauty, culture, and hidden gems—packed with travel tips, unique experiences, and the best places to stay
+              Clock it 😆
               </p>
             </div>
           </div>

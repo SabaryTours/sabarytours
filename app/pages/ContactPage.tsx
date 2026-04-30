@@ -125,7 +125,7 @@ export default function ContactPage() {
               className="text-4xl md:text-6xl text-white tracking-tight"
               style={{ fontFamily: 'var(--font-unlimited-pie)' }}
             >
-              Let's <span className="text-[#ffe0cc]">Connect</span>
+              Let&apos;s <span className="text-[#ffe0cc]">Connect</span>
             </h1>
             <p 
               className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed"
@@ -170,8 +170,8 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">Call Us</h4>
-                      <a href="tel:+233543093838" className="text-gray-600 font-medium hover:text-[#ff5e00] transition-colors block">
-                        +233 543 093 838
+                      <a href="tel:+233576093838" className="text-gray-600 font-medium hover:text-[#ff5e00] transition-colors block">
+                        +233 576 093 838
                       </a>
                     </div>
                   </div>
