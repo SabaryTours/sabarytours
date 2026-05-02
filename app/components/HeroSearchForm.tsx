@@ -32,7 +32,7 @@ export default function HeroSearchForm() {
               type="text" 
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="Accra, Cape Coast, etc." 
+              placeholder="Northern Region, Cape Coast, Accra…" 
               className="bg-transparent text-gray-900 font-semibold outline-none placeholder:font-normal placeholder:text-gray-400 text-sm sm:text-base w-full"
             />
           </div>

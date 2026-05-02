@@ -40,7 +40,7 @@ export default function AdminHeader({ onMenuClick, title = "Dashboard" }: AdminH
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200">
+    <header className="print:hidden sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200">
       <div className="flex items-center gap-4">
         <button 
           onClick={onMenuClick}

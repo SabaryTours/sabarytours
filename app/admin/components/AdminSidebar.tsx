@@ -13,6 +13,8 @@ import {
   Comment01Icon,
   Invoice01Icon,
   Ticket01Icon,
+  Image01Icon,
+  Calendar04Icon,
 } from "hugeicons-react";
 import { logout } from "../../lib/authService";
 import Image from "next/image";
@@ -21,6 +23,8 @@ const navItems = [
   { name: "Dashboard", href: "/admin", icon: Home01Icon },
   { name: "Hero Images", href: "/admin/hero", icon: MapsIcon }, // NEW
   { name: "Bookings", href: "/admin/bookings", icon: MapsIcon },
+  { name: "Gallery", href: "/admin/gallery", icon: Image01Icon },
+  { name: "Year trip plan", href: "/admin/trip-outline", icon: Calendar04Icon },
   { name: "Inquiries", href: "/admin/inquiries", icon: Message01Icon },
   { name: "Invoices", href: "/admin/invoices", icon: Invoice01Icon }, // NEW
   { name: "Vouchers", href: "/admin/vouchers", icon: Ticket01Icon },
@@ -46,15 +50,15 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-gray-100 z-40 lg:hidden"
+        <div
+          className="fixed inset-0 bg-gray-100 z-40 lg:hidden print:hidden"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar sidebar */}
-      <aside 
-        className={`fixed inset-y-0 left-0 z-50 py-3 w-64 bg-white border-r border-gray-100 text-black flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static ${
+      <aside
+        className={`print:hidden fixed inset-y-0 left-0 z-50 py-3 w-64 bg-white border-r border-gray-100 text-black flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

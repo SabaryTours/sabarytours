@@ -78,6 +78,7 @@ export default function Header() {
   const navLinks = [
     { href: "/", label: "Home" },
     { href: "/packages", label: "Tours" },
+    { href: "/gallery", label: "Gallery" },
     { href: "/blog", label: "Blog and News" },
     { href: "/about-us", label: "About us" },
     { href: "/contact", label: "Contact us" },
@@ -148,7 +149,7 @@ export default function Header() {
   };
 
   return (
-    <header className="w-full border-b border-[#ffdfcc] sticky top-0 z-100 bg-white overflow-visible transition-all duration-300">
+    <header className="print:hidden w-full border-b border-[#ffdfcc] sticky top-0 z-100 bg-white overflow-visible transition-all duration-300">
       <div className="container mx-auto px-4 sm:px-6 md:px-12 py-3 sm:py-4 md:py-[18px] overflow-visible">
         <div className="flex items-center justify-between w-full overflow-visible">
 

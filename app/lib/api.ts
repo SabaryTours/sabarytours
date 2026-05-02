@@ -318,3 +318,28 @@ export async function getHappenings(): Promise<NowHappening[]> {
   return data as NowHappening[];
 }
 
+export interface TripOutlineMonth {
+  id?: string;
+  year: number;
+  month: number;
+  title: string;
+  body: string | null;
+  accent_color: string;
+}
+
+export async function getTripOutlineForYear(year: number): Promise<TripOutlineMonth[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("trip_year_outline")
+    .select("id, year, month, title, body, accent_color")
+    .eq("year", year)
+    .eq("is_published", true)
+    .order("month", { ascending: true });
+
+  if (error) {
+    console.error("trip_year_outline fetch:", error);
+    return [];
+  }
+  return (data as TripOutlineMonth[]) || [];
+}
+

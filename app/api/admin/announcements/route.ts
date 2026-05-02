@@ -48,3 +48,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const supabase = await createServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role !== "admin") {
+      return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+    }
+
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ success: false, error: "Missing announcement ID" }, { status: 400 });
+    }
+
+    const { error } = await supabaseAdmin.from("announcements").delete().eq("id", id);
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("Error deleting announcement via Admin API:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

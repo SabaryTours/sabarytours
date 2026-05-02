@@ -4,32 +4,58 @@ import { useEffect, useState } from "react";
 import { createClient } from "../../utils/supabase/client";
 import Link from "next/link";
 import { Edit02Icon, Delete01Icon, PlusSignIcon } from "hugeicons-react";
+import toast from "react-hot-toast";
+
+type AnnouncementRow = {
+  id: string;
+  title: string;
+  type?: string | null;
+  created_at: string;
+};
 
 export default function AdminAnnouncementsPage() {
-  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<AnnouncementRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchAnnouncements();
-  }, []);
-
-  const fetchAnnouncements = async () => {
-    setLoading(true);
+  async function loadRowsFromSupabase(): Promise<AnnouncementRow[]> {
     const supabase = createClient();
     const { data } = await supabase
-      .from('announcements')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (data) setAnnouncements(data);
-    setLoading(false);
-  };
+      .from("announcements")
+      .select("*")
+      .order("created_at", { ascending: false });
+    return (data as AnnouncementRow[]) ?? [];
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const rows = await loadRowsFromSupabase();
+      if (cancelled) return;
+      setAnnouncements(rows);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this announcement?')) return;
-    const supabase = createClient();
-    await supabase.from('announcements').delete().eq('id', id);
-    fetchAnnouncements();
+    if (!confirm("Are you sure you want to delete this announcement?")) return;
+    try {
+      const res = await fetch(`/api/admin/announcements?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(typeof data?.error === "string" ? data.error : "Could not delete announcement.");
+        return;
+      }
+      toast.success("Announcement deleted.");
+      const rows = await loadRowsFromSupabase();
+      setAnnouncements(rows);
+    } catch {
+      toast.error("Could not delete announcement.");
+    }
   };
 
   return (
@@ -64,7 +90,14 @@ export default function AdminAnnouncementsPage() {
               </div>
               <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
                 <Link href={`/admin/announcements/${ann.id}`} className="p-2 text-gray-400 hover:text-[#0060cc] hover:bg-[#0060cc]/10 rounded-lg" title="Edit"><Edit02Icon size={18} /></Link>
-                <button onClick={() => handleDelete(ann.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Delete"><Delete01Icon size={18} /></button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(ann.id)}
+                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                  title="Delete"
+                >
+                  <Delete01Icon size={18} />
+                </button>
               </div>
             </div>
           ))
@@ -94,9 +127,16 @@ export default function AdminAnnouncementsPage() {
                   <td className="px-6 py-4"><span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700 font-sans">{ann.type || "Alert"}</span></td>
                   <td className="px-6 py-4"><span className="text-sm text-gray-600 font-sans">{new Date(ann.created_at).toLocaleDateString()}</span></td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2">
                       <Link href={`/admin/announcements/${ann.id}`} className="p-2 text-gray-400 hover:text-[#0060cc] hover:bg-[#0060cc]/10 rounded-lg" title="Edit"><Edit02Icon size={18} /></Link>
-                      <button onClick={() => handleDelete(ann.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Delete"><Delete01Icon size={18} /></button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(ann.id)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                        title="Delete"
+                      >
+                        <Delete01Icon size={18} />
+                      </button>
                     </div>
                   </td>
                 </tr>
