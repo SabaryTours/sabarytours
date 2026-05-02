@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { contactFormSchema, type ContactFormData } from "../lib/validations/contact";
 import type { ZodError } from "zod";
 import Footer from "../components/Footer";
@@ -9,6 +10,7 @@ import 'react-phone-input-2/lib/style.css';
 import { Location01Icon, CallIcon, Mail01Icon } from "hugeicons-react";
 
 export default function ContactPage() {
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState<ContactFormData>({
     firstName: "",
     lastName: "",
@@ -22,6 +24,39 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
   const [submitMessage, setSubmitMessage] = useState("");
+
+  useEffect(() => {
+    const q = (searchParams.get("q") || searchParams.get("search") || "").trim();
+    const from = searchParams.get("from") || "";
+    if (!q && from !== "year-plan") return;
+
+    setFormData((prev) => {
+      if (prev.subject || prev.message) return prev;
+      if (from === "year-plan") {
+        return {
+          ...prev,
+          subject: "Year plan / custom trip",
+          message:
+            "I'm interested in learning more about your seasonal trips or arranging a private experience.\n\n",
+        };
+      }
+      if (from === "packages" && q) {
+        return {
+          ...prev,
+          subject: `Tour enquiry: ${q}`,
+          message: `I searched for "${q}" on your packages page and didn't find a match. I'd like to discuss a private trip or future availability.\n\n`,
+        };
+      }
+      if (q) {
+        return {
+          ...prev,
+          subject: prev.subject || `Enquiry: ${q}`,
+          message: prev.message || `I'm looking for: ${q}\n\n`,
+        };
+      }
+      return prev;
+    });
+  }, [searchParams]);
 
   const validateForm = (): boolean => {
     try {

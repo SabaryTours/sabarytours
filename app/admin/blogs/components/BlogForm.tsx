@@ -1,11 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "../../../utils/supabase/client";
 import dynamic from "next/dynamic";
 import 'react-quill-new/dist/quill.snow.css';
 import toast from "react-hot-toast";
+
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const SAVE_TIMEOUT_MS = 120_000;
+
+function generateSlug(title: string) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+async function readFetchErrorMessage(res: Response): Promise<string> {
+  try {
+    const j = await res.json();
+    if (j?.error && typeof j.error === "string") return j.error;
+  } catch {
+    /* ignore */
+  }
+  return `Save failed (${res.status})`;
+}
 
 const ReactQuill = dynamic(
   async () => {
@@ -27,34 +46,49 @@ export default function BlogForm({ initialData }: BlogFormProps) {
   const [formData, setFormData] = useState({
     title: initialData?.title || "",
     summary: initialData?.summary || "",
-    content: initialData?.content || "",
     image_url: initialData?.image_url || "",
     status: initialData?.status || "published",
   });
+
+  /** Quill is uncontrolled so large HTML does not re-render the whole editor on every keystroke. */
+  const editorKey = String(initialData?.id ?? "new");
+  const initialHtml = initialData?.content ?? "";
+  const contentDraftRef = useRef(initialHtml);
+
+  useEffect(() => {
+    contentDraftRef.current = initialHtml;
+  }, [editorKey, initialHtml]);
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleQuillChange = (content: string) => {
-    setFormData(prev => ({ ...prev, content }));
-  };
-
   const [uploadingImage, setUploadingImage] = useState(false);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const input = e.target;
+    const file = input.files?.[0];
     if (!file) return;
 
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast.error(`Image is too large (max ${MAX_IMAGE_BYTES / (1024 * 1024)}MB). Try a smaller file.`);
+      input.value = "";
+      return;
+    }
+
     setUploadingImage(true);
-    const formData = new FormData();
-    formData.append("file", file);
+    const uploadBody = new FormData();
+    uploadBody.append("file", file);
+
+    const ac = new AbortController();
+    const timeoutId = setTimeout(() => ac.abort(), SAVE_TIMEOUT_MS);
 
     try {
       const res = await fetch("/api/upload", {
         method: "POST",
-        body: formData,
+        body: uploadBody,
+        signal: ac.signal,
       });
       const data = await res.json();
       if (data.secure_url) {
@@ -63,25 +97,42 @@ export default function BlogForm({ initialData }: BlogFormProps) {
       } else {
         toast.error("Upload failed: " + (data.error || "Unknown error"));
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload image.");
+      if (error instanceof Error && error.name === "AbortError") {
+        toast.error("Upload timed out. Check your connection or use a smaller image.");
+      } else {
+        toast.error("Failed to upload image.");
+      }
     } finally {
+      clearTimeout(timeoutId);
       setUploadingImage(false);
+      input.value = "";
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || uploadingImage) return;
+
     setLoading(true);
-    
+
+    const ac = new AbortController();
+    const timeoutId = setTimeout(() => ac.abort(), SAVE_TIMEOUT_MS);
+
     try {
-      const slug = formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      // Editing: keep existing slug so saves do not collide with unique(slug) or break URLs.
+      const existingSlug =
+        typeof initialData?.slug === "string" ? initialData.slug.trim() : "";
+      const slug = initialData?.id
+        ? existingSlug || generateSlug(formData.title)
+        : generateSlug(formData.title);
+
       const postInput = {
         title: formData.title,
         slug,
         summary: formData.summary,
-        content: formData.content,
+        content: contentDraftRef.current,
         image_url: formData.image_url,
         status: formData.status,
       };
@@ -91,19 +142,30 @@ export default function BlogForm({ initialData }: BlogFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           postInput,
-          blogId: initialData?.id
-        })
+          blogId: initialData?.id,
+        }),
+        signal: ac.signal,
       });
 
-      if (!res.ok) throw new Error("Failed to save blog");
+      if (!res.ok) {
+        const message = await readFetchErrorMessage(res);
+        throw new Error(message);
+      }
 
       toast.success("Article published!");
-      router.push('/admin/blogs');
+      router.push("/admin/blogs");
       router.refresh();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error saving blog:", error);
-      toast.error("Failed to save article.");
+      if (error instanceof Error && error.name === "AbortError") {
+        toast.error("Save timed out. Your article may be very large or the network is slow—try again.");
+      } else if (error instanceof Error) {
+        toast.error(error.message || "Failed to save article.");
+      } else {
+        toast.error("Failed to save article.");
+      }
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
@@ -137,7 +199,7 @@ export default function BlogForm({ initialData }: BlogFormProps) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 font-sans mb-1">Status</label>
-          <select name="status" value={formData.status} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans bg-white">
+          <select name="status" value={formData.status} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans bg-white text-gray-900">
             <option value="published">Published</option>
             <option value="draft">Draft</option>
           </select>
@@ -147,10 +209,13 @@ export default function BlogForm({ initialData }: BlogFormProps) {
       <div>
         <label className="block text-sm font-medium text-gray-700 font-sans mb-1">Article Content</label>
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden font-sans text-black placeholder:text-black">
-          <ReactQuill 
-            theme="snow" 
-            value={formData.content} 
-            onChange={handleQuillChange}
+          <ReactQuill
+            key={editorKey}
+            theme="snow"
+            defaultValue={initialHtml}
+            onChange={(html: string) => {
+              contentDraftRef.current = html;
+            }}
             className="h-64 mb-12 text-black placeholder:text-black"
           />
         </div>
@@ -158,8 +223,12 @@ export default function BlogForm({ initialData }: BlogFormProps) {
 
       <div className="flex justify-end gap-4 pt-4 border-t border-gray-100 mt-12">
         <button type="button" onClick={() => router.push('/admin/blogs')} className="px-6 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors font-sans font-semibold">Cancel</button>
-        <button type="submit" disabled={loading} className="px-6 py-2 bg-[#ff5e00] text-white rounded-lg hover:bg-[#e55500] transition-colors font-sans font-semibold disabled:opacity-50">
-          {loading ? 'Saving...' : 'Publish Article'}
+        <button
+          type="submit"
+          disabled={loading || uploadingImage}
+          className="px-6 py-2 bg-[#ff5e00] text-white rounded-lg hover:bg-[#e55500] transition-colors font-sans font-semibold disabled:opacity-50"
+        >
+          {uploadingImage ? "Wait for upload…" : loading ? "Saving…" : "Publish Article"}
         </button>
       </div>
     </form>

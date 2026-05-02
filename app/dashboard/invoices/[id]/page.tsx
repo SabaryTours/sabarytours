@@ -93,7 +93,7 @@ export default function InvoicePage() {
     : "PAYMENT PENDING";
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 print:py-0 print:px-0 print:bg-white overflow-hidden">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 print:py-0 print:px-0 print:bg-white print:overflow-visible overflow-x-hidden">
       
       {/* Non-printable controls */}
       <div className="max-w-3xl mx-auto mb-6 flex justify-between items-center print:hidden">
@@ -111,7 +111,7 @@ export default function InvoicePage() {
       </div>
 
       {/* Printable Area - A4 Paper Ratio approximately */}
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 print:shadow-none print:border-none print:w-full print:max-w-none print:p-0">
+      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 print:shadow-none print:border-none print:w-full print:max-w-none print:p-0 print:break-inside-avoid">
         
         {/* Header Section */}
         <div className="flex justify-between items-start mb-12 border-b border-gray-100 pb-8">

@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "../../utils/supabase/client";
-import { EyeIcon, CheckmarkBadge01Icon, Cancel01Icon, PlusSignIcon, MailSend01Icon, Tick02Icon } from "hugeicons-react";
+import {
+  CheckmarkBadge01Icon,
+  Cancel01Icon,
+  Invoice01Icon,
+  PlusSignIcon,
+  MailSend01Icon,
+  Tick02Icon,
+} from "hugeicons-react";
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import AdminSkeleton from '../components/AdminSkeleton';
@@ -176,11 +184,32 @@ export default function AdminBookingsPage() {
                   {booking.booking_status || "Pending"}
                 </span>
                 <div className="flex gap-1">
+                  <Link
+                    href={`/admin/bookings/receipt/${booking.id}`}
+                    className="p-1.5 text-gray-400 hover:text-[#0060cc] hover:bg-[#0060cc]/10 rounded-lg"
+                    title="Payment receipt (cash / bank / other)"
+                  >
+                    <Invoice01Icon size={18} />
+                  </Link>
                   {booking.booking_status !== "confirmed" && (
-                    <button onClick={() => updateStatus(booking.id, "confirmed")} className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg" title="Confirm"><CheckmarkBadge01Icon size={18} /></button>
+                    <button
+                      type="button"
+                      onClick={() => updateStatus(booking.id, "confirmed")}
+                      className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"
+                      title="Confirm"
+                    >
+                      <CheckmarkBadge01Icon size={18} />
+                    </button>
                   )}
                   {booking.booking_status !== "cancelled" && (
-                    <button onClick={() => updateStatus(booking.id, "cancelled")} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Cancel"><Cancel01Icon size={18} /></button>
+                    <button
+                      type="button"
+                      onClick={() => updateStatus(booking.id, "cancelled")}
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                      title="Cancel"
+                    >
+                      <Cancel01Icon size={18} />
+                    </button>
                   )}
                 </div>
               </div>
@@ -231,12 +260,33 @@ export default function AdminBookingsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={`/admin/bookings/receipt/${booking.id}`}
+                        className="p-1.5 text-gray-400 hover:text-[#0060cc] hover:bg-[#0060cc]/10 rounded-lg"
+                        title="Payment receipt (cash / bank / other)"
+                      >
+                        <Invoice01Icon size={18} />
+                      </Link>
                       {booking.booking_status !== "confirmed" && (
-                        <button onClick={() => updateStatus(booking.id, "confirmed")} className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg" title="Confirm Booking"><CheckmarkBadge01Icon size={18} /></button>
+                        <button
+                          type="button"
+                          onClick={() => updateStatus(booking.id, "confirmed")}
+                          className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"
+                          title="Confirm Booking"
+                        >
+                          <CheckmarkBadge01Icon size={18} />
+                        </button>
                       )}
                       {booking.booking_status !== "cancelled" && (
-                        <button onClick={() => updateStatus(booking.id, "cancelled")} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Cancel Booking"><Cancel01Icon size={18} /></button>
+                        <button
+                          type="button"
+                          onClick={() => updateStatus(booking.id, "cancelled")}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                          title="Cancel Booking"
+                        >
+                          <Cancel01Icon size={18} />
+                        </button>
                       )}
                     </div>
                   </td>

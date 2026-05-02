@@ -21,12 +21,20 @@ export default function CategoryGrid({
     setQuery(initialQuery);
   }, [initialQuery]);
 
+  const effectiveQuery = (query.trim() || initialQuery.trim()).trim();
+  const effectiveQueryLower = effectiveQuery.toLowerCase();
+
   const visiblePackages = useMemo(() => {
     const q = query.trim().toLowerCase();
     let data = [...packages];
 
     if (q) {
-      data = data.filter((item) => item.title?.toLowerCase().includes(q));
+      data = data.filter((item) => {
+        const title = item.title?.toLowerCase() ?? "";
+        const desc = (item as PackageCategory & { description?: string }).description?.toLowerCase() ?? "";
+        const slug = item.slug?.toLowerCase() ?? "";
+        return title.includes(q) || desc.includes(q) || slug.includes(q);
+      });
     }
 
     if (sortBy === "a-z") {
@@ -48,6 +56,9 @@ export default function CategoryGrid({
     return data;
   }, [packages, query, sortBy]);
 
+  const showNoMatch =
+    visiblePackages.length === 0 && effectiveQueryLower.length >= 2;
+
   return (
     <>
       <div className="mb-6 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
@@ -55,7 +66,7 @@ export default function CategoryGrid({
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search packages by name..."
+            placeholder="Search by name, region, or keyword…"
             className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-sans text-gray-800 outline-none focus:border-[#ff5e00] focus:ring-2 focus:ring-[#ff5e00]/20"
           />
         </div>
@@ -77,6 +88,23 @@ export default function CategoryGrid({
         Showing {visiblePackages.length} {visiblePackages.length === 1 ? "package" : "packages"}
       </div>
 
+      {showNoMatch && (
+        <div className="mb-8 rounded-2xl border border-orange-100 bg-gradient-to-br from-[#fff7f0] to-white p-6 sm:p-8 text-center">
+          <p className="text-gray-800 font-sans font-semibold text-lg mb-2">No packages match &quot;{effectiveQuery}&quot;</p>
+          <p className="text-gray-600 font-sans text-sm max-w-lg mx-auto mb-5">
+            We might still be able to help—private trips, new routes, or something coming soon. Tell us what you have in
+            mind.
+          </p>
+          <Link
+            href={`/contact?from=packages&q=${encodeURIComponent(effectiveQuery)}`}
+            className="inline-flex rounded-full bg-[#ff5e00] px-6 py-3 text-sm font-bold text-white hover:bg-[#e55500] font-sans"
+          >
+            Contact us
+          </Link>
+        </div>
+      )}
+
+      {!showNoMatch && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       {visiblePackages.map((category) => (
         <Link
@@ -137,6 +165,7 @@ export default function CategoryGrid({
         </Link>
       ))}
       </div>
+      )}
     </>
   );
 }

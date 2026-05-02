@@ -89,7 +89,7 @@ export default function RootLayout({
         </LayoutWrapper>
         <TawkToChat />
         <AnnouncementModal />
-        <Toaster position="top-right" />
+        <Toaster position="top-right" containerClassName="print:!hidden" />
       </body>
     </html>
   );

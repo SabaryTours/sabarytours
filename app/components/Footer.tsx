@@ -65,7 +65,7 @@ export default function Footer() {
               <Logo />
             </div>
             <div className="text-white text-[14px] font-normal leading-[24px] mb-4">
-              A travel and tour company in Ghana...Slogan goes here!
+            For a lifetime experience, travel with Sabary.
             </div>
             <div className="flex gap-3">
               <a href="#" className="text-white hover:text-[#ff5e00] transition-colors">
@@ -111,6 +111,22 @@ export default function Footer() {
                   className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors"
                 >
                   Privacy &amp; terms
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/gallery"
+                  className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors"
+                >
+                  Gallery
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/#year-at-a-glance"
+                  className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors"
+                >
+                  Year at a glance
                 </Link>
               </li>
               <li>

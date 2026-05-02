@@ -43,7 +43,7 @@ export default function AnnouncementModal() {
   if (!isOpen || !announcement) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
+    <div className="print:hidden fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"

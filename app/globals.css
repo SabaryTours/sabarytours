@@ -20,17 +20,61 @@
   --font-sans: var(--font-quicksand);
 }
 
+/* Light-first marketing site: keep strong text contrast even when OS prefers dark */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #171717;
   }
+}
+
+html {
+  color-scheme: light;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-quicksand), sans-serif;
+}
+
+/* Readable text + options in inputs, textareas, and native selects */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
+input[type="search"],
+input[type="password"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+  color: #0f172a;
+}
+
+select option {
+  color: #0f172a;
+  background-color: #ffffff;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0f172a;
 }
 
 /* Prevent text overflow across the app */
@@ -125,4 +169,28 @@ body {
 
 #goog-gt-tt {
   display: none !important;
+}
+
+/* ----- Print (invoices, receipts, PDF via browser) ----- */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    max-width: none !important;
+    background: #fff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Tawk widget iframe */
+  iframe[src*="tawk"],
+  iframe[title*="chat" i] {
+    display: none !important;
+  }
 }

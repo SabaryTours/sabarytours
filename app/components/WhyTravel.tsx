@@ -48,7 +48,7 @@ export default function WhyTravel() {
     <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7">
       {/* Blue Background Container - matching hero section structure */}
       <div className="bg-blue-50 relative rounded-2xl py-16 overflow-visible">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 sm:px-6">
           {/* Header Section */}
           <div className="flex flex-col gap-[20px] items-center mb-12">
             {/* Top Line - Icon + Subtitle */}
@@ -100,45 +100,50 @@ export default function WhyTravel() {
             </div>
           </div>
 
-          {/* Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-  {features.map((feature, index) => (
-    <div
-      key={index}
-      className="relative rounded-2xl overflow-hidden flex items-center justify-center p-6 min-h-[200px]"
-      style={{
-        backgroundColor: feature.bgColor,
-      }}
-    >
-      {/* Pattern Overlay */}
-      <div
-        className="absolute inset-0 z-0"
-        style={{
-          backgroundImage: "url(/assets/pattern.svg)",
-          backgroundRepeat: "repeat",
-          opacity: 0.2,
-          mixBlendMode: "overlay",
-        }}
-      />
+          {/* Cards: horizontal scroll on mobile, grid from md */}
+          <div
+            className="flex flex-row gap-6 overflow-x-auto overflow-y-visible pb-4 snap-x snap-mandatory scroll-pl-4 scroll-pr-4 -mx-1 px-1 [-webkit-overflow-scrolling:touch] overscroll-x-contain scrollbar-hide md:mx-0 md:grid md:grid-cols-2 md:gap-8 md:overflow-visible md:pb-0 md:px-0 md:snap-none lg:grid-cols-3"
+            role="list"
+            aria-label="Why travel with Sabary"
+          >
+            {features.map((feature, index) => (
+              <div
+                key={index}
+                className="relative shrink-0 snap-start w-[min(88vw,360px)] max-w-[360px] rounded-2xl overflow-hidden flex items-center justify-center p-6 min-h-[200px] md:w-auto md:max-w-none md:min-w-0 md:shrink"
+                style={{
+                  backgroundColor: feature.bgColor,
+                }}
+                role="listitem"
+              >
+                {/* Pattern Overlay */}
+                <div
+                  className="absolute inset-0 z-0"
+                  style={{
+                    backgroundImage: "url(/assets/pattern.svg)",
+                    backgroundRepeat: "repeat",
+                    opacity: 0.2,
+                    mixBlendMode: "overlay",
+                  }}
+                />
 
-      {/* Inner Floating Card */}
-      <div
-        className="relative z-10 bg-white rounded-xl px-6 py-8 flex flex-col gap-4 w-full max-w-[320px] text-center shadow-lg"
-        style={{
-          backgroundColor: feature.innerBgColor,
-          border: `1px solid ${feature.borderColor}`,
-        }}
-      >
-        <h3 className="text-[#222] text-[22px] font-bold leading-[1.2]">
-          {feature.title}
-        </h3>
+                {/* Inner Floating Card */}
+                <div
+                  className="relative z-10 bg-white rounded-xl px-6 py-8 flex flex-col gap-4 w-full max-w-[320px] text-center shadow-lg"
+                  style={{
+                    backgroundColor: feature.innerBgColor,
+                    border: `1px solid ${feature.borderColor}`,
+                  }}
+                >
+                  <h3 className="text-[#222] text-[22px] font-bold leading-[1.2]">
+                    {feature.title}
+                  </h3>
 
-        <p className="text-[#555] text-[15px] leading-[26px]">
-          {feature.description}
-        </p>
-      </div>
-    </div>
-  ))}
+                  <p className="text-[#555] text-[15px] leading-[26px]">
+                    {feature.description}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
