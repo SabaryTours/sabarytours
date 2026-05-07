@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { bookingSchema } from "../../lib/validations/booking";
+import { bookingSchema, type BookingInput } from "../../lib/validations/booking";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -10,6 +10,13 @@ const turnstileSecret = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
 const bookingRateLimitStore = new Map<string, { count: number; resetAt: number }>();
+const TURNSTILE_ACTION = "booking_submit";
+const PRICE_TOLERANCE = 0.5;
+
+type TurnstileVerifyResult = {
+  valid: boolean;
+  reason?: string;
+};
 
 function getRequestIp(request: Request): string {
   const forwardedFor = request.headers.get("x-forwarded-for");
@@ -21,7 +28,7 @@ function getUserAgent(request: Request): string {
   return request.headers.get("user-agent") || "unknown";
 }
 
-function isRateLimited(key: string): { limited: boolean; retryAfterSec?: number } {
+function isRateLimitedInMemory(key: string): { limited: boolean; retryAfterSec?: number } {
   const now = Date.now();
   const current = bookingRateLimitStore.get(key);
 
@@ -39,9 +46,86 @@ function isRateLimited(key: string): { limited: boolean; retryAfterSec?: number 
   return { limited: false };
 }
 
-async function verifyTurnstileToken(token: string, ip: string): Promise<boolean> {
+async function logSecurityEvent(params: {
+  eventType: string;
+  ip: string;
+  userAgent: string;
+  detail: string;
+  payload?: Record<string, unknown>;
+}) {
+  const { eventType, ip, userAgent, detail, payload } = params;
+  console.warn(`[booking-security] ${eventType}: ${detail}`, { ip, userAgent, payload });
+
+  const { error } = await supabaseAdmin.from("booking_security_events").insert({
+    event_type: eventType,
+    ip_address: ip,
+    user_agent: userAgent,
+    detail,
+    metadata: payload || {},
+  });
+
+  if (error) {
+    // Table might not exist yet; keep security checks non-blocking.
+    console.warn("Failed to persist security event", { eventType, error: error.message });
+  }
+}
+
+async function isRateLimitedPersistent(key: string): Promise<{ limited: boolean; retryAfterSec?: number }> {
+  const now = Date.now();
+  const nowIso = new Date(now).toISOString();
+  const resetAt = now + RATE_LIMIT_WINDOW_MS;
+  const resetAtIso = new Date(resetAt).toISOString();
+
+  const { data, error } = await supabaseAdmin
+    .from("api_rate_limits")
+    .select("id, count, reset_at")
+    .eq("id", key)
+    .maybeSingle();
+
+  if (error) {
+    return isRateLimitedInMemory(key);
+  }
+
+  if (!data || !data.reset_at || new Date(data.reset_at).getTime() <= now) {
+    await supabaseAdmin.from("api_rate_limits").upsert({
+      id: key,
+      count: 1,
+      window_started_at: nowIso,
+      reset_at: resetAtIso,
+      updated_at: nowIso,
+    });
+    return { limited: false };
+  }
+
+  if (data.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return {
+      limited: true,
+      retryAfterSec: Math.max(1, Math.ceil((new Date(data.reset_at).getTime() - now) / 1000)),
+    };
+  }
+
+  await supabaseAdmin
+    .from("api_rate_limits")
+    .update({
+      count: data.count + 1,
+      updated_at: nowIso,
+    })
+    .eq("id", key);
+
+  return { limited: false };
+}
+
+function roundCurrency(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+async function verifyTurnstileToken(
+  token: string,
+  ip: string,
+  expectedHostname: string
+): Promise<TurnstileVerifyResult> {
   if (!turnstileSecret) {
-    return false;
+    return { valid: false, reason: "missing_secret" };
   }
 
   const body = new URLSearchParams();
@@ -58,18 +142,121 @@ async function verifyTurnstileToken(token: string, ip: string): Promise<boolean>
   });
 
   const verifyData = await verifyRes.json();
-  return Boolean(verifyData?.success);
+  if (!verifyData?.success) {
+    return { valid: false, reason: "challenge_failed" };
+  }
+  if (verifyData.action && verifyData.action !== TURNSTILE_ACTION) {
+    return { valid: false, reason: "action_mismatch" };
+  }
+  if (verifyData.hostname && expectedHostname && verifyData.hostname !== expectedHostname) {
+    return { valid: false, reason: "hostname_mismatch" };
+  }
+
+  return { valid: true };
+}
+
+async function computeExpectedPricing(body: BookingInput) {
+  const { data: tour, error: tourError } = await supabaseAdmin
+    .from("tours")
+    .select("id, slug, title, price, currency, tour_prices(name, amount, currency)")
+    .eq("status", "published")
+    .eq("slug", body.tourSlug)
+    .maybeSingle();
+
+  if (tourError || !tour) {
+    throw new Error("Tour pricing could not be resolved.");
+  }
+
+  const tourPriceTiers = Array.isArray(tour.tour_prices) ? tour.tour_prices : [];
+  const numberOfPeople = Number(body.numberOfPeople || 0);
+  if (!Number.isFinite(numberOfPeople) || numberOfPeople < 1) {
+    throw new Error("Invalid number of guests.");
+  }
+
+  let subtotal = 0;
+  if (tourPriceTiers.length > 0) {
+    const selections = body.tierSelections || {};
+    const hasSelections = Object.values(selections).some((qty) => Number(qty) > 0);
+    if (hasSelections) {
+      for (const tier of tourPriceTiers) {
+        const tierName = String(tier?.name || "");
+        const qty = Number(selections[tierName] || 0);
+        if (qty > 0) {
+          subtotal += Number(tier.amount || 0) * qty;
+        }
+      }
+    } else {
+      subtotal = Number(tourPriceTiers[0]?.amount || 0) * numberOfPeople;
+    }
+  } else {
+    const basePrice = Number(tour.price || 0);
+    subtotal = basePrice * numberOfPeople;
+  }
+
+  if (!Number.isFinite(subtotal) || subtotal <= 0) {
+    throw new Error("Invalid computed pricing.");
+  }
+
+  // Match current frontend pricing behavior.
+  if (body.date) {
+    const dayOfWeek = new Date(body.date).getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      subtotal *= 1.15;
+    }
+  }
+
+  if (numberOfPeople >= 5) {
+    subtotal *= 0.9;
+  } else if (numberOfPeople >= 3) {
+    subtotal *= 0.95;
+  }
+
+  let voucherDiscount = 0;
+  const voucherCode = typeof body.voucherCode === "string" ? body.voucherCode.trim().toUpperCase() : "";
+  if (voucherCode) {
+    const { data: voucher } = await supabaseAdmin
+      .from("vouchers")
+      .select("discount_percentage, expiry_date, active")
+      .eq("code", voucherCode)
+      .maybeSingle();
+
+    if (voucher?.active) {
+      const notExpired =
+        !voucher.expiry_date || new Date(voucher.expiry_date).getTime() >= Date.now() - 24 * 60 * 60 * 1000;
+      if (notExpired) {
+        voucherDiscount = Number(voucher.discount_percentage || 0);
+      }
+    }
+  }
+
+  const discountAmount = (subtotal * voucherDiscount) / 100;
+  const totalPrice = roundCurrency(subtotal - discountAmount);
+  const paymentAmount =
+    body.paymentOption === "deposit" ? roundCurrency((totalPrice * 30) / 100) : totalPrice;
+
+  return {
+    totalPrice,
+    paymentAmount,
+    voucherDiscount,
+    voucherCode: voucherCode || null,
+  };
 }
 
 export async function POST(request: Request) {
   const ip = getRequestIp(request);
   const userAgent = getUserAgent(request);
+  const expectedHostname = new URL(request.url).hostname;
 
   try {
     const rateLimitKey = `${ip}:${userAgent.slice(0, 80)}`;
-    const rateLimitResult = isRateLimited(rateLimitKey);
+    const rateLimitResult = await isRateLimitedPersistent(rateLimitKey);
     if (rateLimitResult.limited) {
-      console.warn("Rate limit triggered on booking endpoint", { ip, userAgent });
+      await logSecurityEvent({
+        eventType: "rate_limit_hit",
+        ip,
+        userAgent,
+        detail: "Too many booking attempts within the window",
+      });
       return NextResponse.json(
         {
           success: false,
@@ -88,20 +275,67 @@ export async function POST(request: Request) {
     const parsed = bookingSchema.safeParse(rawBody);
     if (!parsed.success) {
       const message = parsed.error.issues[0]?.message || "Invalid booking details provided.";
-      console.warn("Booking validation failed", { ip, userAgent, message });
+      await logSecurityEvent({
+        eventType: "validation_failed",
+        ip,
+        userAgent,
+        detail: message,
+      });
       return NextResponse.json(
-        { success: false, error: message, details: parsed.error.flatten() },
+        { success: false, error: message },
         { status: 400 }
       );
     }
 
     const body = parsed.data;
 
-    const captchaValid = await verifyTurnstileToken(body.turnstileToken, ip);
-    if (!captchaValid) {
-      console.warn("Turnstile verification failed", { ip, userAgent });
+    const captchaResult = await verifyTurnstileToken(body.turnstileToken, ip, expectedHostname);
+    if (!captchaResult.valid) {
+      await logSecurityEvent({
+        eventType: "turnstile_failed",
+        ip,
+        userAgent,
+        detail: `Turnstile failed: ${captchaResult.reason || "unknown"}`,
+      });
       return NextResponse.json(
         { success: false, error: "CAPTCHA verification failed. Please try again." },
+        { status: 400 }
+      );
+    }
+
+    const expectedPricing = await computeExpectedPricing(body);
+    if (Math.abs(expectedPricing.totalPrice - Number(body.totalPrice)) > PRICE_TOLERANCE) {
+      await logSecurityEvent({
+        eventType: "price_tamper_detected",
+        ip,
+        userAgent,
+        detail: "Submitted total price differs from server-computed total",
+        payload: {
+          submittedTotal: body.totalPrice,
+          expectedTotal: expectedPricing.totalPrice,
+          tourSlug: body.tourSlug,
+        },
+      });
+      return NextResponse.json(
+        { success: false, error: "Booking amount is invalid. Please refresh and try again." },
+        { status: 400 }
+      );
+    }
+
+    if (Math.abs(expectedPricing.paymentAmount - Number(body.paymentAmount)) > PRICE_TOLERANCE) {
+      await logSecurityEvent({
+        eventType: "payment_tamper_detected",
+        ip,
+        userAgent,
+        detail: "Submitted payment amount differs from expected payment amount",
+        payload: {
+          submittedPayment: body.paymentAmount,
+          expectedPayment: expectedPricing.paymentAmount,
+          paymentOption: body.paymentOption,
+        },
+      });
+      return NextResponse.json(
+        { success: false, error: "Payment amount is invalid. Please refresh and try again." },
         { status: 400 }
       );
     }
@@ -123,10 +357,24 @@ export async function POST(request: Request) {
         throw new Error("Payment verification failed. The transaction was not successful according to Paystack.");
       }
 
-      // Optional: Check if amount matches. Paystack returns amount in pesewas
-      const expectedPesewas = Math.round(body.paymentAmount * 100);
+      // Hard check amount match. Paystack returns amount in pesewas.
+      const expectedPesewas = Math.round(expectedPricing.paymentAmount * 100);
       if (verifyData.data.amount < expectedPesewas) {
-        console.warn(`Payment amount mismatch. Expected: ${expectedPesewas}, Paid: ${verifyData.data.amount}`);
+        await logSecurityEvent({
+          eventType: "paystack_underpayment",
+          ip,
+          userAgent,
+          detail: "Paystack verified amount was lower than expected",
+          payload: {
+            expectedPesewas,
+            paidPesewas: verifyData.data.amount,
+            reference: body.paymentReference,
+          },
+        });
+        return NextResponse.json(
+          { success: false, error: "Payment amount could not be verified." },
+          { status: 400 }
+        );
       }
     }
 
@@ -160,10 +408,10 @@ export async function POST(request: Request) {
         pickup_location: body.pickupLocation?.trim() ? body.pickupLocation.trim() : null,
         payment_reference: body.paymentReference,
         payment_option: body.paymentOption,
-        voucher_code: body.voucherCode,
-        voucher_discount: body.voucherDiscount,
-        total_cost: body.totalPrice,
-        amount_paid: body.paymentAmount,
+        voucher_code: expectedPricing.voucherCode,
+        voucher_discount: expectedPricing.voucherDiscount,
+        total_cost: expectedPricing.totalPrice,
+        amount_paid: expectedPricing.paymentAmount,
         payment_status: "paid",
         booking_status: "confirmed"
       })
@@ -178,7 +426,7 @@ export async function POST(request: Request) {
     // 1.5 Give Sabary Miles (1 point per $10 spent)
     if (body.userId) {
       try {
-        const pointsEarned = Math.floor(body.totalPrice / 10);
+        const pointsEarned = Math.floor(expectedPricing.totalPrice / 10);
 
         // Fetch current points
         const { data: profile } = await supabaseAdmin
@@ -200,12 +448,12 @@ export async function POST(request: Request) {
     }
 
     // 1.8 Increment Voucher usage count
-    if (body.voucherCode) {
+    if (expectedPricing.voucherCode) {
       try {
         const { data: voucher } = await supabaseAdmin
           .from("vouchers")
           .select("id, usage_count")
-          .eq("code", (body.voucherCode as string).toUpperCase())
+          .eq("code", expectedPricing.voucherCode.toUpperCase())
           .single();
 
         if (voucher) {
@@ -240,7 +488,7 @@ export async function POST(request: Request) {
                   <li><strong>Date:</strong> ${body.date} at ${body.timeSlot}</li>
                   <li><strong>Guests:</strong> ${body.numberOfPeople}</li>
                   <li><strong>Pickup:</strong> ${body.pickupLocation}</li>
-                  <li><strong>Total Paid:</strong> $${body.paymentAmount}</li>
+                  <li><strong>Total Paid:</strong> GHS ${expectedPricing.paymentAmount}</li>
                 </ul>
                 <p>If you have any questions, feel free to reply to this email.</p>
               `
@@ -259,8 +507,14 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, booking });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Booking creation error:", { error, ip, userAgent });
+    await logSecurityEvent({
+      eventType: "booking_server_error",
+      ip,
+      userAgent,
+      detail: error instanceof Error ? error.message : "unknown_server_error",
+    });
     return NextResponse.json(
       {
         success: false,
