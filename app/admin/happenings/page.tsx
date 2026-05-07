@@ -251,7 +251,7 @@ export default function AdminHappeningsPage() {
                       </button>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/admin/happenings/${h.id}`}
                           className="p-2 text-gray-400 hover:text-[#0060cc] hover:bg-[#0060cc]/10 rounded-lg"
