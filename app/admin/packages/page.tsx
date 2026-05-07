@@ -117,7 +117,7 @@ export default function AdminPackagesPage() {
                     </td>
                     <td className="px-6 py-4"><span className="text-sm text-gray-600 font-sans">{pkg.slug}</span></td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2">
                         <Link href={`/admin/packages/${pkg.id}`} className="p-2 text-gray-400 hover:text-[#0060cc] hover:bg-[#0060cc]/10 rounded-lg" title="Edit"><Edit02Icon size={18} /></Link>
                         <button onClick={() => handleDelete(pkg.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Delete"><Delete01Icon size={18} /></button>
                       </div>

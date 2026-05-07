@@ -140,7 +140,7 @@ export default function AdminInquiriesPage() {
                       {inq.status === "unread" && (
                         <button onClick={() => markAsRead(inq.id, inq.status)} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg" title="Mark as Read"><CheckmarkBadge01Icon size={18} /></button>
                       )}
-                      <button onClick={() => handleDelete(inq.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100" title="Delete"><Delete01Icon size={18} /></button>
+                      <button onClick={() => handleDelete(inq.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Delete"><Delete01Icon size={18} /></button>
                     </div>
                   </td>
                 </tr>
