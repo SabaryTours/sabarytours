@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -13,6 +13,8 @@ declare global {
           callback?: (token: string) => void;
           "expired-callback"?: () => void;
           "error-callback"?: () => void;
+          action?: string;
+          cData?: string;
           theme?: "light" | "dark" | "auto";
         }
       ) => string;
@@ -30,10 +32,7 @@ export default function TurnstileWidget({ onTokenChange }: TurnstileWidgetProps)
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [widgetId, setWidgetId] = useState<string | null>(null);
   const siteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
-  const containerId = useMemo(
-    () => `turnstile-${Math.random().toString(36).slice(2, 9)}`,
-    []
-  );
+  const containerId = `turnstile-${useId().replace(/:/g, "-")}`;
 
   useEffect(() => {
     if (!scriptLoaded || !window.turnstile || !containerRef.current || !siteKey || widgetId) {
@@ -45,6 +44,7 @@ export default function TurnstileWidget({ onTokenChange }: TurnstileWidgetProps)
       callback: (token: string) => onTokenChange(token),
       "expired-callback": () => onTokenChange(""),
       "error-callback": () => onTokenChange(""),
+      action: "booking_submit",
       theme: "light",
     });
     setWidgetId(id);
