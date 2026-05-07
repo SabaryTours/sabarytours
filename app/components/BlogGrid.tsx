@@ -137,7 +137,7 @@ export default function BlogGrid() {
           </div>
           
           {/* Title */}
-          <h3 className="text-[#3e3638] text-[16px] font-bold leading-[28px]">
+          <h3 className="text-[#3e3638] text-[16px] font-bold leading-[28px] break-normal" style={{ hyphens: "manual" }}>
             {post.title}
           </h3>
         </Link>

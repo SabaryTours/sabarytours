@@ -42,9 +42,10 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
         <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
           {/* Article Title */}
           <h1 
-            className="text-[40px] md:text-[48px] font-normal leading-[1.2] text-[#222] uppercase mb-4"
+            className="text-[40px] md:text-[48px] font-normal leading-[1.2] text-[#222] uppercase mb-4 break-normal"
             style={{
-              fontFamily: 'var(--font-unlimited-pie)'
+              fontFamily: 'var(--font-unlimited-pie)',
+              hyphens: "manual",
             }}
           >
             {post.title}
@@ -107,7 +108,8 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
           {/* Article Content */}
           <div className="prose prose-lg max-w-none mb-12">
             <div 
-              className="text-[#222] text-[16px] leading-[28px] whitespace-pre-line"
+              className="text-[#222] text-[16px] leading-[28px] whitespace-pre-line break-normal"
+              style={{ hyphens: "manual" }}
               dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, '<br />') }}
             />
           </div>
