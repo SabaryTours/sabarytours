@@ -10,6 +10,7 @@ import StarRating from "../components/StarRating";
 import TourGrid from "../components/TourGrid";
 import SafeHTML from "../components/SafeHTML";
 import TourComments from "../components/TourComments";
+import { useCurrency } from "../context/CurrencyContext";
 
 interface TourDetailPageProps {
   tour: Tour;
@@ -20,6 +21,7 @@ interface TourDetailPageProps {
 export default function TourDetailPage({ tour, categoryTitle, similarTours = [] }: TourDetailPageProps) {
   const router = useRouter();
   const [showAllGallery, setShowAllGallery] = useState(false);
+  const { symbol, convert } = useCurrency();
 
   const displayImages = Array.from(
     new Set([tour.image, ...(tour.gallery || [])].filter(Boolean))
@@ -36,6 +38,8 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
     tour.languages && tour.languages.length > 0 ? tour.languages : ["English"];
   const exclusions = tour.exclusions && tour.exclusions.length > 0 ? tour.exclusions : [];
   const whatToBring = tour.whatToBring && tour.whatToBring.length > 0 ? tour.whatToBring : [];
+  const startingPriceRaw = typeof tour.priceValue === "number" ? tour.priceValue : 0;
+  const startingPrice = convert(startingPriceRaw, "GHS");
 
   return (
     <div className="min-h-screen bg-white">
@@ -324,7 +328,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
               <p className="text-sm text-gray-500 font-sans font-medium uppercase tracking-wider mb-1">Starting from</p>
               <div className="flex items-end gap-2">
                 <span className="text-3xl font-bold font-sans text-gray-900 leading-none">
-                  {tour.price}
+                  {symbol} {startingPrice.toFixed(2)}
                 </span>
                 <span className="text-gray-500 font-sans text-sm pb-1">per person</span>
               </div>
@@ -450,7 +454,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
         <div className="flex items-center justify-between gap-4">
           <div className="flex flex-col">
             <span className="text-xs text-gray-500 font-sans uppercase font-medium">From</span>
-            <span className="text-lg font-bold font-sans text-gray-900">{tour.price}</span>
+            <span className="text-lg font-bold font-sans text-gray-900">{symbol} {startingPrice.toFixed(2)}</span>
           </div>
           <button
             onClick={() => router.push(`/booking?tour=${tour.slug}`)}

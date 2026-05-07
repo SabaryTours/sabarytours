@@ -11,6 +11,7 @@ import PickupLocation from "./PickupLocation";
 import PaystackPayment from "./PaystackPayment";
 import { getUser } from "../lib/authService";
 import { useCurrency } from "../context/CurrencyContext";
+import TurnstileWidget from "./TurnstileWidget";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -36,6 +37,8 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
   const [voucherCode, setVoucherCode] = useState<string>("");
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
   const { symbol, convert } = useCurrency();
 
   // Generate available dates based on real tour rules
@@ -112,6 +115,11 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+    if (!turnstileToken) {
+      setFormError("Please complete CAPTCHA verification.");
+      return;
+    }
     setShowPayment(true);
   };
 
@@ -130,6 +138,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
         tourId: tour.id,
         tourSlug: tour.slug,
         userId: currentUser?.id || null,
+        turnstileToken,
       };
 
       const response = await fetch("/api/bookings", {
@@ -140,12 +149,15 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
         body: JSON.stringify(bookingData),
       });
 
-      if (response.ok) {
+      const result = await response.json();
+      if (response.ok && result.success) {
         setShowSuccess(true);
       } else {
-        throw new Error("Booking failed");
+        throw new Error(result.error || "Booking failed");
       }
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Booking failed";
+      setFormError(message);
       setShowError(true);
     }
   };
@@ -441,6 +453,8 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
           </div>
 
           {/* Payment Options */}
+          {formError && <p className="text-sm text-red-600">{formError}</p>}
+          <TurnstileWidget onTokenChange={setTurnstileToken} />
           <PaymentOptions
             totalPrice={totalPrice}
             selectedOption={paymentOption}

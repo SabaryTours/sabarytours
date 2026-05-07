@@ -1,13 +1,110 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { bookingSchema } from "../../lib/validations/booking";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+const turnstileSecret = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
+
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 8;
+const bookingRateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+function getRequestIp(request: Request): string {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const cfIp = request.headers.get("cf-connecting-ip");
+  return (cfIp || forwardedFor?.split(",")[0]?.trim() || "unknown").trim();
+}
+
+function getUserAgent(request: Request): string {
+  return request.headers.get("user-agent") || "unknown";
+}
+
+function isRateLimited(key: string): { limited: boolean; retryAfterSec?: number } {
+  const now = Date.now();
+  const current = bookingRateLimitStore.get(key);
+
+  if (!current || now > current.resetAt) {
+    bookingRateLimitStore.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { limited: false };
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return { limited: true, retryAfterSec: Math.ceil((current.resetAt - now) / 1000) };
+  }
+
+  current.count += 1;
+  bookingRateLimitStore.set(key, current);
+  return { limited: false };
+}
+
+async function verifyTurnstileToken(token: string, ip: string): Promise<boolean> {
+  if (!turnstileSecret) {
+    return false;
+  }
+
+  const body = new URLSearchParams();
+  body.append("secret", turnstileSecret);
+  body.append("response", token);
+  if (ip && ip !== "unknown") {
+    body.append("remoteip", ip);
+  }
+
+  const verifyRes = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+
+  const verifyData = await verifyRes.json();
+  return Boolean(verifyData?.success);
+}
 
 export async function POST(request: Request) {
+  const ip = getRequestIp(request);
+  const userAgent = getUserAgent(request);
+
   try {
-    const body = await request.json();
+    const rateLimitKey = `${ip}:${userAgent.slice(0, 80)}`;
+    const rateLimitResult = isRateLimited(rateLimitKey);
+    if (rateLimitResult.limited) {
+      console.warn("Rate limit triggered on booking endpoint", { ip, userAgent });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Too many booking attempts. Please wait a few minutes and try again.",
+        },
+        {
+          status: 429,
+          headers: rateLimitResult.retryAfterSec
+            ? { "Retry-After": String(rateLimitResult.retryAfterSec) }
+            : undefined,
+        }
+      );
+    }
+
+    const rawBody = await request.json();
+    const parsed = bookingSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || "Invalid booking details provided.";
+      console.warn("Booking validation failed", { ip, userAgent, message });
+      return NextResponse.json(
+        { success: false, error: message, details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const body = parsed.data;
+
+    const captchaValid = await verifyTurnstileToken(body.turnstileToken, ip);
+    if (!captchaValid) {
+      console.warn("Turnstile verification failed", { ip, userAgent });
+      return NextResponse.json(
+        { success: false, error: "CAPTCHA verification failed. Please try again." },
+        { status: 400 }
+      );
+    }
 
     // 0. Verify with Paystack (Source of Truth)
     if (body.paymentReference && body.paymentReference !== 'cash') {
@@ -60,7 +157,7 @@ export async function POST(request: Request) {
         number_of_people: body.numberOfPeople,
         tour_date: body.date,
         time_slot: body.timeSlot,
-        pickup_location: body.pickupLocation,
+        pickup_location: body.pickupLocation?.trim() ? body.pickupLocation.trim() : null,
         payment_reference: body.paymentReference,
         payment_option: body.paymentOption,
         voucher_code: body.voucherCode,
@@ -163,7 +260,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, booking });
   } catch (error: any) {
-    console.error("Booking creation error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error("Booking creation error:", { error, ip, userAgent });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "We could not complete your booking due to a server error. Please try again shortly.",
+      },
+      { status: 500 }
+    );
   }
 }
