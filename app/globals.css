@@ -97,7 +97,9 @@ button,
 label {
   word-wrap: break-word;
   overflow-wrap: break-word;
-  hyphens: auto;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+  -ms-hyphens: manual;
 }
 
 /* Ensure containers don't overflow */
