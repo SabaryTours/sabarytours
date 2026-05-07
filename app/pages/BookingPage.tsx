@@ -13,6 +13,7 @@ import PickupLocation from "../components/PickupLocation";
 import PaystackPayment from "../components/PaystackPayment";
 import TourGrid from "../components/TourGrid";
 import { useCurrency } from "../context/CurrencyContext";
+import TurnstileWidget from "../components/TurnstileWidget";
 
 interface BookingPageProps {
   tour: Tour;
@@ -45,6 +46,8 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
   const [voucherCode, setVoucherCode] = useState<string>("");
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const { symbol, convert } = useCurrency();
 
@@ -137,15 +140,20 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
   };
 
   const handleNextStep = async () => {
+    setFormError(null);
     if (step === 1) {
+      if (!formData.package) {
+        setFormError("Please select a package.");
+        return;
+      }
       if (!formData.date || !formData.timeSlot) {
-        alert("Please select a date and time slot.");
+        setFormError("Please select a date and time slot.");
         return;
       }
 
       const isAuth = await isAuthenticated();
       if (!isAuth) {
-        alert("Please create an account or log in to continue booking.");
+        setFormError("Please create an account or log in to continue booking.");
         // Redirect to login/signup with a return URL
         router.push(`/login?redirect=/booking?tour=${tour.slug}`);
         return;
@@ -168,7 +176,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (step === 2) {
       if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
-        alert("Please fill in all personal details.");
+        setFormError("Please fill in all required personal details.");
         return;
       }
       setStep(3);
@@ -178,6 +186,11 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
 
   const handlePaymentSuccess = async (reference: string) => {
     try {
+      if (!turnstileToken) {
+        setFormError("Please complete CAPTCHA verification before booking.");
+        setShowPayment(false);
+        return;
+      }
       // Get current user to set user_id on booking
       const userData = await getUser();
       
@@ -194,6 +207,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
         tourId: tour.id,
         tourSlug: tour.slug,
         userId: userData?.id || null,
+        turnstileToken,
       };
 
       const response = await fetch("/api/bookings", {
@@ -202,12 +216,15 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
         body: JSON.stringify(bookingData),
       });
 
-      if (response.ok) {
+      const result = await response.json();
+      if (response.ok && result.success) {
         router.push(`/booking/success?tour=${tour.slug}&ref=${reference}`);
       } else {
-        throw new Error("Booking failed");
+        throw new Error(result.error || "Booking failed");
       }
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Booking failed";
+      setFormError(message);
       router.push(`/booking/error?tour=${tour.slug}`);
     }
   };
@@ -406,6 +423,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
               </div>
 
               <div className="pt-6 border-t border-gray-100 flex justify-end">
+                {formError && <p className="mr-auto text-sm text-red-600">{formError}</p>}
                 <button
                   type="button"
                   onClick={handleNextStep}
@@ -480,6 +498,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
               </div>
 
               <div className="pt-6 border-t border-gray-100 flex justify-between items-center">
+                {formError && <p className="text-sm text-red-600">{formError}</p>}
                 <button
                   type="button"
                   onClick={() => setStep(1)}
@@ -562,15 +581,24 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                 <div className="space-y-6">
                   {!showPayment ? (
                     <>
+                      {formError && <p className="text-sm text-red-600">{formError}</p>}
                       <PaymentOptions
                         totalPrice={totalPrice}
                         selectedOption={paymentOption}
                         onSelectOption={setPaymentOption}
                         depositPercentage={30}
                       />
+                      <TurnstileWidget onTokenChange={setTurnstileToken} />
                       <button
                         type="button"
-                        onClick={() => setShowPayment(true)}
+                        onClick={() => {
+                          setFormError(null);
+                          if (!turnstileToken) {
+                            setFormError("Please complete CAPTCHA verification before continuing.");
+                            return;
+                          }
+                          setShowPayment(true);
+                        }}
                         className="w-full bg-[#ff5e00] text-white py-4 rounded-xl font-bold text-[16px] hover:bg-[#e55500] hover:shadow-xl transition-all font-sans"
                       >
                         Confirm & Pay {symbol} {convert(paymentAmount, "GHS").toFixed(2)}
