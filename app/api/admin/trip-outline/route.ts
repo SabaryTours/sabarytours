@@ -40,20 +40,34 @@ export async function GET(request: Request) {
     .from("trip_year_outline")
     .select("*")
     .eq("year", year)
-    .order("month", { ascending: true });
+    .order("month", { ascending: true })
+    .order("sort_order", { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ year, rows: data || [] });
 }
 
 type Row = {
-  year: number;
+  id?: string;
   month: number;
   title: string;
   body?: string | null;
+  description?: string | null;
+  image_url?: string | null;
+  book_url?: string | null;
+  card_type?: "featured" | "upcoming";
   accent_color?: string | null;
   is_published?: boolean;
+  sort_order?: number;
 };
+
+function toTourSlug(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
 
 export async function POST(request: Request) {
   const gate = await requireAdmin();
@@ -72,21 +86,47 @@ export async function POST(request: Request) {
 
     const payload = rows
       .filter((r) => r.month >= 1 && r.month <= 12)
-      .map((r) => ({
+      .map((r, idx) => ({
+        normalizedTitle: (r.title || "").trim() || `Month ${r.month}`,
+        id: r.id,
         year,
         month: r.month,
         title: (r.title || "").trim() || `Month ${r.month}`,
         body: r.body?.trim() || null,
+        description: r.description?.trim() || null,
+        image_url: r.image_url?.trim() || null,
+        book_url: null as string | null,
+        card_type: r.card_type === "featured" ? "featured" : "upcoming",
         accent_color: (r.accent_color || "#ff5e00").trim(),
         is_published: r.is_published !== false,
+        sort_order: Number.isFinite(r.sort_order) ? Number(r.sort_order) : idx,
         updated_at: new Date().toISOString(),
+      }))
+      .map((row) => ({
+        ...row,
+        book_url: `/booking?tour=${toTourSlug(row.normalizedTitle)}`,
       }));
 
-    const { error } = await supabaseAdmin.from("trip_year_outline").upsert(payload, {
-      onConflict: "year,month",
-    });
+    const { error: clearError } = await supabaseAdmin.from("trip_year_outline").delete().eq("year", year);
+    if (clearError) throw clearError;
+
+    const rowsToInsert = payload.map((row) => ({
+      year: row.year,
+      month: row.month,
+      title: row.title,
+      body: row.body,
+      description: row.description,
+      image_url: row.image_url,
+      book_url: row.book_url,
+      card_type: row.card_type,
+      accent_color: row.accent_color,
+      is_published: row.is_published,
+      sort_order: row.sort_order,
+      updated_at: row.updated_at,
+    }));
+    const { error } = await supabaseAdmin.from("trip_year_outline").insert(rowsToInsert);
     if (error) throw error;
-    return NextResponse.json({ success: true, saved: payload.length });
+    return NextResponse.json({ success: true, saved: rowsToInsert.length });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Save failed";
     return NextResponse.json({ error: msg }, { status: 500 });

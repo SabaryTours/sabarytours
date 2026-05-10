@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { StarIcon, CheckmarkBadge01Icon, Cancel01Icon, Delete02Icon } from "hugeicons-react";
+import { StarIcon, CheckmarkBadge01Icon, Cancel01Icon, Delete02Icon, PencilEdit01Icon } from "hugeicons-react";
 import { format } from "date-fns";
 import AdminSkeleton from '../components/AdminSkeleton';
 
@@ -21,6 +21,15 @@ export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    rating: 5,
+    message: "",
+    image_url: "",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     fetchReviews();
@@ -33,8 +42,8 @@ export default function AdminReviewsPage() {
       if (!res.ok) throw new Error("Failed to fetch reviews");
       const data = await res.json();
       setReviews(data);
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -59,6 +68,78 @@ export default function AdminReviewsPage() {
     } catch (err) {
       console.error(err);
       alert("Failed to update status");
+    }
+  };
+
+  const startEditing = (review: Review) => {
+    setEditingId(review.id);
+    setEditForm({
+      name: review.name || "",
+      rating: review.rating || 5,
+      message: review.message || "",
+      image_url: review.image_url || "",
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditForm({ name: "", rating: 5, message: "", image_url: "" });
+  };
+
+  const saveReviewChanges = async () => {
+    if (!editingId) return;
+    try {
+      setSavingEdit(true);
+      const res = await fetch(`/api/admin/reviews/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editForm.name.trim(),
+          rating: editForm.rating,
+          message: editForm.message.trim(),
+          image_url: editForm.image_url.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update review");
+      setReviews((prev) =>
+        prev.map((r) =>
+          r.id === editingId
+            ? {
+                ...r,
+                name: data.name ?? editForm.name.trim(),
+                rating: data.rating ?? editForm.rating,
+                message: data.message ?? editForm.message.trim(),
+                image_url: data.image_url ?? (editForm.image_url.trim() || null),
+              }
+            : r
+        )
+      );
+      cancelEditing();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save review changes");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const uploadReviewPhoto = async (file: File) => {
+    try {
+      setUploadingPhoto(true);
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok || !data.secure_url) {
+        throw new Error(data.error || "Upload failed");
+      }
+      setEditForm((prev) => ({ ...prev, image_url: data.secure_url }));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to upload image");
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -117,7 +198,82 @@ export default function AdminReviewsPage() {
                   <StarIcon key={star} size={16} fill={review.rating >= star ? "#ffb400" : "none"} color={review.rating >= star ? "#ffb400" : "#d1d5db"} />
                 ))}
               </div>
-              <p className="text-gray-700 text-sm line-clamp-3" title={review.message}>"{review.message}"</p>
+              {review.image_url && (
+                <div className="relative w-12 h-12 rounded-full overflow-hidden border border-gray-200">
+                  <Image src={review.image_url} alt={review.name} fill className="object-cover" unoptimized />
+                </div>
+              )}
+              <p className="text-gray-700 text-sm line-clamp-3" title={review.message}>&quot;{review.message}&quot;</p>
+              {editingId === review.id && (
+                <div className="space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                  <input
+                    type="text"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded text-sm"
+                    placeholder="Reviewer name"
+                  />
+                  <input
+                    type="number"
+                    min={1}
+                    max={5}
+                    value={editForm.rating}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, rating: Number(e.target.value) || 1 }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-200 rounded text-sm"
+                  />
+                  <textarea
+                    value={editForm.message}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, message: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded text-sm min-h-[90px]"
+                    placeholder="Review message"
+                  />
+                  <input
+                    type="url"
+                    value={editForm.image_url}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, image_url: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded text-sm"
+                    placeholder="Photo URL"
+                  />
+                  <label className="inline-flex items-center gap-2 text-xs font-semibold text-[#ff5e00] cursor-pointer">
+                    <span>{uploadingPhoto ? "Uploading..." : "Upload Photo"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadingPhoto}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void uploadReviewPhoto(file);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  {editForm.image_url && (
+                    <div className="relative w-14 h-14 rounded-full overflow-hidden border border-gray-200">
+                      <Image src={editForm.image_url} alt="Preview" fill className="object-cover" unoptimized />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void saveReviewChanges()}
+                      disabled={savingEdit}
+                      className="px-3 py-2 rounded bg-[#ff5e00] text-white text-xs font-semibold hover:bg-[#e55500]"
+                    >
+                      {savingEdit ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEditing}
+                      className="px-3 py-2 rounded bg-gray-200 text-gray-700 text-xs font-semibold"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
               {review.source === "tour_comment" && (
                 <span className="inline-block w-fit text-[10px] uppercase font-bold tracking-wider text-[#ff5e00] bg-orange-50 px-2 py-0.5 rounded">Tour Page</span>
               )}
@@ -128,6 +284,13 @@ export default function AdminReviewsPage() {
                 {review.status !== "rejected" && (
                   <button onClick={() => updateStatus(review.id, "rejected")} title="Reject" className="p-1.5 text-amber-600 hover:bg-amber-50 rounded"><Cancel01Icon size={18} /></button>
                 )}
+                <button
+                  onClick={() => startEditing(review)}
+                  title="Edit"
+                  className="p-1.5 text-[#ff5e00] hover:bg-orange-50 rounded"
+                >
+                  <PencilEdit01Icon size={18} />
+                </button>
                 <button onClick={() => deleteReview(review.id)} title="Delete" className="p-1.5 text-red-600 hover:bg-red-50 rounded ml-auto"><Delete02Icon size={18} /></button>
               </div>
             </div>
@@ -157,6 +320,11 @@ export default function AdminReviewsPage() {
                     <td className="py-4 px-6">
                       <div className="font-bold text-gray-900">{review.name}</div>
                       <div className="text-xs text-gray-500">{format(new Date(review.created_at), "MMM d, yyyy")}</div>
+                      {review.image_url && (
+                        <div className="relative mt-2 w-10 h-10 rounded-full overflow-hidden border border-gray-200">
+                          <Image src={review.image_url} alt={review.name} fill className="object-cover" unoptimized />
+                        </div>
+                      )}
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex gap-0.5">
@@ -166,7 +334,7 @@ export default function AdminReviewsPage() {
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <p className="text-gray-700 line-clamp-2 md:line-clamp-3" title={review.message}>"{review.message}"</p>
+                      <p className="text-gray-700 line-clamp-2 md:line-clamp-3" title={review.message}>&quot;{review.message}&quot;</p>
                       {review.source === "tour_comment" && (
                         <span className="inline-block mt-2 text-[10px] uppercase font-bold tracking-wider text-[#ff5e00] bg-orange-50 px-2 py-0.5 rounded">Tour Page</span>
                       )}
@@ -182,6 +350,7 @@ export default function AdminReviewsPage() {
                         {review.status !== "rejected" && (
                           <button onClick={() => updateStatus(review.id, "rejected")} title="Reject Review" className="p-1.5 text-amber-600 hover:bg-amber-50 rounded"><Cancel01Icon size={18} /></button>
                         )}
+                        <button onClick={() => startEditing(review)} title="Edit Review" className="p-1.5 text-[#ff5e00] hover:bg-orange-50 rounded"><PencilEdit01Icon size={18} /></button>
                         <button onClick={() => deleteReview(review.id)} title="Delete Permanently" className="p-1.5 text-red-600 hover:bg-red-50 rounded ml-2"><Delete02Icon size={18} /></button>
                       </div>
                     </td>
@@ -192,6 +361,89 @@ export default function AdminReviewsPage() {
           </div>
         )}
       </div>
+
+      {editingId && (
+        <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900 font-sans">Edit Review</h2>
+            <button
+              type="button"
+              onClick={cancelEditing}
+              className="text-sm text-gray-500 hover:text-gray-700 font-semibold"
+            >
+              Close
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              type="text"
+              value={editForm.name}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              placeholder="Reviewer name"
+            />
+            <input
+              type="number"
+              min={1}
+              max={5}
+              value={editForm.rating}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, rating: Number(e.target.value) || 1 }))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+            <textarea
+              value={editForm.message}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, message: e.target.value }))}
+              className="md:col-span-2 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm min-h-[110px]"
+              placeholder="Review message"
+            />
+            <input
+              type="url"
+              value={editForm.image_url}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, image_url: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              placeholder="Photo URL"
+            />
+            <div className="flex items-center gap-3">
+              <label className="inline-flex items-center gap-2 text-xs font-semibold text-[#ff5e00] cursor-pointer">
+                <span>{uploadingPhoto ? "Uploading..." : "Upload Photo"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploadingPhoto}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void uploadReviewPhoto(file);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {editForm.image_url && (
+                <div className="relative w-12 h-12 rounded-full overflow-hidden border border-gray-200">
+                  <Image src={editForm.image_url} alt="Review photo preview" fill className="object-cover" unoptimized />
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-2 mt-5">
+            <button
+              type="button"
+              onClick={cancelEditing}
+              className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => void saveReviewChanges()}
+              disabled={savingEdit}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#ff5e00] text-white text-sm font-semibold hover:bg-[#e55500] disabled:opacity-60"
+            >
+              {savingEdit ? "Saving..." : "Save changes"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

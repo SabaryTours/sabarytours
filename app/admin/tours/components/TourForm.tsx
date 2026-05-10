@@ -10,19 +10,88 @@ import toast from "react-hot-toast";
 const ReactQuill = dynamic(
   async () => {
     const { default: RQ } = await import("react-quill-new");
-    return function comp({ forwardedRef, ...props }: any) {
+    return function comp({
+      forwardedRef,
+      ...props
+    }: React.ComponentProps<typeof RQ> & { forwardedRef?: React.Ref<unknown> }) {
       return <RQ ref={forwardedRef} {...props} />;
     };
   },
   { ssr: false }
 );
 
+type TourPriceInput = { name?: string; amount?: number | string; currency?: string };
+type TourImageInput = { image_url?: string };
+type PackageOption = { slug: string; title: string };
+
 interface TourFormProps {
-  initialData?: any;
+  initialData?: {
+    id?: string;
+    title?: string;
+    category?: string;
+    location?: string;
+    duration?: string;
+    status?: string;
+    description?: string;
+    map_url?: string;
+    is_featured?: boolean;
+    itinerary?: ItineraryItem[];
+    tour_prices?: TourPriceInput[];
+    tour_images?: TourImageInput[];
+    whats_included?: string[];
+    exclusions?: string[];
+    what_to_bring?: string[];
+    group_size_options?: string[];
+    age_categories?: string[];
+    languages?: string[];
+    available_days?: string[];
+    blocked_dates?: string[];
+    time_slots?: string[];
+  };
 }
+
+type ItineraryMode = "single-day" | "multi-day";
+
+type ItineraryItem = {
+  type?: "time" | "day";
+  day?: number;
+  time?: string;
+  title?: string;
+  activity?: string;
+  description?: string;
+};
+
+const inferItineraryMode = (items: ItineraryItem[], duration?: string): ItineraryMode => {
+  if (items.some((item) => item.type === "time" || (item.time && !item.day))) return "single-day";
+  if (items.some((item) => item.type === "day" || Number(item.day) > 1)) return "multi-day";
+
+  const durationMatch = String(duration || "").match(/(\d+)\s*(day|days|night|nights)/i);
+  if (durationMatch && Number(durationMatch[1]) > 1) return "multi-day";
+
+  return "single-day";
+};
+
+const normalizeItinerary = (items: ItineraryItem[], mode: ItineraryMode): ItineraryItem[] =>
+  items.map((item, index) =>
+    mode === "single-day"
+      ? {
+          type: "time",
+          time: item.time || "",
+          title: item.title || item.activity || "",
+          description: item.description || "",
+        }
+      : {
+          type: "day",
+          day: Number(item.day) || index + 1,
+          title: item.title || item.activity || "",
+          description: item.description || "",
+        }
+  );
 
 export default function TourForm({ initialData }: TourFormProps) {
   const router = useRouter();
+  const rawInitialItinerary = Array.isArray(initialData?.itinerary) ? initialData.itinerary : [];
+  const initialItineraryMode = inferItineraryMode(rawInitialItinerary, initialData?.duration);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: initialData?.title || "",
@@ -38,7 +107,7 @@ export default function TourForm({ initialData }: TourFormProps) {
     Array<{ name: string; amount: number | string; currency: string }>
   >(
     initialData?.tour_prices?.length
-      ? initialData.tour_prices.map((p: any) => ({
+      ? initialData.tour_prices.map((p) => ({
           name: p.name || "Base Price",
           amount: p.amount ?? 0,
           currency: p.currency || "GHS",
@@ -49,11 +118,12 @@ export default function TourForm({ initialData }: TourFormProps) {
         ]
   );
   const [imageInputs, setImageInputs] = useState<string[]>(
-    initialData?.tour_images?.map((img: any) => img.image_url).filter(Boolean) || []
+    initialData?.tour_images?.flatMap((img) => (img.image_url ? [img.image_url] : [])) || []
   );
 
-  const [itinerary, setItinerary] = useState<any[]>(
-    initialData?.itinerary || []
+  const [itineraryMode, setItineraryMode] = useState<ItineraryMode>(initialItineraryMode);
+  const [itinerary, setItinerary] = useState<ItineraryItem[]>(
+    normalizeItinerary(rawInitialItinerary, initialItineraryMode)
   );
   
   const [whatsIncluded, setWhatsIncluded] = useState<string[]>(
@@ -87,7 +157,7 @@ export default function TourForm({ initialData }: TourFormProps) {
     initialData?.time_slots || []
   );
 
-  const [packages, setPackages] = useState<any[]>([]);
+  const [packages, setPackages] = useState<PackageOption[]>([]);
 
   useEffect(() => {
     const fetchPackages = async () => {
@@ -95,15 +165,15 @@ export default function TourForm({ initialData }: TourFormProps) {
       const { data } = await supabase.from('packages').select('slug, title').order('title');
       if (data) {
         setPackages(data);
-        if (!formData.category && data.length > 0) {
-          setFormData(prev => ({ ...prev, category: data[0].slug }));
+        if (data.length > 0) {
+          setFormData(prev => (prev.category ? prev : { ...prev, category: data[0].slug }));
         }
       }
     };
     fetchPackages();
   }, []);
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -176,13 +246,28 @@ export default function TourForm({ initialData }: TourFormProps) {
       return next;
     });
 
-  const addItineraryDay = () => setItinerary([...itinerary, { day: itinerary.length + 1, title: "", description: "" }]);
-  const removeItineraryDay = (index: number) => {
-    const newItinerary = itinerary.filter((_, i) => i !== index);
-    // Reassign day numbers
-    setItinerary(newItinerary.map((item, i) => ({ ...item, day: i + 1 })));
+  const changeItineraryMode = (mode: ItineraryMode) => {
+    setItineraryMode(mode);
+    setItinerary((prev) => normalizeItinerary(prev, mode));
   };
-  const updateItineraryDay = (index: number, field: string, value: string) => {
+
+  const addItineraryItem = () =>
+    setItinerary((prev) => [
+      ...prev,
+      itineraryMode === "single-day"
+        ? { type: "time", time: "09:00", title: "", description: "" }
+        : { type: "day", day: prev.length + 1, title: "", description: "" },
+    ]);
+
+  const removeItineraryItem = (index: number) => {
+    const newItinerary = itinerary.filter((_, i) => i !== index);
+    setItinerary(
+      itineraryMode === "multi-day"
+        ? newItinerary.map((item, i) => ({ ...item, type: "day", day: i + 1 }))
+        : newItinerary
+    );
+  };
+  const updateItineraryItem = (index: number, field: string, value: string) => {
     const newItinerary = [...itinerary];
     newItinerary[index] = { ...newItinerary[index], [field]: value };
     setItinerary(newItinerary);
@@ -258,6 +343,28 @@ export default function TourForm({ initialData }: TourFormProps) {
     setLoading(true);
     
     try {
+      const normalizedItinerary = itinerary
+        .map((item, index) =>
+          itineraryMode === "single-day"
+            ? {
+                type: "time",
+                time: String(item.time || "").trim(),
+                title: String(item.title || "").trim(),
+                description: String(item.description || "").trim(),
+              }
+            : {
+                type: "day",
+                day: index + 1,
+                title: String(item.title || "").trim(),
+                description: String(item.description || "").trim(),
+              }
+        )
+        .filter((item) =>
+          item.type === "time"
+            ? Boolean(item.time || item.title || item.description)
+            : Boolean(item.title || item.description)
+        );
+
       // 1. Prepare Data
       const tourInput = {
         title: formData.title,
@@ -269,7 +376,7 @@ export default function TourForm({ initialData }: TourFormProps) {
         description: formData.description,
         map_url: formData.map_url,
         is_featured: formData.is_featured,
-        itinerary,
+        itinerary: normalizedItinerary,
         whats_included: whatsIncluded.filter((item) => item.trim() !== ""),
         exclusions: exclusions.filter((item) => item.trim() !== ""),
         what_to_bring: whatToBring.filter((item) => item.trim() !== ""),
@@ -516,35 +623,76 @@ export default function TourForm({ initialData }: TourFormProps) {
 
       {/* Itinerary Section */}
       <div className="border-t border-gray-100 pt-8">
-        <div className="flex items-center justify-between mb-4">
-          <label className="block text-sm font-medium text-gray-700 font-sans">Itinerary</label>
-          <button type="button" onClick={addItineraryDay} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold flex items-center gap-1 hover:bg-gray-200">
-            + Add Day
+        <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 font-sans">Itinerary</label>
+            <p className="text-xs text-gray-500 mt-1 font-sans">
+              Use time slots for single-day tours and day numbers for multi-day tours.
+            </p>
+          </div>
+          <button type="button" onClick={addItineraryItem} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold flex items-center gap-1 hover:bg-gray-200 self-start">
+            {itineraryMode === "single-day" ? "+ Add Time Slot" : "+ Add Day"}
           </button>
         </div>
+
+        <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 mb-5 font-sans">
+          <button
+            type="button"
+            onClick={() => changeItineraryMode("single-day")}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              itineraryMode === "single-day" ? "bg-[#ff5e00] text-white shadow-sm" : "text-gray-600 hover:text-[#ff5e00]"
+            }`}
+          >
+            Single-day times
+          </button>
+          <button
+            type="button"
+            onClick={() => changeItineraryMode("multi-day")}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              itineraryMode === "multi-day" ? "bg-[#ff5e00] text-white shadow-sm" : "text-gray-600 hover:text-[#ff5e00]"
+            }`}
+          >
+            Multi-day plan
+          </button>
+        </div>
+
         <div className="space-y-4">
-          {itinerary.map((day, index) => (
+          {itinerary.map((item, index) => (
             <div key={index} className="p-4 bg-gray-50 border border-gray-200 rounded-xl relative group">
-              <button type="button" onClick={() => removeItineraryDay(index)} className="absolute top-4 right-4 text-red-500 hover:bg-red-100 p-1 rounded font-bold opacity-0 group-hover:opacity-100 transition-opacity">X</button>
-              <h4 className="font-bold text-gray-800 mb-3">Day {day.day}</h4>
+              <button type="button" onClick={() => removeItineraryItem(index)} className="absolute top-4 right-4 text-red-500 hover:bg-red-100 p-1 rounded font-bold opacity-0 group-hover:opacity-100 transition-opacity">X</button>
+              <h4 className="font-bold text-gray-800 mb-3">
+                {itineraryMode === "single-day" ? `Time Slot ${index + 1}` : `Day ${item.day || index + 1}`}
+              </h4>
               <div className="space-y-3">
+                {itineraryMode === "single-day" && (
+                  <input
+                    type="time"
+                    value={item.time || ""}
+                    onChange={(e) => updateItineraryItem(index, "time", e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black"
+                  />
+                )}
                 <input 
                   type="text" 
-                  value={day.title} 
-                  onChange={(e) => updateItineraryDay(index, "title", e.target.value)} 
+                  value={item.title || ""} 
+                  onChange={(e) => updateItineraryItem(index, "title", e.target.value)} 
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black" 
-                  placeholder="Day Title (e.g. Arrival & City Tour)" 
+                  placeholder={itineraryMode === "single-day" ? "Activity title (e.g. Museum visit)" : "Day title (e.g. Arrival & City Tour)"}
                 />
                 <textarea 
-                  value={day.description} 
-                  onChange={(e) => updateItineraryDay(index, "description", e.target.value)} 
+                  value={item.description || ""} 
+                  onChange={(e) => updateItineraryItem(index, "description", e.target.value)} 
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black min-h-[80px]" 
-                  placeholder="Describe the day's activities..." 
+                  placeholder={itineraryMode === "single-day" ? "Describe what happens at this time..." : "Describe the day's activities..."}
                 />
               </div>
             </div>
           ))}
-          {itinerary.length === 0 && <p className="text-gray-400 text-sm italic">No itinerary days added yet.</p>}
+          {itinerary.length === 0 && (
+            <p className="text-gray-400 text-sm italic">
+              {itineraryMode === "single-day" ? "No time slots added yet." : "No itinerary days added yet."}
+            </p>
+          )}
         </div>
       </div>
 

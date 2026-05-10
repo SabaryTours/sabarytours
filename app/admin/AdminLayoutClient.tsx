@@ -18,7 +18,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
   if (pathname.includes("/admin/bookings/receipt")) pageTitle = "Payment receipt";
   else if (pathname.includes("/admin/bookings")) pageTitle = "Manage Bookings";
   if (pathname.includes("/admin/gallery")) pageTitle = "Gallery";
-  if (pathname.includes("/admin/trip-outline")) pageTitle = "Year trip outline";
+  if (pathname.includes("/admin/trip-outline")) pageTitle = "Upcoming tours planner";
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden font-sans print:h-auto print:min-h-0 print:overflow-visible">

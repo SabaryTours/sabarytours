@@ -157,7 +157,7 @@ export default function AdminBookingReceiptPage() {
   }
 
   return (
-    <div className="space-y-8 print:space-y-0">
+    <div className="space-y-8 print:space-y-0 print:bg-white print:text-black">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
         <div>
           <Link
@@ -176,8 +176,8 @@ export default function AdminBookingReceiptPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 print:block">
         <div className="min-h-0 print:break-inside-avoid">
-          <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 print:shadow-none print:border-none print:w-full print:max-w-none print:p-0 print:mx-0">
-            <div className="flex justify-between items-start mb-12 border-b border-gray-100 pb-8 print:mb-8 print:pb-6">
+          <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-8 md:p-12 print:shadow-none print:border-none print:w-full print:max-w-none print:p-0 print:mx-0 print:rounded-none">
+            <div className="flex flex-col gap-6 sm:flex-row sm:justify-between sm:items-start mb-8 sm:mb-12 border-b border-gray-100 pb-6 sm:pb-8 print:flex-row print:justify-between print:items-start print:mb-8 print:pb-6">
               <div>
                 <Logo />
                 <div className="mt-4 text-gray-500 text-sm font-sans space-y-1">
@@ -188,14 +188,14 @@ export default function AdminBookingReceiptPage() {
                   <p>+233 576 093 838</p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right print:text-right">
                 <h1
-                  className="text-3xl font-bold uppercase text-gray-800 tracking-wider mb-2"
+                  className="text-2xl sm:text-3xl font-bold uppercase text-gray-800 tracking-wider mb-2 leading-tight"
                   style={{ fontFamily: "var(--font-unlimited-pie)" }}
                 >
                   Payment receipt
                 </h1>
-                <p className="text-gray-500 font-sans text-sm font-medium">Receipt #: {preview.receiptNo}</p>
+                <p className="text-gray-500 font-sans text-sm font-medium break-all sm:break-normal print:break-normal">Receipt #: {preview.receiptNo}</p>
                 <p className="text-gray-500 font-sans text-sm mt-1">Date issued: {issuedLabel}</p>
                 <div className="mt-4 inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border bg-green-50 text-green-700 border-green-200">
                   {preview.fullyPaid ? "Paid in full" : "Payment received"}
@@ -203,11 +203,11 @@ export default function AdminBookingReceiptPage() {
               </div>
             </div>
 
-            <div className="mb-10 flex flex-col sm:flex-row gap-10 sm:gap-12">
+            <div className="mb-8 sm:mb-10 flex flex-col sm:flex-row gap-8 sm:gap-12 print:flex-row print:gap-12">
               <div className="flex-1">
                 <h3 className="text-xs font-bold text-gray-400 font-sans uppercase tracking-wider mb-2">Received from</h3>
                 <p className="font-bold text-gray-800 font-sans text-lg">{booking.customer_name || "—"}</p>
-                <p className="text-gray-600 font-sans text-sm mt-1">{booking.customer_email || "—"}</p>
+                <p className="text-gray-600 font-sans text-sm mt-1 break-all sm:break-normal print:break-normal">{booking.customer_email || "—"}</p>
                 {booking.customer_phone && (
                   <p className="text-gray-600 font-sans text-sm mt-0.5">{booking.customer_phone}</p>
                 )}
@@ -249,8 +249,8 @@ export default function AdminBookingReceiptPage() {
               </div>
             </div>
 
-            <div className="mb-10 print:break-inside-avoid">
-              <table className="w-full text-left border-collapse">
+            <div className="mb-8 sm:mb-10 print:break-inside-avoid overflow-x-auto print:overflow-visible">
+              <table className="w-full min-w-[420px] text-left border-collapse print:min-w-0">
                 <thead>
                   <tr className="border-b-2 border-gray-800">
                     <th className="py-3 text-sm font-bold text-gray-800 font-sans uppercase tracking-wider">
@@ -263,14 +263,14 @@ export default function AdminBookingReceiptPage() {
                 </thead>
                 <tbody className="font-sans">
                   <tr className="border-b border-gray-100">
-                    <td className="py-5 text-gray-800">
+                    <td className="py-5 pr-4 text-gray-800">
                       <span className="font-bold text-base block mb-1">{tourTitle}</span>
                       <span className="text-sm text-gray-500">
                         Booking for {booking.number_of_people ?? 1}{" "}
                         {(booking.number_of_people ?? 1) > 1 ? "people" : "person"}
                       </span>
                     </td>
-                    <td className="py-5 text-gray-800 text-right font-semibold">
+                    <td className="py-5 text-gray-800 text-right font-semibold whitespace-nowrap">
                       {currency} {preview.total.toFixed(2)}
                     </td>
                   </tr>
@@ -278,36 +278,36 @@ export default function AdminBookingReceiptPage() {
               </table>
             </div>
 
-            <div className="flex justify-end mb-12 print:break-inside-avoid">
-              <div className="w-full max-w-xs space-y-3 font-sans">
+            <div className="flex justify-end mb-10 sm:mb-12 print:break-inside-avoid">
+              <div className="w-full sm:max-w-xs space-y-3 font-sans">
                 <div className="flex justify-between items-center text-gray-600 text-sm">
                   <span>Booking total</span>
-                  <span>
+                  <span className="whitespace-nowrap">
                     {currency} {preview.total.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-gray-600 text-sm">
                   <span>Previously paid</span>
-                  <span>
+                  <span className="whitespace-nowrap">
                     {currency} {preview.prevPaid.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm font-bold text-[#ff5e00] pt-1">
                   <span>This payment ({paymentMethod})</span>
-                  <span>
+                  <span className="whitespace-nowrap">
                     {currency} {preview.applied.toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center text-lg font-bold text-gray-900 border-t border-gray-200 pt-3">
+                <div className="flex justify-between items-center gap-4 text-base sm:text-lg font-bold text-gray-900 border-t border-gray-200 pt-3">
                   <span>Total paid to date</span>
-                  <span>
+                  <span className="whitespace-nowrap">
                     {currency} {preview.newPaid.toFixed(2)}
                   </span>
                 </div>
                 {preview.bal > 0.009 && (
                   <div className="flex justify-between items-center text-sm font-bold text-gray-500 pt-1">
                     <span>Balance due</span>
-                    <span>
+                    <span className="whitespace-nowrap">
                       {currency} {preview.bal.toFixed(2)}
                     </span>
                   </div>
