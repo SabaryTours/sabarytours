@@ -34,10 +34,11 @@ function buildInitialTierSelections(tour: Tour): Record<string, number> {
 function tierHeadingLabel(
   tier: NonNullable<Tour["price_tiers"]>[number],
   index: number,
-  tiers: NonNullable<Tour["price_tiers"]>,
+  tiers: Tour["price_tiers"],
 ) {
+  const list = tiers ?? [];
   const rawName = (tier.name && tier.name.trim()) || "";
-  const peersWithSameName = tiers.filter(
+  const peersWithSameName = list.filter(
     (t) => (t.name?.trim() || "") === rawName,
   ).length;
   const labelBase = rawName || `Price option ${index + 1}`;
