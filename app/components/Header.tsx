@@ -247,6 +247,9 @@ export default function Header() {
               <div className="relative h-full" ref={currencyRef}>
                 <button
                   type="button"
+                  aria-expanded={currencyOpen}
+                  aria-haspopup="listbox"
+                  aria-label={`Currency, ${currency}. Open to change currency`}
                   onClick={(e) => {
                     e.stopPropagation();
                     setCurrencyOpen((prev) => !prev);
@@ -323,13 +326,19 @@ export default function Header() {
                 >
                   <div className="flex justify-between items-center p-4 border-b">
                     <h3 className="font-bold text-lg font-sans">Select Language</h3>
-                    <button onClick={() => setLanguageOpen(false)} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-                      <Cancel01Icon size={24} className="text-gray-500" />
+                    <button
+                      type="button"
+                      aria-label="Close language selector"
+                      onClick={() => setLanguageOpen(false)}
+                      className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <Cancel01Icon size={24} className="text-gray-500" aria-hidden />
                     </button>
                   </div>
                   <div className="p-2 max-h-[60vh] overflow-y-auto">
                     {languages.map(lang => (
                       <button
+                        type="button"
                         key={lang.code}
                         onClick={() => handleLanguageSelect(lang.code)}
                         className={`w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors font-sans ${
@@ -402,10 +411,12 @@ export default function Header() {
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <Logo />
               <button 
+                type="button"
+                aria-label="Close menu"
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2 -mr-2 text-gray-400 hover:text-gray-900 transition-colors bg-gray-50 hover:bg-gray-100 rounded-full"
               >
-                <Cancel01Icon size={24} />
+                <Cancel01Icon size={24} aria-hidden />
               </button>
             </div>
 

@@ -17,7 +17,7 @@ export default function GoogleTranslate() {
       <div id="google_translate_element" style={{ display: "none" }}></div>
       <Script
         id="google-translate-config"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
         dangerouslySetInnerHTML={{
           __html: `
             window.googleTranslateElementInit = function() {
@@ -33,7 +33,7 @@ export default function GoogleTranslate() {
       />
       <Script
         id="google-translate-script"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
         src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
       />
       
