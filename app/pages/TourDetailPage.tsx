@@ -42,7 +42,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
   const startingPrice = convert(startingPriceRaw, "GHS");
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-clip">
       {/* 1. Header & Title Section */}
       <div className="container mx-auto px-4 sm:px-6 md:px-12 pt-8 pb-6">
         <button
@@ -53,27 +53,27 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
           Back to packages
         </button>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 min-w-0 max-w-full">
           {categoryTitle ? (
-            <p className="text-xs uppercase tracking-wide text-gray-500 font-sans">{categoryTitle}</p>
+            <p className="text-xs uppercase tracking-wide text-gray-500 font-sans break-words">{categoryTitle}</p>
           ) : null}
           <h1 
-            className="text-[28px] sm:text-[36px] md:text-[42px] text-gray-900 font-bold leading-tight uppercase"
+            className="text-[28px] sm:text-[36px] md:text-[42px] text-gray-900 font-bold leading-tight uppercase break-words"
             style={{ fontFamily: 'var(--font-unlimited-pie)' }}
           >
             {tour.title}
           </h1>
           
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 font-sans">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 font-sans min-w-0">
             {tour.rating && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 min-w-0">
                 <StarRating rating={tour.rating} reviewCount={tour.reviewCount} size="sm" />
               </div>
             )}
             {tour.location && (
-              <div className="flex items-center gap-1 font-medium">
-                <Location01Icon size={16} className="text-[#ff5e00]" />
-                {tour.location}
+              <div className="flex items-start gap-1 font-medium min-w-0 max-w-full">
+                <Location01Icon size={16} className="text-[#ff5e00] shrink-0 mt-0.5" />
+                <span className="break-words">{tour.location}</span>
               </div>
             )}
             {tour.trustBadges?.includes('best-seller') && (
@@ -144,36 +144,36 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
       </div>
 
       {/* 3. 2-Column Main Content */}
-      <div className="container mx-auto px-4 sm:px-6 md:px-12 flex flex-col lg:flex-row gap-12 pb-16">
+      <div className="container mx-auto px-4 sm:px-6 md:px-12 flex flex-col lg:flex-row gap-12 pb-16 min-w-0">
         
         {/* LEFT COLUMN: Content */}
-        <div className="w-full lg:w-[65%] space-y-12">
+        <div className="w-full lg:w-[65%] min-w-0 space-y-12">
           
           {/* At a Glance */}
           <section>
             <h2 className="text-2xl font-bold font-sans text-gray-900 mb-6 uppercase" style={{ fontFamily: 'var(--font-unlimited-pie)'}}>
               At a Glance
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-gray-50 rounded-2xl border border-gray-100">
-              <div className="flex flex-col gap-1">
-                <Clock01Icon size={24} className="text-[#ff5e00] mb-1" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-gray-50 rounded-2xl border border-gray-100 min-w-0">
+              <div className="flex flex-col gap-1 min-w-0">
+                <Clock01Icon size={24} className="text-[#ff5e00] mb-1 shrink-0" />
                 <span className="text-xs text-gray-500 font-sans font-medium uppercase">Duration</span>
-                <span className="text-sm text-gray-900 font-medium font-sans">{tour.duration || 'Not specified'}</span>
+                <span className="text-sm text-gray-900 font-medium font-sans break-words">{tour.duration || 'Not specified'}</span>
               </div>
-              <div className="flex flex-col gap-1">
-                <Location01Icon size={24} className="text-[#ff5e00] mb-1" />
+              <div className="flex flex-col gap-1 min-w-0">
+                <Location01Icon size={24} className="text-[#ff5e00] mb-1 shrink-0" />
                 <span className="text-xs text-gray-500 font-sans font-medium uppercase">Location</span>
-                <span className="text-sm text-gray-900 font-medium font-sans">{tour.location || 'Various'}</span>
+                <span className="text-sm text-gray-900 font-medium font-sans break-words">{tour.location || 'Various'}</span>
               </div>
-              <div className="flex flex-col gap-1">
-                <UserGroupIcon size={24} className="text-[#ff5e00] mb-1" />
+              <div className="flex flex-col gap-1 min-w-0">
+                <UserGroupIcon size={24} className="text-[#ff5e00] mb-1 shrink-0" />
                 <span className="text-xs text-gray-500 font-sans font-medium uppercase">Format</span>
-                <span className="text-sm text-gray-900 font-medium font-sans">Private / Group</span>
+                <span className="text-sm text-gray-900 font-medium font-sans break-words">Private / Group</span>
               </div>
-              <div className="flex flex-col gap-1">
-                <Tick02Icon size={24} className="text-green-600 mb-1" />
+              <div className="flex flex-col gap-1 min-w-0">
+                <Tick02Icon size={24} className="text-green-600 mb-1 shrink-0" />
                 <span className="text-xs text-gray-500 font-sans font-medium uppercase">Cancellation</span>
-                <span className="text-sm text-gray-900 font-medium font-sans">{tour.freeCancellation ? 'Free Cancellation' : 'Standard'}</span>
+                <span className="text-sm text-gray-900 font-medium font-sans break-words">{tour.freeCancellation ? 'Free Cancellation' : 'Standard'}</span>
               </div>
             </div>
           </section>
@@ -184,7 +184,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
               <h2 className="text-2xl font-bold font-sans text-gray-900 mb-6 uppercase" style={{ fontFamily: 'var(--font-unlimited-pie)'}}>
                 About this tour
               </h2>
-              <div className="prose max-w-none text-gray-600 font-sans text-base leading-relaxed wrap-normal [word-break:normal]">
+              <div className="prose max-w-none min-w-0 text-gray-600 font-sans text-base leading-relaxed [&_*]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto">
                 <SafeHTML html={tour.description} />
               </div>
             </section>
@@ -198,9 +198,9 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
               </h2>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
                 {tour.whatsIncluded.map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-gray-700 font-sans">
+                  <li key={i} className="flex items-start gap-3 text-gray-700 font-sans min-w-0">
                     <Tick02Icon size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>{item}</span>
+                    <span className="min-w-0 break-words">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -215,9 +215,9 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
               </h2>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
                 {exclusions.map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-gray-700 font-sans">
+                  <li key={i} className="flex items-start gap-3 text-gray-700 font-sans min-w-0">
                     <Cancel01Icon size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
-                    <span>{item}</span>
+                    <span className="min-w-0 break-words">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -232,9 +232,9 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
               </h2>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
                 {whatToBring.map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-gray-700 font-sans">
+                  <li key={i} className="flex items-start gap-3 text-gray-700 font-sans min-w-0">
                     <InformationCircleIcon size={20} className="text-[#0060cc] flex-shrink-0 mt-0.5" />
-                    <span>{item}</span>
+                    <span className="min-w-0 break-words">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -255,13 +255,13 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
                       <div className="w-2 h-2 md:w-3 md:h-3 bg-[#ff5e00] rounded-full"></div>
                     </div>
                     
-                    <div className="bg-gray-50 border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-[#ff5e00] font-bold font-sans text-sm tracking-wide uppercase">
+                    <div className="bg-gray-50 border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow min-w-0">
+                      <div className="flex items-center gap-3 mb-2 min-w-0">
+                        <span className="text-[#ff5e00] font-bold font-sans text-sm tracking-wide uppercase break-words">
                           {item.time || `Day ${index + 1}`}
                         </span>
                       </div>
-                      <h3 className="text-lg font-bold text-gray-900 font-sans mb-2">
+                      <h3 className="text-lg font-bold text-gray-900 font-sans mb-2 break-words">
                         {item.activity}
                       </h3>
                       {item.description && (
@@ -308,8 +308,8 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
               </h2>
               <div className="space-y-4">
                 {tour.faq.map((item, index) => (
-                  <div key={index} className="bg-white border border-gray-200 rounded-xl p-6">
-                    <h3 className="text-gray-900 font-bold font-sans text-lg mb-2">
+                  <div key={index} className="bg-white border border-gray-200 rounded-xl p-6 min-w-0">
+                    <h3 className="text-gray-900 font-bold font-sans text-lg mb-2 break-words">
                       {item.question}
                     </h3>
                     <p className="text-gray-600 font-sans leading-relaxed">
@@ -323,8 +323,8 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
         </div>
 
         {/* RIGHT COLUMN: Sticky Booking Sidebar */}
-        <div className="w-full lg:w-[35%] relative">
-          <div className="sticky top-28 bg-white border border-gray-200 text-black shadow-2xl rounded-2xl p-6 flex flex-col gap-6 transform transition-all hover:-translate-y-1">
+        <div className="w-full lg:w-[35%] relative min-w-0">
+          <div className="sticky top-28 bg-white border border-gray-200 text-black shadow-2xl rounded-2xl p-6 flex flex-col gap-6 transform transition-all hover:-translate-y-1 min-w-0 max-w-full">
             
             {/* Price block */}
             <div>
@@ -339,12 +339,12 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
 
             {/* Structured Pricing / Preferences */}
             <div className="space-y-4">
-              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                <p className="text-xs text-gray-500 font-sans uppercase font-semibold tracking-wide mb-2">Group size options</p>
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 min-w-0">
+                <p className="text-xs text-gray-500 font-sans uppercase font-semibold tracking-wide mb-2 break-words">Group size options</p>
                 {groupSizeOptions.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 min-w-0">
                     {groupSizeOptions.map((option, idx) => (
-                      <span key={`${option}-${idx}`} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-sans text-gray-700">
+                      <span key={`${option}-${idx}`} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-sans text-gray-700 max-w-full break-words">
                         {option}
                       </span>
                     ))}
@@ -354,22 +354,22 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
                 )}
               </div>
 
-              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                <p className="text-xs text-gray-500 font-sans uppercase font-semibold tracking-wide mb-2">Age categories</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 min-w-0">
+                <p className="text-xs text-gray-500 font-sans uppercase font-semibold tracking-wide mb-2 break-words">Age categories</p>
+                <div className="flex flex-wrap gap-2 min-w-0">
                   {ageCategories.map((option, idx) => (
-                    <span key={`${option}-${idx}`} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-sans text-gray-700">
+                    <span key={`${option}-${idx}`} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-sans text-gray-700 max-w-full break-words">
                       {option}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                <p className="text-xs text-gray-500 font-sans uppercase font-semibold tracking-wide mb-2">Language preferences</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 min-w-0">
+                <p className="text-xs text-gray-500 font-sans uppercase font-semibold tracking-wide mb-2 break-words">Language preferences</p>
+                <div className="flex flex-wrap gap-2 min-w-0">
                   {languages.map((option, idx) => (
-                    <span key={`${option}-${idx}`} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-sans text-gray-700">
+                    <span key={`${option}-${idx}`} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-sans text-gray-700 max-w-full break-words">
                       {option}
                     </span>
                   ))}
@@ -378,9 +378,9 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
             </div>
 
             {/* Availability */}
-            <div className="flex items-center gap-3 bg-orange-50 text-orange-800 p-3 rounded-lg border border-orange-100">
-              <InformationCircleIcon size={20} className="flex-shrink-0" />
-              <p className="text-sm font-sans font-medium">
+            <div className="flex items-start gap-3 bg-orange-50 text-orange-800 p-3 rounded-lg border border-orange-100 min-w-0">
+              <InformationCircleIcon size={20} className="flex-shrink-0 mt-0.5" />
+              <p className="text-sm font-sans font-medium min-w-0 break-words">
                 Highly likely to sell out. Reserve your spot today!
               </p>
             </div>
@@ -395,14 +395,14 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
 
             {/* Trust Markers */}
             <ul className="space-y-3 mt-2">
-              <li className="flex items-center gap-3 text-sm text-gray-600 font-sans">
-                <Tick02Icon size={18} className="text-green-600" />
-                Reserve now & pay later
+              <li className="flex items-start gap-3 text-sm text-gray-600 font-sans min-w-0">
+                <Tick02Icon size={18} className="text-green-600 shrink-0 mt-0.5" />
+                <span className="min-w-0 break-words">Reserve now & pay later</span>
               </li>
               {tour.freeCancellation && (
-                <li className="flex items-center gap-3 text-sm text-gray-600 font-sans">
-                  <Tick02Icon size={18} className="text-green-600" />
-                  Free cancellation up to 24 hours in advance
+                <li className="flex items-start gap-3 text-sm text-gray-600 font-sans min-w-0">
+                  <Tick02Icon size={18} className="text-green-600 shrink-0 mt-0.5" />
+                  <span className="min-w-0 break-words">Free cancellation up to 24 hours in advance</span>
                 </li>
               )}
             </ul>
@@ -453,11 +453,11 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
       )}
 
       {/* Mobile Sticky Bottom Bar for Booking */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex flex-col">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 min-w-0">
+        <div className="flex items-center justify-between gap-4 min-w-0">
+          <div className="flex flex-col min-w-0 shrink">
             <span className="text-xs text-gray-500 font-sans uppercase font-medium">From</span>
-            <span className="text-lg font-bold font-sans text-gray-900">{symbol} {startingPrice.toFixed(2)}</span>
+            <span className="text-lg font-bold font-sans text-gray-900 break-all">{symbol} {startingPrice.toFixed(2)}</span>
           </div>
           <button
             onClick={() => router.push(`/booking?tour=${tour.slug}`)}
