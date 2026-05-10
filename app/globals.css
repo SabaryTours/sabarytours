@@ -77,7 +77,10 @@ select:-webkit-autofill:focus {
   -webkit-text-fill-color: #0f172a;
 }
 
-/* Avoid splitting normal words across lines globally */
+/*
+ * Allow wrapping when content would overflow (long URLs, pasted text, CMS HTML).
+ * overflow-wrap: normal forbids mid-token breaks and caused horizontal overflow site-wide.
+ */
 h1,
 h2,
 h3,
@@ -90,7 +93,7 @@ div,
 a,
 button,
 label {
-  overflow-wrap: normal;
+  overflow-wrap: break-word;
   word-break: normal;
   hyphens: manual;
   -webkit-hyphens: manual;
