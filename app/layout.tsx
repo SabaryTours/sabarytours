@@ -15,7 +15,10 @@ import SplashScreen from "./components/SplashScreen";
 //   weight: ["300", "400", "500", "600", "700"],
 // });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sabarytours.com";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Sabary Tours - Experience Ghana The Sabary Way",
   description: "Discover the beauty, culture, and adventure that Ghana has to offer with Sabary Tours. Expertly crafted tours creating memories that last a lifetime.",
   keywords: ["Ghana tours", "Travel Ghana", "Accra tours", "Sabary Tours", "West Africa travel", "Ghana vacations"],
@@ -69,7 +72,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-        <script src="https://js.paystack.co/v2/inline.js" async></script>
         <style dangerouslySetInnerHTML={{__html: `
           :root {
             --font-quicksand: 'Quicksand', sans-serif;

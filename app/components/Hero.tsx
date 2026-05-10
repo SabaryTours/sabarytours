@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import HeroSearchForm from "./HeroSearchForm";
 
 export default function Hero({ initialImages = [] }: { initialImages?: string[] }) {
+  const router = useRouter();
   const [images] = useState<string[]>(
     Array.from(new Set(initialImages.filter(Boolean))).length > 0
       ? Array.from(new Set(initialImages.filter(Boolean)))
@@ -23,17 +26,30 @@ export default function Hero({ initialImages = [] }: { initialImages?: string[] 
 
   return (
     <section className="relative w-full h-[800px] sm:h-[750px] md:h-[700px] lg:h-[650px] xl:h-[600px] font-sans flex items-center justify-center bg-gray-900">
-      {/* Background Image Container with Crossfade */}
+      {/* Background images — Next/Image + priority on first slide improves LCP vs CSS backgrounds */}
       {images.map((imgUrl, index) => (
-        <div 
+        <div
           key={imgUrl + index}
-          className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ease-in-out"
-          style={{ 
-            backgroundImage: `url(${imgUrl})`,
-            opacity: index === currentIndex ? 1 : 0
-          }}
+          className={`absolute inset-0 z-0 transition-opacity duration-1000 ease-in-out ${
+            index === currentIndex ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+          aria-hidden={index !== currentIndex}
         >
-          <div className="absolute inset-0 bg-black/40"></div>
+          <Image
+            src={imgUrl}
+            alt={
+              index === 0
+                ? "Ghana landscapes and experiences featured by Sabary Tours"
+                : ""
+            }
+            fill
+            priority={index === 0}
+            fetchPriority={index === 0 ? "high" : undefined}
+            sizes="100vw"
+            className="object-cover"
+            quality={index === 0 ? 82 : 75}
+          />
+          <div className="absolute inset-0 bg-black/40" aria-hidden />
         </div>
       ))}
 
@@ -67,7 +83,13 @@ export default function Hero({ initialImages = [] }: { initialImages?: string[] 
         <div className="hidden sm:flex mt-6 flex-wrap items-center justify-center gap-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <span className="text-white/80 text-sm font-medium font-sans">Popular:</span>
           {["Kakum", "Quad Bike", "Cape Coast & Elmina", "Accra City Tour", "Safari Valley"].map((tag) => (
-            <button key={tag} className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-medium backdrop-blur-sm transition-all whitespace-nowrap">
+            <button
+              key={tag}
+              type="button"
+              aria-label={`Search tours for ${tag}`}
+              className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-medium backdrop-blur-sm transition-all whitespace-nowrap"
+              onClick={() => router.push(`/packages?q=${encodeURIComponent(tag)}`)}
+            >
               {tag}
             </button>
           ))}

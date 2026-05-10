@@ -10,7 +10,8 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
   const [showCursor, setShowCursor] = useState(true);
 
   const fullText = "WELCOME TO SABARY TOURS";
-  const minDisplayTime = 3000; 
+  /** Short enough to avoid blocking LCP; splash is cosmetic only */
+  const minDisplayTime = 900;
 
   useEffect(() => {
     let typingTimeout: NodeJS.Timeout | undefined;
@@ -19,6 +20,15 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
 
     // If we've already shown the splash in this session, skip animation
     if (typeof window !== "undefined") {
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduceMotion) {
+        setIsLoading(false);
+        setDisplayText(fullText);
+        setShowCursor(false);
+        window.sessionStorage.setItem("sabary_splash_shown", "1");
+        return;
+      }
+
       const alreadyShown = window.sessionStorage.getItem("sabary_splash_shown");
       if (alreadyShown === "1") {
         setIsLoading(false);
@@ -34,7 +44,7 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
       if (currentIndex < fullText.length) {
         setDisplayText(fullText.slice(0, currentIndex + 1));
         currentIndex++;
-        typingTimeout = setTimeout(typeNextChar, 100); // Typing speed
+        typingTimeout = setTimeout(typeNextChar, 45);
       } else {
         // After typing is complete, wait for minimum display time
         const elapsed = Date.now() - startTime;
@@ -142,15 +152,8 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
         )}
       </AnimatePresence>
 
-      {/* Main Content with Fade In */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isLoading ? 0 : 1 }}
-        transition={{ duration: 0.8, delay: isLoading ? 0 : 0.3 }}
-        className={isLoading ? "pointer-events-none" : ""}
-      >
-        {children}
-      </motion.div>
+      {/* Keep page paintable for LCP — splash is an overlay only (no opacity:0 on main content) */}
+      <div className={isLoading ? "pointer-events-none select-none" : ""}>{children}</div>
     </>
   );
 }

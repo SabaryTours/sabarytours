@@ -46,6 +46,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
       {/* 1. Header & Title Section */}
       <div className="container mx-auto px-4 sm:px-6 md:px-12 pt-8 pb-6">
         <button
+          type="button"
           onClick={() => window.history.back()}
           className="text-[#666] hover:text-[#222] text-[14px] font-sans mb-4 inline-flex items-center gap-2 transition-colors"
         >
@@ -184,7 +185,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
               <h2 className="text-2xl font-bold font-sans text-gray-900 mb-6 uppercase" style={{ fontFamily: 'var(--font-unlimited-pie)'}}>
                 About this tour
               </h2>
-              <div className="prose max-w-none min-w-0 text-gray-600 font-sans text-base leading-relaxed [&_*]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto">
+              <div className="rich-text-content prose max-w-none min-w-0 text-gray-600 font-sans text-base leading-relaxed [&_*]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto">
                 <SafeHTML html={tour.description} />
               </div>
             </section>
@@ -437,10 +438,12 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
       {showAllGallery && (
         <div className="fixed inset-0 z-[200] bg-black bg-opacity-95 flex flex-col p-4 sm:p-8 overflow-y-auto">
           <button 
+            type="button"
+            aria-label="Close photo gallery"
             onClick={() => setShowAllGallery(false)}
             className="self-end text-white p-2 hover:bg-white/10 rounded-full mb-4 sticky top-4 z-10 transition-colors"
           >
-            <Cancel01Icon size={32} />
+            <Cancel01Icon size={32} aria-hidden />
           </button>
           <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
             {displayImages.map((img, i) => (

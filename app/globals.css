@@ -100,6 +100,39 @@ label {
   -ms-hyphens: manual;
 }
 
+/*
+ * CMS / rich HTML (blog posts, tour descriptions): body text wraps at word
+ * boundaries where possible; long URLs and monospace tokens may break anywhere
+ * so lines stay readable and nothing overflows.
+ */
+.rich-text-content {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.rich-text-content :is(pre) {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.rich-text-content :not(pre) > code,
+.rich-text-content kbd,
+.rich-text-content samp {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.rich-text-content a[href^="http:"],
+.rich-text-content a[href^="https:"],
+.rich-text-content a[href^="//"],
+.rich-text-content a[href^="mailto:"],
+.rich-text-content a[href^="tel:"],
+.rich-text-content a[href^="/"] {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
 /* Ensure containers don't overflow */
 /* .container, .w-full {
   max-width: 100%;
