@@ -55,9 +55,23 @@ export default function SafeHTML({
     sanitized = sanitized.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
     sanitized = sanitized.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '');
     
-    // Remove javascript: protocol in href/src
     sanitized = sanitized.replace(/javascript:/gi, '');
-    
+
+    // Repair line breaks introduced by pasting from PDF/Word into the rich text editor.
+    // PDF text extraction inserts a hard <br> wherever the source page wrapped, often
+    // mid-word (e.g. "passpo<br>rt"). When we re-flow that HTML in a different container
+    // width it produces awkward broken words. We collapse those mid-word breaks while
+    // leaving intentional structural breaks (after punctuation, between digits, around
+    // capitalised tokens) untouched.
+    sanitized = sanitized.replace(
+      /([a-z])\s*<br\s*\/?>\s*([a-z])/gi,
+      '$1$2'
+    );
+    sanitized = sanitized.replace(
+      /([a-z])\s*[\r\n]+\s*([a-z])/gi,
+      '$1$2'
+    );
+
     return sanitized;
   }, [html, allowScripts]);
 

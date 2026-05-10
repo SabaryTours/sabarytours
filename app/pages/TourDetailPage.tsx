@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ArrowLeft01Icon, Clock01Icon, UserGroupIcon, Tick02Icon, Cancel01Icon, StarIcon, CheckmarkBadge01Icon, InformationCircleIcon, Location01Icon } from "hugeicons-react";
+import { ArrowLeft01Icon, Clock01Icon, UserGroupIcon, Tick02Icon, Cancel01Icon, CheckmarkBadge01Icon, InformationCircleIcon, Location01Icon } from "hugeicons-react";
 import { Tour } from "../data/packages";
 import Footer from "../components/Footer";
 import StarRating from "../components/StarRating";
@@ -30,7 +30,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
   const groupSizeOptions =
     (tour.groupSizeOptions && tour.groupSizeOptions.length > 0
       ? tour.groupSizeOptions
-      : (tour.price_tiers || []).map((tier: any) => tier?.name).filter(Boolean)) || [];
+      : (tour.price_tiers || []).map((tier) => tier?.name).filter(Boolean)) || [];
   const ageCategories = tour.ageCategories && tour.ageCategories.length > 0
     ? tour.ageCategories
     : ["Infant", "Child", "Adult"];
@@ -54,6 +54,9 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
         </button>
 
         <div className="flex flex-col gap-2">
+          {categoryTitle ? (
+            <p className="text-xs uppercase tracking-wide text-gray-500 font-sans">{categoryTitle}</p>
+          ) : null}
           <h1 
             className="text-[28px] sm:text-[36px] md:text-[42px] text-gray-900 font-bold leading-tight uppercase"
             style={{ fontFamily: 'var(--font-unlimited-pie)' }}
@@ -181,7 +184,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
               <h2 className="text-2xl font-bold font-sans text-gray-900 mb-6 uppercase" style={{ fontFamily: 'var(--font-unlimited-pie)'}}>
                 About this tour
               </h2>
-              <div className="prose max-w-none text-gray-600 font-sans text-base leading-relaxed">
+              <div className="prose max-w-none text-gray-600 font-sans text-base leading-relaxed wrap-normal [word-break:normal]">
                 <SafeHTML html={tour.description} />
               </div>
             </section>
@@ -238,7 +241,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
             </section>
           )}
 
-          {/* Day-by-Day Itinerary Timeline */}
+          {/* Itinerary Timeline */}
           {tour.itinerary && tour.itinerary.length > 0 && (
             <section>
               <h2 className="text-2xl font-bold font-sans text-gray-900 mb-8 uppercase" style={{ fontFamily: 'var(--font-unlimited-pie)'}}>
@@ -255,7 +258,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
                     <div className="bg-gray-50 border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-3 mb-2">
                         <span className="text-[#ff5e00] font-bold font-sans text-sm tracking-wide uppercase">
-                          {item.time}
+                          {item.time || `Day ${index + 1}`}
                         </span>
                       </div>
                       <h3 className="text-lg font-bold text-gray-900 font-sans mb-2">

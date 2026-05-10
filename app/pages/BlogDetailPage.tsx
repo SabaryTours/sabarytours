@@ -2,14 +2,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { type BlogPost, getRelatedPosts } from "../data/blog";
 import Footer from "../components/Footer";
+import SafeHTML from "../components/SafeHTML";
 
 interface BlogDetailPageProps {
   post: BlogPost;
 }
 
+function plainTextToHtml(raw: string): string {
+  return raw
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((paragraph) => `<p>${paragraph.replace(/\n/g, " ").trim()}</p>`)
+    .join("");
+}
+
 export default function BlogDetailPage({ post }: BlogDetailPageProps) {
-  // Get related posts (exclude current blog)
   const relatedPosts = getRelatedPosts(post.slug, 3);
+  const rawContent = post.content || "";
+  const articleHtml = /<[^>]+>/.test(rawContent) ? rawContent : plainTextToHtml(rawContent);
 
   return (
     <div className="min-h-screen bg-white">
@@ -42,7 +52,7 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
         <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
           {/* Article Title */}
           <h1 
-            className="text-[40px] md:text-[48px] font-normal leading-[1.2] text-[#222] uppercase mb-4 break-normal"
+            className="text-[28px] sm:text-[34px] md:text-[40px] font-normal leading-[1.15] text-[#222] uppercase mb-4 wrap-normal [word-break:normal]"
             style={{
               fontFamily: 'var(--font-unlimited-pie)',
               hyphens: "manual",
@@ -106,11 +116,10 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
           </div>
 
           {/* Article Content */}
-          <div className="prose prose-lg max-w-none mb-12">
-            <div 
-              className="text-[#222] text-[16px] leading-[28px] whitespace-pre-line break-normal"
-              style={{ hyphens: "manual" }}
-              dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, '<br />') }}
+          <div className="prose prose-lg max-w-none mb-12 wrap-normal [word-break:normal]">
+            <SafeHTML
+              html={articleHtml}
+              className="text-[#222] text-[16px] leading-[28px] wrap-normal [word-break:normal] [&_p]:mb-4 [&_p:last-child]:mb-0"
             />
           </div>
 

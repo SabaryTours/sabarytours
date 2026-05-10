@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { buildTripOutlineBody, parseTripOutlineBody } from "../../lib/tripOutline";
 
 const MONTH_LABELS = [
   "January",
@@ -18,25 +19,46 @@ const MONTH_LABELS = [
   "December",
 ];
 
-type MonthDraft = { title: string; body: string; accent_color: string; is_published: boolean };
+type CardDraft = {
+  id?: string;
+  title: string;
+  description: string;
+  image_url: string;
+  card_type: "featured" | "upcoming";
+  accent_color: string;
+  is_published: boolean;
+  sort_order: number;
+};
 
-const emptyMonth = (): MonthDraft => ({
+function toTourSlug(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+const emptyCard = (sortOrder: number): CardDraft => ({
   title: "",
-  body: "",
+  description: "",
+  image_url: "",
+  card_type: "upcoming",
   accent_color: "#ff5e00",
   is_published: true,
+  sort_order: sortOrder,
 });
 
 export default function AdminTripOutlinePage() {
   const currentY = new Date().getFullYear();
   const [year, setYear] = useState(currentY);
-  const [byMonth, setByMonth] = useState<Record<number, MonthDraft>>(() => {
-    const o: Record<number, MonthDraft> = {};
-    for (let m = 1; m <= 12; m++) o[m] = emptyMonth();
+  const [byMonth, setByMonth] = useState<Record<number, CardDraft[]>>(() => {
+    const o: Record<number, CardDraft[]> = {};
+    for (let m = 1; m <= 12; m++) o[m] = [];
     return o;
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
 
   const load = useCallback(async (y: number) => {
     setLoading(true);
@@ -44,17 +66,38 @@ export default function AdminTripOutlinePage() {
       const res = await fetch(`/api/admin/trip-outline?year=${y}`);
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "Failed to load");
-      const next: Record<number, MonthDraft> = {};
-      for (let m = 1; m <= 12; m++) next[m] = emptyMonth();
-      (j.rows || []).forEach((r: { month: number; title?: string; body?: string | null; accent_color?: string; is_published?: boolean }) => {
+      const next: Record<number, CardDraft[]> = {};
+      for (let m = 1; m <= 12; m++) next[m] = [];
+      (j.rows || []).forEach((r: {
+        id?: string;
+        month: number;
+        title?: string;
+        body?: string | null;
+        description?: string | null;
+        image_url?: string | null;
+        book_url?: string | null;
+        card_type?: "featured" | "upcoming";
+        accent_color?: string;
+        is_published?: boolean;
+        sort_order?: number;
+      }) => {
         if (r.month < 1 || r.month > 12) return;
-        next[r.month] = {
+        const meta = parseTripOutlineBody(r.body);
+        next[r.month].push({
+          id: r.id,
           title: r.title || "",
-          body: r.body || "",
+          description: r.description || meta.description || "",
+          image_url: r.image_url || meta.image_url || "",
+          card_type: r.card_type || meta.card_type || "upcoming",
           accent_color: r.accent_color || "#ff5e00",
           is_published: r.is_published !== false,
-        };
+          sort_order: Number.isFinite(r.sort_order) ? Number(r.sort_order) : next[r.month].length,
+        });
       });
+
+      for (let m = 1; m <= 12; m++) {
+        next[m].sort((a, b) => a.sort_order - b.sort_order);
+      }
       setByMonth(next);
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Load failed");
@@ -69,19 +112,87 @@ export default function AdminTripOutlinePage() {
 
   const rowsPayload = useMemo(
     () =>
-      Array.from({ length: 12 }, (_, i) => {
-        const month = i + 1;
-        const d = byMonth[month] || emptyMonth();
-        return {
-          month,
-          title: d.title.trim() || `${MONTH_LABELS[i]} highlights`,
-          body: d.body.trim() || null,
-          accent_color: d.accent_color.trim() || "#ff5e00",
-          is_published: d.is_published,
-        };
-      }),
+      Array.from({ length: 12 }, (_, i) =>
+        (byMonth[i + 1] || []).map((card, idx) => ({
+          id: card.id,
+          month: i + 1,
+          title: card.title.trim() || `${MONTH_LABELS[i]} highlights`,
+          description: card.description.trim() || null,
+          image_url: card.image_url.trim() || null,
+          book_url: `/booking?tour=${toTourSlug(card.title.trim() || `${MONTH_LABELS[i]} highlights`)}`,
+          card_type: card.card_type,
+          body: buildTripOutlineBody({
+            description: card.description,
+            image_url: card.image_url,
+            book_url: `/booking?tour=${toTourSlug(card.title.trim() || `${MONTH_LABELS[i]} highlights`)}`,
+            card_type: card.card_type,
+          }),
+          accent_color: card.accent_color.trim() || "#ff5e00",
+          is_published: card.is_published,
+          sort_order: idx,
+        }))
+      ).flat(),
     [byMonth]
   );
+
+  const updateCard = (month: number, cardIndex: number, patch: Partial<CardDraft>) => {
+    setByMonth((prev) => {
+      const cards = [...(prev[month] || [])];
+      cards[cardIndex] = { ...cards[cardIndex], ...patch };
+      return { ...prev, [month]: cards };
+    });
+  };
+
+  const addCard = (month: number) => {
+    setByMonth((prev) => {
+      const cards = [...(prev[month] || [])];
+      cards.push(emptyCard(cards.length));
+      return { ...prev, [month]: cards };
+    });
+  };
+
+  const removeCard = (month: number, cardIndex: number) => {
+    setByMonth((prev) => {
+      const cards = (prev[month] || []).filter((_, i) => i !== cardIndex).map((card, i) => ({
+        ...card,
+        sort_order: i,
+      }));
+      return { ...prev, [month]: cards };
+    });
+  };
+
+  const moveCard = (month: number, cardIndex: number, direction: "up" | "down") => {
+    setByMonth((prev) => {
+      const cards = [...(prev[month] || [])];
+      const target = direction === "up" ? cardIndex - 1 : cardIndex + 1;
+      if (target < 0 || target >= cards.length) return prev;
+      const temp = cards[cardIndex];
+      cards[cardIndex] = cards[target];
+      cards[target] = temp;
+      return {
+        ...prev,
+        [month]: cards.map((card, i) => ({ ...card, sort_order: i })),
+      };
+    });
+  };
+
+  const uploadCardImage = async (month: number, cardIndex: number, file: File) => {
+    const key = `${month}-${cardIndex}`;
+    try {
+      setUploadingKey(key);
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok || !data.secure_url) throw new Error(data.error || "Upload failed");
+      updateCard(month, cardIndex, { image_url: data.secure_url });
+      toast.success("Image uploaded");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Image upload failed");
+    } finally {
+      setUploadingKey(null);
+    }
+  };
 
   const saveAll = async () => {
     setSaving(true);
@@ -93,7 +204,7 @@ export default function AdminTripOutlinePage() {
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "Save failed");
-      toast.success(`Saved ${j.saved ?? 12} months for ${year}.`);
+      toast.success(`Saved ${j.saved ?? 0} cards for ${year}.`);
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Save failed");
     } finally {
@@ -105,10 +216,10 @@ export default function AdminTripOutlinePage() {
     <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 font-sans">Year trip outline</h1>
+          <h1 className="text-2xl font-bold text-gray-800 font-sans">Upcoming tours by month</h1>
           <p className="text-gray-500 text-sm font-sans mt-1">
-            One story per month for the public &quot;Year at a glance&quot; on the homepage. Leave body empty to hide
-            detail for that month (title still shows if published).
+            Create multiple featured/upcoming cards per month. These cards power the public{" "}
+            <span className="font-semibold">Featured &amp; upcoming tours</span> page.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -128,9 +239,9 @@ export default function AdminTripOutlinePage() {
         type="button"
         onClick={() => void saveAll()}
         disabled={saving || loading}
-        className="rounded-xl bg-[#0060cc] px-6 py-3 font-bold text-white font-sans hover:bg-[#004a9e] disabled:opacity-60"
+        className="rounded-xl bg-[#ff5e00] px-6 py-3 font-bold text-white font-sans hover:bg-[#e55500] disabled:opacity-60"
       >
-        {saving ? "Saving…" : `Save all 12 months (${year})`}
+        {saving ? "Saving…" : `Save all cards (${year})`}
       </button>
 
       {loading ? (
@@ -139,63 +250,143 @@ export default function AdminTripOutlinePage() {
         <div className="space-y-6">
           {MONTH_LABELS.map((label, idx) => {
             const month = idx + 1;
-            const d = byMonth[month] || emptyMonth();
+            const cards = byMonth[month] || [];
             return (
               <div key={month} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <h2 className="font-bold text-gray-800 font-sans">{label}</h2>
-                  <label className="flex items-center gap-2 text-xs font-semibold text-gray-600">
-                    <input
-                      type="checkbox"
-                      checked={d.is_published}
-                      onChange={(e) =>
-                        setByMonth((prev) => ({
-                          ...prev,
-                          [month]: { ...d, is_published: e.target.checked },
-                        }))
-                      }
-                    />
-                    Published
-                  </label>
+                  <button
+                    type="button"
+                    onClick={() => addCard(month)}
+                    className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-200"
+                  >
+                    + Add card
+                  </button>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Short headline"
-                  value={d.title}
-                  onChange={(e) =>
-                    setByMonth((prev) => ({
-                      ...prev,
-                      [month]: { ...d, title: e.target.value },
-                    }))
-                  }
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
-                />
-                <textarea
-                  placeholder="What’s happening this month? (optional)"
-                  rows={3}
-                  value={d.body}
-                  onChange={(e) =>
-                    setByMonth((prev) => ({
-                      ...prev,
-                      [month]: { ...d, body: e.target.value },
-                    }))
-                  }
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
-                />
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 font-sans">Accent</span>
-                  <input
-                    type="color"
-                    value={d.accent_color}
-                    onChange={(e) =>
-                      setByMonth((prev) => ({
-                        ...prev,
-                        [month]: { ...d, accent_color: e.target.value },
-                      }))
-                    }
-                    className="h-9 w-14 cursor-pointer rounded border border-gray-200 bg-white"
-                  />
-                </div>
+                {cards.length === 0 ? (
+                  <p className="text-sm text-gray-400 font-sans italic">No cards added for {label} yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {cards.map((card, cardIndex) => {
+                      const uploadKey = `${month}-${cardIndex}`;
+                      return (
+                        <div key={card.id || `${month}-${cardIndex}`} className="rounded-xl border border-gray-200 p-4 space-y-3 bg-gray-50">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs font-bold uppercase tracking-wide text-gray-500">
+                              Card {cardIndex + 1}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => moveCard(month, cardIndex, "up")}
+                                disabled={cardIndex === 0}
+                                className="rounded border border-gray-300 px-2 py-1 text-xs disabled:opacity-40"
+                              >
+                                Up
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveCard(month, cardIndex, "down")}
+                                disabled={cardIndex === cards.length - 1}
+                                className="rounded border border-gray-300 px-2 py-1 text-xs disabled:opacity-40"
+                              >
+                                Down
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeCard(month, cardIndex)}
+                                className="rounded border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input
+                              type="text"
+                              placeholder="Short headline"
+                              value={card.title}
+                              onChange={(e) => updateCard(month, cardIndex, { title: e.target.value })}
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                            />
+                            <select
+                              value={card.card_type}
+                              onChange={(e) =>
+                                updateCard(month, cardIndex, {
+                                  card_type: e.target.value === "featured" ? "featured" : "upcoming",
+                                })
+                              }
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans bg-white"
+                            >
+                              <option value="upcoming">Upcoming</option>
+                              <option value="featured">Featured</option>
+                            </select>
+                          </div>
+
+                          <textarea
+                            placeholder="Short tour description"
+                            rows={3}
+                            value={card.description}
+                            onChange={(e) => updateCard(month, cardIndex, { description: e.target.value })}
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                          />
+
+                          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
+                            <input
+                              type="url"
+                              placeholder="Card image URL (optional)"
+                              value={card.image_url}
+                              onChange={(e) => updateCard(month, cardIndex, { image_url: e.target.value })}
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                            />
+                            <label className={`inline-flex cursor-pointer items-center justify-center rounded-lg bg-[#ff5e00] px-3 py-2 text-xs font-bold text-white hover:bg-[#e55500] ${uploadingKey === uploadKey ? "opacity-60" : ""}`}>
+                              {uploadingKey === uploadKey ? "Uploading..." : "Upload image"}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                disabled={uploadingKey === uploadKey}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) void uploadCardImage(month, cardIndex, file);
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+                          </div>
+
+                          <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-sans text-gray-600">
+                            Booking URL (auto):{" "}
+                            <span className="font-semibold text-gray-800">
+                              /booking?tour={toTourSlug(card.title || `${MONTH_LABELS[idx]} highlights`)}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-4">
+                            <label className="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                              <input
+                                type="checkbox"
+                                checked={card.is_published}
+                                onChange={(e) => updateCard(month, cardIndex, { is_published: e.target.checked })}
+                              />
+                              Published
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-500 font-sans">Accent</span>
+                              <input
+                                type="color"
+                                value={card.accent_color}
+                                onChange={(e) => updateCard(month, cardIndex, { accent_color: e.target.value })}
+                                className="h-9 w-14 cursor-pointer rounded border border-gray-200 bg-white"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}

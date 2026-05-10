@@ -423,13 +423,6 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
                 </div>
               )}
 
-              {formData.numberOfPeople >= 3 && (
-                <div className="flex items-center justify-between text-[12px] text-green-600 font-sans">
-                  <span>Group discount ({formData.numberOfPeople >= 5 ? '10%' : '5%'})</span>
-                  <span>-${(subtotal - basePrice * formData.numberOfPeople).toFixed(2)}</span>
-                </div>
-              )}
-
               {voucherDiscount > 0 && (
                 <div className="flex items-center justify-between text-[12px] text-green-600 font-sans">
                   <span>Voucher discount ({voucherDiscount}%)</span>

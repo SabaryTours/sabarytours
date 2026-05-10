@@ -13,7 +13,28 @@ export async function PATCH(
 
   try {
     const supabase = await createClient();
-    const { status } = await request.json();
+    const body = await request.json();
+    const updates: Record<string, unknown> = {};
+
+    if (typeof body.status === 'string') {
+      updates.status = body.status;
+    }
+    if (typeof body.name === 'string') {
+      updates.name = body.name.trim();
+    }
+    if (typeof body.message === 'string') {
+      updates.message = body.message.trim();
+    }
+    if (typeof body.rating === 'number' && Number.isFinite(body.rating)) {
+      updates.rating = body.rating;
+    }
+    if (typeof body.image_url === 'string') {
+      updates.image_url = body.image_url.trim() || null;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'No updates provided' }, { status: 400 });
+    }
 
     // Verify admin (use getUser, not getSession)
     const {
@@ -36,7 +57,7 @@ export async function PATCH(
 
     const { data, error } = await supabase
       .from('reviews')
-      .update({ status })
+      .update(updates)
       .eq('id', id)
       .select()
       .single();
@@ -44,10 +65,11 @@ export async function PATCH(
     if (error) throw error;
 
     return NextResponse.json(data, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to update review';
     console.error('Error updating review status:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to update review' },
+      { error: message },
       { status: 500 }
     );
   }
@@ -96,10 +118,11 @@ export async function DELETE(
       { message: 'Deleted successfully' },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to delete review';
     console.error('Error deleting review:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to delete review' },
+      { error: message },
       { status: 500 }
     );
   }

@@ -1,23 +1,33 @@
 import Link from "next/link";
 import type { TripOutlineMonth } from "../lib/api";
+import { parseTripOutlineBody } from "../lib/tripOutline";
 
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function hasContent(m: TripOutlineMonth) {
-  return Boolean((m.title && m.title.trim()) || (m.body && m.body.trim()));
+  const meta = parseTripOutlineBody(m.body);
+  const description = m.description || meta.description || "";
+  return Boolean((m.title && m.title.trim()) || description.trim());
 }
 
 export default function YearAtAGlance({ year, items }: { year: number; items: TripOutlineMonth[] }) {
-  const byMonth = new Map<number, TripOutlineMonth>();
-  items.forEach((r) => byMonth.set(r.month, r));
+  const byMonth = new Map<number, TripOutlineMonth[]>();
+  items.forEach((r) => {
+    const existing = byMonth.get(r.month) || [];
+    existing.push(r);
+    byMonth.set(r.month, existing);
+  });
 
   const months = Array.from({ length: 12 }, (_, i) => {
     const month = i + 1;
-    const row = byMonth.get(month);
-    return { month, label: MONTH_SHORT[i], row };
-  });
+    const rows = byMonth.get(month) || [];
+    return { month, label: MONTH_SHORT[i], rows };
+  }).map((m) => ({
+    ...m,
+    visibleRows: m.rows.filter((row) => hasContent(row)),
+  })).filter((m) => m.visibleRows.length > 0);
 
-  const any = months.some(({ row }) => row && hasContent(row));
+  const any = months.length > 0;
 
   if (!any) {
     return (
@@ -54,34 +64,26 @@ export default function YearAtAGlance({ year, items }: { year: number; items: Tr
               className="text-3xl sm:text-4xl text-[#222] uppercase"
               style={{ fontFamily: "var(--font-unlimited-pie)" }}
             >
-              {year} at a glance
+              Featured & upcoming tours
             </h2>
             <p className="mt-2 text-gray-600 font-sans text-sm max-w-xl">
-              A playful calendar of what we&apos;re dreaming up—ask us about private runs or trips still on the drawing board.
+              Explore the year month-by-month to see what trips are coming up and when to book.
             </p>
           </div>
           <Link
-            href="/contact?from=year-plan"
+            href="/upcoming-tours"
             className="inline-flex items-center justify-center rounded-full border-2 border-[#ff5e00] px-5 py-2.5 text-sm font-bold text-[#ff5e00] hover:bg-[#ff5e00] hover:text-white transition-colors font-sans shrink-0"
           >
-            Plan with us
+            View all months
           </Link>
         </div>
 
         <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scroll-pl-1 [-webkit-overflow-scrolling:touch] overscroll-x-contain scrollbar-hide">
-          {months.map(({ month, label, row }) => {
-            if (!row || !hasContent(row)) {
-              return (
-                <div
-                  key={month}
-                  className="min-w-[140px] max-w-[160px] shrink-0 snap-start rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 p-4 flex flex-col items-center justify-center text-center opacity-70"
-                >
-                  <span className="text-xs font-bold text-gray-400 font-sans">{label}</span>
-                  <span className="text-[11px] text-gray-400 mt-2 font-sans">TBA</span>
-                </div>
-              );
-            }
-            const accent = row.accent_color || "#ff5e00";
+          {months.map(({ month, label, visibleRows }) => {
+            const topCard = visibleRows[0];
+            const meta = parseTripOutlineBody(topCard.body);
+            const accent = topCard.accent_color || "#ff5e00";
+            const description = topCard.description || meta.description || "";
             return (
               <article
                 key={month}
@@ -94,10 +96,15 @@ export default function YearAtAGlance({ year, items }: { year: number; items: Tr
                 </div>
                 <div className="px-4 pb-4 flex-1 flex flex-col">
                   <h3 className="font-bold text-gray-900 font-sans text-lg leading-snug" style={{ color: "#111" }}>
-                    {row.title}
+                    {topCard.title}
                   </h3>
-                  {row.body ? (
-                    <p className="mt-2 text-sm text-gray-600 font-sans leading-relaxed line-clamp-5">{row.body}</p>
+                  {description ? (
+                    <p className="mt-2 text-sm text-gray-600 font-sans leading-relaxed line-clamp-4">{description}</p>
+                  ) : null}
+                  {visibleRows.length > 1 ? (
+                    <p className="mt-3 text-[11px] font-bold uppercase tracking-wide text-[#ff5e00] font-sans">
+                      +{visibleRows.length - 1} more this month
+                    </p>
                   ) : null}
                 </div>
               </article>

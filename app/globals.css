@@ -77,12 +77,7 @@ select:-webkit-autofill:focus {
   -webkit-text-fill-color: #0f172a;
 }
 
-/* Prevent text overflow across the app */
-* {
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-
+/* Avoid splitting normal words across lines globally */
 h1,
 h2,
 h3,
@@ -95,8 +90,8 @@ div,
 a,
 button,
 label {
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  overflow-wrap: normal;
+  word-break: normal;
   hyphens: manual;
   -webkit-hyphens: manual;
   -ms-hyphens: manual;
@@ -194,5 +189,13 @@ body {
   iframe[src*="tawk"],
   iframe[title*="chat" i] {
     display: none !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  a[href]::after {
+    content: "" !important;
   }
 }

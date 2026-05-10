@@ -178,9 +178,17 @@ async function computeExpectedPricing(body: BookingInput) {
     const selections = body.tierSelections || {};
     const hasSelections = Object.values(selections).some((qty) => Number(qty) > 0);
     if (hasSelections) {
-      for (const tier of tourPriceTiers) {
+      for (let i = 0; i < tourPriceTiers.length; i++) {
+        const tier = tourPriceTiers[i];
         const tierName = String(tier?.name || "");
-        const qty = Number(selections[tierName] || 0);
+        const sel = selections as Record<string, unknown>;
+        let qty = 0;
+        const byIndex = sel[String(i)];
+        if (byIndex !== undefined && byIndex !== null) {
+          qty = Number(byIndex) || 0;
+        } else if (tierName) {
+          qty = Number(sel[tierName] || 0) || 0;
+        }
         if (qty > 0) {
           subtotal += Number(tier.amount || 0) * qty;
         }

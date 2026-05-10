@@ -15,6 +15,36 @@ import TourGrid from "../components/TourGrid";
 import { useCurrency } from "../context/CurrencyContext";
 import TurnstileWidget from "../components/TurnstileWidget";
 
+function tierSelectionKey(index: number) {
+  return String(index);
+}
+
+function buildInitialTierSelections(tour: Tour): Record<string, number> {
+  const tiers = tour.price_tiers;
+  if (tiers && tiers.length > 0) {
+    const init: Record<string, number> = {};
+    tiers.forEach((_, i) => {
+      init[tierSelectionKey(i)] = i === 0 ? 1 : 0;
+    });
+    return init;
+  }
+  return { Base: 1 };
+}
+
+function tierHeadingLabel(
+  tier: NonNullable<Tour["price_tiers"]>[number],
+  index: number,
+  tiers: Tour["price_tiers"],
+) {
+  const list = tiers ?? [];
+  const rawName = (tier.name && tier.name.trim()) || "";
+  const peersWithSameName = list.filter(
+    (t) => (t.name?.trim() || "") === rawName,
+  ).length;
+  const labelBase = rawName || `Price option ${index + 1}`;
+  return peersWithSameName > 1 ? `${labelBase} (rate ${index + 1})` : labelBase;
+}
+
 interface BookingPageProps {
   tour: Tour;
   otherTours?: Tour[];
@@ -34,11 +64,9 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
     pickupLocation: "",
   });
   
-  // New state for dynamic price tier selections: { [tierName]: quantity }
-  const [tierSelections, setTierSelections] = useState<Record<string, number>>(
-    tour.price_tiers && tour.price_tiers.length > 0 
-      ? { [tour.price_tiers[0].name]: 1 }
-      : { "Base": 1 }
+  // Price tier quantities keyed by tier index ("0", "1", …).
+  const [tierSelections, setTierSelections] = useState<Record<string, number>>(() =>
+    buildInitialTierSelections(tour),
   );
 
   const totalPeople = Object.values(tierSelections).reduce((a, b) => a + b, 0);
@@ -97,9 +125,9 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
     let tPrice = 0;
     
     if (tour.price_tiers && tour.price_tiers.length > 0) {
-      tour.price_tiers.forEach(tier => {
-        const qty = tierSelections[tier.name] || 0;
-        tPrice += (tier.amount * qty);
+      tour.price_tiers.forEach((tier, i) => {
+        const qty = tierSelections[tierSelectionKey(i)] ?? 0;
+        tPrice += (tier.amount || 0) * qty;
       });
     } else {
       // Legacy fallback
@@ -144,6 +172,10 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
     if (step === 1) {
       if (!formData.package) {
         setFormError("Please select a package.");
+        return;
+      }
+      if (totalPeople < 1) {
+        setFormError("Please select at least one guest.");
         return;
       }
       if (!formData.date || !formData.timeSlot) {
@@ -317,28 +349,28 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                   <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">
                     Number of people
                   </label>
-                  
+
                   {tour.price_tiers && tour.price_tiers.length > 0 ? (
-                    tour.price_tiers.map((tier) => (
-                      <div key={tier.name} className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <div>
-                          <p className="font-bold text-gray-900 font-sans">{tier.name}</p>
+                    tour.price_tiers.map((tier, index) => (
+                      <div key={tierSelectionKey(index)} className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-100 gap-4">
+                        <div className="min-w-0">
+                          <p className="font-bold text-gray-900 font-sans">{tierHeadingLabel(tier, index, tour.price_tiers)}</p>
                           <p className="text-sm text-gray-500 font-sans">
                             {symbol}{" "}
                             {convert(
-                              tier.amount,
+                              tier.amount ?? 0,
                               (tier.currency as "USD" | "GHS") || "GHS"
                             ).toFixed(2)}
                           </p>
-                          {tier.description && <p className="text-xs text-gray-400 font-sans mt-0.5">{tier.description}</p>}
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 shrink-0">
                           <button
                             type="button"
                             onClick={() => {
-                              const currentQty = tierSelections[tier.name] || 0;
+                              const key = tierSelectionKey(index);
+                              const currentQty = tierSelections[key] || 0;
                               if (currentQty > 0) {
-                                setTierSelections({ ...tierSelections, [tier.name]: currentQty - 1 });
+                                setTierSelections({ ...tierSelections, [key]: currentQty - 1 });
                               }
                             }}
                             className="w-8 h-8 sm:w-10 sm:h-10 bg-white border border-gray-200 text-gray-700 rounded-lg flex items-center justify-center font-bold hover:border-[#ff5e00] hover:text-[#ff5e00] transition-colors"
@@ -346,13 +378,14 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                             -
                           </button>
                           <span className="w-8 text-center font-sans font-bold text-lg text-gray-900">
-                            {tierSelections[tier.name] || 0}
+                            {tierSelections[tierSelectionKey(index)] || 0}
                           </span>
                           <button
                             type="button"
                             onClick={() => {
-                              const currentQty = tierSelections[tier.name] || 0;
-                              setTierSelections({ ...tierSelections, [tier.name]: currentQty + 1 });
+                              const key = tierSelectionKey(index);
+                              const currentQty = tierSelections[key] || 0;
+                              setTierSelections({ ...tierSelections, [key]: currentQty + 1 });
                             }}
                             className="w-8 h-8 sm:w-10 sm:h-10 bg-white border border-gray-200 text-gray-700 rounded-lg flex items-center justify-center font-bold hover:border-[#ff5e00] hover:text-[#ff5e00] transition-colors"
                           >
@@ -565,7 +598,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                     {voucherDiscount > 0 && (
                       <div className="flex justify-between text-sm text-green-600 font-sans">
                         <span>Discount ({voucherDiscount}%)</span>
-                        <span>-${discountAmount.toFixed(2)}</span>
+                        <span>-{symbol} {convert(discountAmount, "GHS").toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-xl font-bold font-sans text-gray-900 pt-2">

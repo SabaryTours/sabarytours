@@ -17,7 +17,11 @@ export interface Tour {
   description: string;
   price: string;
   priceValue?: number; // For filtering
-  price_tiers?: any[];
+  price_tiers?: Array<{
+    name?: string;
+    amount?: number;
+    currency?: string;
+  }>;
   duration?: string;
   rating?: number; // 1-5 stars
   reviewCount?: number;
@@ -44,6 +48,7 @@ export interface Tour {
     answer: string;
   }>;
   itinerary?: Array<{
+    type?: "time" | "day";
     time: string;
     activity: string;
     description?: string;

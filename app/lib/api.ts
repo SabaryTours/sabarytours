@@ -1,6 +1,55 @@
 import { createClient } from '../utils/supabase/server';
 import { Tour } from '../data/packages';
 
+type TourImageRow = {
+  image_url: string;
+  display_order: number;
+};
+
+type TourPriceRow = {
+  amount: number;
+  currency?: string | null;
+  name?: string | null;
+};
+
+type ItineraryRow = {
+  type?: "time" | "day";
+  day?: number;
+  time?: string;
+  title?: string;
+  activity?: string;
+  description?: string;
+};
+
+type TourRow = {
+  id: string | number;
+  title: string;
+  slug?: string | null;
+  category?: string | null;
+  description?: string | null;
+  duration?: string | null;
+  location?: string | null;
+  map_url?: string | null;
+  currency?: string | null;
+  tour_images?: TourImageRow[] | null;
+  tour_prices?: TourPriceRow[] | null;
+  itinerary?: ItineraryRow[] | null;
+  whats_included?: string[] | null;
+  exclusions?: string[] | null;
+  what_to_bring?: string[] | null;
+  group_size_options?: string[] | null;
+  age_categories?: string[] | null;
+  languages?: string[] | null;
+  available_days?: string[] | null;
+  blocked_dates?: string[] | null;
+  time_slots?: string[] | null;
+};
+
+type ReviewRow = {
+  tour_slug?: string | null;
+  rating: number;
+};
+
 // Helper to generate a slug if missing
 const generateSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -36,7 +85,8 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
   }
 
   // Fetch review stats for all tours in this category
-  const tourSlugs = tours.map((t: any) => t.slug || generateSlug(t.title)).filter(Boolean);
+  const typedTours = tours as TourRow[];
+  const tourSlugs = typedTours.map((t) => t.slug || generateSlug(t.title)).filter(Boolean);
   const { data: reviewStats } = await supabase
     .from('reviews')
     .select('tour_slug, rating')
@@ -45,7 +95,7 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
 
   // Aggregate ratings per tour
   const ratingMap: Record<string, { total: number; count: number }> = {};
-  (reviewStats || []).forEach((r: any) => {
+  ((reviewStats || []) as ReviewRow[]).forEach((r) => {
     if (!r.tour_slug) return;
     if (!ratingMap[r.tour_slug]) ratingMap[r.tour_slug] = { total: 0, count: 0 };
     ratingMap[r.tour_slug].total += r.rating;
@@ -53,10 +103,10 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
   });
 
   // Map to frontend Tour interface
-  return tours.map((t: any) => {
+  return typedTours.map((t) => {
     // Sort images by order
-    const sortedImages = (t.tour_images || []).sort((a: any, b: any) => a.display_order - b.display_order);
-    const gallery = sortedImages.map((img: any) => img.image_url);
+    const sortedImages = [...(t.tour_images || [])].sort((a, b) => a.display_order - b.display_order);
+    const gallery = sortedImages.map((img) => img.image_url);
     const primaryImage = gallery[0] || '/assets/placeholder-tour.jpg'; // fallback
 
     const basePrice = t.tour_prices?.[0]?.amount || 0;
@@ -101,13 +151,14 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
   if (error || !tours) return null;
 
   // Find by active generated slug
-  const matchedTour = tours.find((t: any) => (t.slug || generateSlug(t.title)) === tourSlug);
+  const typedTours = tours as TourRow[];
+  const matchedTour = typedTours.find((t) => (t.slug || generateSlug(t.title)) === tourSlug);
 
   if (!matchedTour) return null;
   const t = matchedTour;
 
-  const sortedImages = (t.tour_images || []).sort((a: any, b: any) => a.display_order - b.display_order);
-  const gallery = sortedImages.map((img: any) => img.image_url);
+  const sortedImages = [...(t.tour_images || [])].sort((a, b) => a.display_order - b.display_order);
+  const gallery = sortedImages.map((img) => img.image_url);
   const primaryImage = gallery[0] || '/assets/placeholder-tour.jpg';
 
   const basePrice = t.tour_prices?.[0]?.amount || 0;
@@ -115,8 +166,9 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
 
   // Itinerary from JSONB column
   const rawItinerary = Array.isArray(t.itinerary) ? t.itinerary : [];
-  const mappedItin = rawItinerary.map((i: any) => ({
-    time: i.time || `Day ${i.day || ''}`,
+  const mappedItin = rawItinerary.map((i) => ({
+    type: i.type === 'time' || (i.time && !i.day) ? 'time' : 'day',
+    time: i.type === 'time' || (i.time && !i.day) ? i.time || '' : `Day ${i.day || ''}`,
     activity: i.title || i.activity || 'Activity',
     description: i.description || ''
   }));
@@ -139,7 +191,7 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
 
   const reviewCount = reviewData?.length || 0;
   const avgRating = reviewCount > 0
-    ? Math.round((reviewData!.reduce((sum: number, r: any) => sum + r.rating, 0) / reviewCount) * 10) / 10
+    ? Math.round((((reviewData || []) as Pick<ReviewRow, "rating">[]).reduce((sum, r) => sum + r.rating, 0) / reviewCount) * 10) / 10
     : undefined;
 
   return {
@@ -324,17 +376,24 @@ export interface TripOutlineMonth {
   month: number;
   title: string;
   body: string | null;
+  description?: string | null;
+  image_url?: string | null;
+  book_url?: string | null;
+  card_type?: "featured" | "upcoming";
   accent_color: string;
+  is_published?: boolean;
+  sort_order?: number;
 }
 
 export async function getTripOutlineForYear(year: number): Promise<TripOutlineMonth[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("trip_year_outline")
-    .select("id, year, month, title, body, accent_color")
+    .select("id, year, month, title, body, description, image_url, book_url, card_type, accent_color, is_published, sort_order")
     .eq("year", year)
     .eq("is_published", true)
-    .order("month", { ascending: true });
+    .order("month", { ascending: true })
+    .order("sort_order", { ascending: true });
 
   if (error) {
     console.error("trip_year_outline fetch:", error);

@@ -10,10 +10,11 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("trip_year_outline")
-      .select("id, year, month, title, body, accent_color")
+      .select("id, year, month, title, body, description, image_url, book_url, card_type, accent_color, sort_order")
       .eq("year", year)
       .eq("is_published", true)
-      .order("month", { ascending: true });
+      .order("month", { ascending: true })
+      .order("sort_order", { ascending: true });
 
     if (error) throw error;
     return NextResponse.json({ year, items: data || [] });

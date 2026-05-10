@@ -38,9 +38,9 @@ export default function Footer() {
       setStatus("success");
       setMessage("Subscribed successfully!");
       setEmail("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setStatus("error");
-      setMessage(err.message || 'Something went wrong');
+      setMessage(err instanceof Error ? err.message : 'Something went wrong');
     }
   };
 
@@ -123,10 +123,10 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/#year-at-a-glance"
+                  href="/upcoming-tours"
                   className="text-white text-[14px] font-normal leading-[24px] hover:text-[#ff5e00] transition-colors"
                 >
-                  Year at a glance
+                  Upcoming tours
                 </Link>
               </li>
               <li>

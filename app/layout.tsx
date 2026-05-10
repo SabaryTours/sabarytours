@@ -3,7 +3,6 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ConditionalHeader from "./components/ConditionalHeader";
 import LayoutWrapper from "./components/LayoutWrapper";
-import TawkToChat from "./components/TawkToChat";
 import AnnouncementModal from "./components/AnnouncementModal";
 import { Toaster } from "react-hot-toast";
 import GoogleTranslate from "./components/GoogleTranslate";
@@ -87,7 +86,6 @@ export default function RootLayout({
             {children}
           </SplashScreen>
         </LayoutWrapper>
-        <TawkToChat />
         <AnnouncementModal />
         <Toaster position="top-right" containerClassName="print:!hidden" />
       </body>
