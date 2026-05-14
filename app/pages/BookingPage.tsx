@@ -14,6 +14,7 @@ import PaystackPayment from "../components/PaystackPayment";
 import TourGrid from "../components/TourGrid";
 import { useCurrency } from "../context/CurrencyContext";
 import TurnstileWidget from "../components/TurnstileWidget";
+import { inferTierCurrency, currencySymbol } from "../lib/tourPricing";
 
 function tierSelectionKey(index: number) {
   return String(index);
@@ -77,7 +78,15 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
   const [turnstileToken, setTurnstileToken] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const { symbol, convert } = useCurrency();
+  const { symbol, convert, toGhs } = useCurrency();
+
+  /** Unit for raw totals (matches server sum of `tour_prices.amount`). */
+  const pricingBase = useMemo((): "USD" | "GHS" => {
+    if (tour.price_tiers && tour.price_tiers.length > 0) {
+      return inferTierCurrency(tour.price_tiers[0], tour.price_tiers);
+    }
+    return "GHS";
+  }, [tour.price_tiers]);
 
   // Available dates driven by tour's availableDays, blockedDates, and timeSlots
   const availableDates = useMemo(() => {
@@ -351,16 +360,14 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                   </label>
 
                   {tour.price_tiers && tour.price_tiers.length > 0 ? (
-                    tour.price_tiers.map((tier, index) => (
+                    tour.price_tiers.map((tier, index) => {
+                      const tierCur = inferTierCurrency(tier, tour.price_tiers ?? []);
+                      return (
                       <div key={tierSelectionKey(index)} className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-100 gap-4">
                         <div className="min-w-0">
                           <p className="font-bold text-gray-900 font-sans">{tierHeadingLabel(tier, index, tour.price_tiers)}</p>
                           <p className="text-sm text-gray-500 font-sans">
-                            {symbol}{" "}
-                            {convert(
-                              tier.amount ?? 0,
-                              (tier.currency as "USD" | "GHS") || "GHS"
-                            ).toFixed(2)}
+                            {currencySymbol(tierCur)} {(tier.amount ?? 0).toFixed(2)}
                           </p>
                         </div>
                         <div className="flex items-center gap-4 shrink-0">
@@ -393,7 +400,8 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                           </button>
                         </div>
                       </div>
-                    ))
+                      );
+                    })
                   ) : (
                     // Legacy Fallback
                     <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 w-fit">
@@ -592,19 +600,19 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                     <div className="flex justify-between text-sm text-gray-600 font-sans">
                       <span>Subtotal</span>
                       <span>
-                        {symbol} {convert(subtotal, "GHS").toFixed(2)}
+                        {symbol} {convert(subtotal, pricingBase).toFixed(2)}
                       </span>
                     </div>
                     {voucherDiscount > 0 && (
                       <div className="flex justify-between text-sm text-green-600 font-sans">
                         <span>Discount ({voucherDiscount}%)</span>
-                        <span>-{symbol} {convert(discountAmount, "GHS").toFixed(2)}</span>
+                        <span>-{symbol} {convert(discountAmount, pricingBase).toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-xl font-bold font-sans text-gray-900 pt-2">
                       <span>Total</span>
                       <span className="text-[#ff5e00]">
-                        {symbol} {convert(totalPrice, "GHS").toFixed(2)}
+                        {symbol} {convert(totalPrice, pricingBase).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -634,7 +642,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                         }}
                         className="w-full bg-[#ff5e00] text-white py-4 rounded-xl font-bold text-[16px] hover:bg-[#e55500] hover:shadow-xl transition-all font-sans"
                       >
-                        Confirm & Pay {symbol} {convert(paymentAmount, "GHS").toFixed(2)}
+                        Confirm & Pay {symbol} {convert(paymentAmount, pricingBase).toFixed(2)}
                       </button>
                       <button
                         type="button"
@@ -648,7 +656,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                     <div className="space-y-4">
                       <div className="bg-orange-50 border border-orange-200 rounded-xl p-6">
                         <PaystackPayment
-                          amount={paymentAmount}
+                          amount={toGhs(paymentAmount, pricingBase)}
                           email={formData.email}
                           onSuccess={handlePaymentSuccess}
                           onError={(err) => alert(`Payment error: ${err}`)}

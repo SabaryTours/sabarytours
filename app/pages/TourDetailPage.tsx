@@ -11,6 +11,7 @@ import TourGrid from "../components/TourGrid";
 import SafeHTML from "../components/SafeHTML";
 import TourComments from "../components/TourComments";
 import { useCurrency } from "../context/CurrencyContext";
+import { inferTierCurrency } from "../lib/tourPricing";
 
 interface TourDetailPageProps {
   tour: Tour;
@@ -38,8 +39,11 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
     tour.languages && tour.languages.length > 0 ? tour.languages : ["English"];
   const exclusions = tour.exclusions && tour.exclusions.length > 0 ? tour.exclusions : [];
   const whatToBring = tour.whatToBring && tour.whatToBring.length > 0 ? tour.whatToBring : [];
+  const list = tour.price_tiers ?? [];
+  const pricingBase =
+    list.length > 0 ? inferTierCurrency(list[0], list) : "GHS";
   const startingPriceRaw = typeof tour.priceValue === "number" ? tour.priceValue : 0;
-  const startingPrice = convert(startingPriceRaw, "GHS");
+  const startingPrice = convert(startingPriceRaw, pricingBase);
 
   return (
     <div className="min-h-screen bg-white overflow-x-clip">
