@@ -9,6 +9,8 @@ interface CurrencyContextValue {
   symbol: string;
   setCurrency: (code: CurrencyCode) => void;
   convert: (amount: number, baseCurrency: CurrencyCode) => number;
+  /** Convert an amount that is stored in `sourceCurrency` into GHS (for Paystack / pesewas). */
+  toGhs: (amount: number, sourceCurrency: CurrencyCode) => number;
   loading: boolean;
 }
 
@@ -85,11 +87,18 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     return amount;
   };
 
+  const toGhs = (amount: number, sourceCurrency: CurrencyCode): number => {
+    if (!rates?.GHS) return amount;
+    if (sourceCurrency === "GHS") return amount;
+    return amount * rates.GHS;
+  };
+
   const value: CurrencyContextValue = {
     currency,
     symbol,
     setCurrency,
     convert,
+    toGhs,
     loading,
   };
 

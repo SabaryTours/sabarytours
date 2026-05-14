@@ -53,7 +53,7 @@ export default async function PackagesPage({
           {/* Right Video Layer */}
           <div className="relative w-full h-[250px] md:absolute md:inset-y-0 md:right-0 md:w-[60%] md:h-full z-0 block">
             <video
-              src="https://res.cloudinary.com/demo/video/upload/v1689252062/elephants.mp4"
+              src="https://res.cloudinary.com/dg9ugeluw/video/upload/q_auto/f_auto/v1778775859/IMG_5101_un7at6.mov"
               autoPlay
               loop
               muted
