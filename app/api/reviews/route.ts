@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     // Fetch approved reviews, ordering by newest first
     let query = supabase
       .from('reviews')
-      .select('id, name, image_url, rating, message, created_at')
+      .select('id, name, image_url, rating, message, created_at, source, position')
       .eq('status', 'approved') // Only fetch approved reviews now
       .order('created_at', { ascending: false });
 
@@ -32,7 +32,9 @@ export async function GET(request: Request) {
       avatar_url: r.image_url,
       rating: r.rating,
       content: r.message,
-      created_at: r.created_at
+      created_at: r.created_at,
+      source: r.source,
+      position: r.position,
     }));
 
     return NextResponse.json(formattedReviews, { status: 200 });

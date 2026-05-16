@@ -214,7 +214,6 @@ export default function Footer() {
                   fill
                   alt="Paystack"
                   className="object-contain opacity-80 hover:opacity-100 transition-opacity"
-                  unoptimized
                 />
               </div>
             

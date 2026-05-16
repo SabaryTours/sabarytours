@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getBlogPostBySlug } from "../../lib/api";
 import BlogDetailPage from "../../pages/BlogDetailPage";
+import BlogViewTracker from "../../components/BlogViewTracker";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -25,7 +26,12 @@ export default async function BlogPostPage({ params }: PageProps) {
     notFound();
   }
 
-  return <BlogDetailPage post={post} />;
+  return (
+    <>
+      <BlogViewTracker slug={post.slug} title={post.title} />
+      <BlogDetailPage post={post} />
+    </>
+  );
 }
 
 

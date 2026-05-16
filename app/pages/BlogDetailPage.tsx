@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { EyeIcon } from "hugeicons-react";
 import { type BlogPost, getRelatedPosts } from "../data/blog";
 import Footer from "../components/Footer";
 import SafeHTML from "../components/SafeHTML";
@@ -67,6 +68,15 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
             <span>By {post.author}</span>
             <span>•</span>
             <span>{post.date}</span>
+            {post.views > 0 && (
+              <>
+                <span>•</span>
+                <span className="inline-flex items-center gap-1">
+                  <EyeIcon className="w-4 h-4" />
+                  {post.views} view{post.views !== 1 ? "s" : ""}
+                </span>
+              </>
+            )}
             {post.comments > 0 && (
               <>
                 <span>•</span>
@@ -92,12 +102,10 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
           </div>
 
           {/* Article Content */}
-          <div className="rich-text-content prose prose-lg max-w-none min-w-0 mb-12 [&_*]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto">
-            <SafeHTML
-              html={articleHtml}
-              className="text-[#222] text-[16px] leading-[28px] [&_p]:mb-4 [&_p:last-child]:mb-0"
-            />
-          </div>
+          <SafeHTML
+            html={articleHtml}
+            className="prose prose-lg max-w-none min-w-0 mb-12 text-[#222] text-[16px] leading-[28px] [&_*]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+          />
 
           {/* Comment Section */}
           <div className="mb-12">
@@ -135,7 +143,6 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
           {post.comments > 0 && (
             <div className="mb-12">
               <h3 className="text-[24px] font-bold text-[#222] mb-6">{post.comments} comment{post.comments !== 1 ? 's' : ''}</h3>
-              <p className="text-[#8e8e8e] text-[14px]">Comments feature coming soon.</p>
             </div>
           )}
 
@@ -163,7 +170,6 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
                           alt={relatedPost.title}
                           fill
                           className="object-cover"
-                          unoptimized
                         />
                       </div>
                       {relatedPost.comments > 0 && (

@@ -50,15 +50,14 @@ export default function WhatsHappening({ events }: WhatsHappeningProps) {
               </h2>
             </div>
 
-        <div className="flex flex-wrap justify-center" style={{ gap: '40px' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {events.map((event) => {
             const dotColor = statusDotColor[event.status] || "#FF5E00";
             const cardContent = (
             <div
               key={event.id}
-              className="relative overflow-hidden rounded-[20px] border-[3px] border-[rgba(255,255,255,0.5)]"
+              className="relative overflow-hidden rounded-[20px] border-[3px] border-[rgba(255,255,255,0.5)] w-full"
               style={{
-                width: '342px',
                 height: '124px',
               }}
             >
@@ -69,7 +68,6 @@ export default function WhatsHappening({ events }: WhatsHappeningProps) {
                   alt={event.name}
                   fill
                   className="object-cover rounded-[20px]"
-                  unoptimized
                 />
               </div>
               

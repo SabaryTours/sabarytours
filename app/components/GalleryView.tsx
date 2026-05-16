@@ -54,7 +54,7 @@ export default function GalleryView({ initialItems = [] as GalleryImageRow[] }: 
               className="relative block w-full break-inside-avoid overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5e00]"
             >
               <div className="relative aspect-[4/3] w-full">
-                <Image src={row.image_url} alt={row.caption || "Gallery"} fill className="object-cover" unoptimized />
+                <Image src={row.image_url} alt={row.caption || "Gallery"} fill className="object-cover" />
               </div>
               {row.caption ? (
                 <p className="p-3 text-left text-sm font-sans font-medium text-gray-800">{row.caption}</p>
@@ -87,7 +87,6 @@ export default function GalleryView({ initialItems = [] as GalleryImageRow[] }: 
                 alt={lightbox.caption || "Gallery"}
                 fill
                 className="object-contain"
-                unoptimized
                 sizes="100vw"
               />
             </div>

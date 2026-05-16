@@ -256,8 +256,8 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
     title: post.title,
     slug: post.slug || generateSlug(post.title),
     image: post.image_url || '/assets/placeholder-blog.jpg',
-    views: Math.floor(Math.random() * 1000) + 100,
-    comments: Math.floor(Math.random() * 50),
+    views: post.view_count ?? 0,
+    comments: post.comment_count ?? 0,
     author: 'Sabary Tours',
     date: new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
     content: post.content || '',
@@ -353,12 +353,21 @@ export interface NowHappening {
   created_at?: string;
 }
 
+export function filterLiveHappenings(events: NowHappening[]): NowHappening[] {
+  return events.filter(
+    (event) =>
+      event.is_active &&
+      (event.status === "ongoing" || event.status === "upcoming")
+  );
+}
+
 export async function getHappenings(): Promise<NowHappening[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("now_happenings")
     .select("*")
     .eq("is_active", true)
+    .in("status", ["ongoing", "upcoming"])
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
 

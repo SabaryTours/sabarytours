@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Tour } from "../data/packages";
 import StarRating from "./StarRating";
 import { useCurrency } from "../context/CurrencyContext";
+import { safeImageUrl } from "../lib/safeImageUrl";
 
 interface TourGridProps {
   tours: Tour[];
@@ -29,11 +30,10 @@ export default function TourGrid({ tours, categorySlug }: TourGridProps) {
           {/* Image */}
           <div className="absolute inset-0">
             <Image
-              src={tour.image}
+              src={safeImageUrl(tour.image)}
               alt={tour.title}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-110"
-              unoptimized
             />
           </div>
           

@@ -47,12 +47,25 @@ export default function Testimonial() {
         .limit(10);
         
       if (data && data.length > 0) {
-        setTestimonials(data.map(r => ({
-          name: r.name || 'Guest',
-          handle: r.position ? `@${r.position.replace(/\s+/g, '').toLowerCase()}` : '@guest',
-          text: r.message || '',
-          image: r.image_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop',
-        })));
+        setTestimonials(data.map(r => {
+          const source = r.source as string | undefined;
+          const handle =
+            r.position?.trim() ||
+            (source === "google"
+              ? "Google Review"
+              : source === "tripadvisor"
+                ? "TripAdvisor"
+                : "@guest");
+          return {
+            name: r.name || "Guest",
+            handle: handle.startsWith("@") ? handle : handle,
+            text: r.message || "",
+            image:
+              r.image_url ||
+              "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop",
+            source,
+          };
+        }));
       }
     };
     fetchReviews();
@@ -71,10 +84,10 @@ export default function Testimonial() {
   const currentTestimonial = testimonials[currentIndex] || defaultTestimonials[0];
   
   return (
-    <section className="w-full px-4 sm:px-6 md:px-12 py-2 sm:py-4 md:py-7 relative overflow-visible">
+    <section className="w-full px-4 sm:px-6 md:px-12 py-2 sm:py-4 md:py-5 relative overflow-visible">
       {/* Background Container */}
       <div 
-        className="relative py-8 sm:py-12 md:py-16 px-4 sm:px-8 md:px-12 overflow-visible"
+        className="relative py-8 sm:py-10 md:py-12 px-4 sm:px-8 md:px-12 overflow-visible"
         style={{
           backgroundColor: '#ffdfcc',
           borderRadius: '16px',
@@ -102,7 +115,7 @@ export default function Testimonial() {
 
         <div className="container mx-auto px-6 relative z-10">
           {/* Header Section */}
-          <div className="flex flex-col gap-[20px] items-center mb-12">
+          <div className="flex flex-col gap-[16px] items-center mb-8">
             {/* Top Line - Icon + Subtitle */}
             <div className="flex gap-[5px] items-center justify-center">
               {/* Chat Icon */}
@@ -128,9 +141,9 @@ export default function Testimonial() {
             </div>
 
             {/* Main Heading */}
-            <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center overflow-visible px-2">
+            <div className="flex flex-col md:flex-row gap-[8px] md:gap-[12px] items-center leading-none uppercase w-full justify-center overflow-visible px-2">
               <h2 
-                className="text-[32px] text-[#222] relative"
+                className="text-[24px] md:text-[32px] text-[#222] relative"
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
                   lineHeight: 1
@@ -139,7 +152,7 @@ export default function Testimonial() {
                 They came, they saw,
               </h2>
               <h2 
-                className="text-[32px] text-[#ff5e00] relative"
+                className="text-[24px] md:text-[32px] text-[#ff5e00] relative"
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
                   lineHeight: 1,
@@ -152,7 +165,7 @@ export default function Testimonial() {
           </div>
 
           {/* Testimonial Card */}
-          <div className="flex flex-col items-center max-w-[498px] mx-auto" style={{ gap: '32px' }}>
+          <div className="flex flex-col items-center max-w-[498px] mx-auto" style={{ gap: '24px' }}>
             {/* Profile Image */}
             <div 
               className="relative rounded-[20px] border-[5px] border-white overflow-hidden transition-opacity duration-500"
@@ -168,7 +181,6 @@ export default function Testimonial() {
                 alt={currentTestimonial.name}
                 fill
                 className="object-cover"
-                unoptimized
               />
             </div>
 
@@ -197,8 +209,13 @@ export default function Testimonial() {
 
               {/* Name and Handle */}
               <p className="text-[14px] font-bold leading-[24px]">
-                <span className="text-[#222]">{currentTestimonial.name} - </span>
-                <span className="text-[#0060cc]">{currentTestimonial.handle}</span>
+                <span className="text-[#222]">{currentTestimonial.name}</span>
+                {currentTestimonial.handle ? (
+                  <>
+                    <span className="text-[#222]"> — </span>
+                    <span className="text-[#0060cc]">{currentTestimonial.handle}</span>
+                  </>
+                ) : null}
               </p>
             </div>
 

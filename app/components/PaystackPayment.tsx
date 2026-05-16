@@ -185,7 +185,6 @@ export default function PaystackPayment({
               alt="Visa"
               fill
               className="object-contain opacity-60"
-              unoptimized
               onError={() => {}}
             />
           </div>
@@ -195,7 +194,6 @@ export default function PaystackPayment({
               alt="Mastercard"
               fill
               className="object-contain opacity-60"
-              unoptimized
               onError={() => {}}
             />
           </div>
@@ -205,7 +203,6 @@ export default function PaystackPayment({
               alt="Mobile Money"
               fill
               className="object-contain opacity-60"
-              unoptimized
               onError={() => {}}
             />
           </div>

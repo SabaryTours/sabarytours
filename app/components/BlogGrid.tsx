@@ -37,8 +37,8 @@ export default function BlogGrid() {
       data?.map((p) => ({
         ...p,
         image: p.image_url || "/assets/placeholder-blog.jpg",
-        views: Math.floor(Math.random() * 1000) + 100,
-        comments: Math.floor(Math.random() * 50),
+        views: p.view_count || 0,
+        comments: p.comment_count || 0,
       })) || [];
 
     setHasMore(mapped.length === PAGE_SIZE);
@@ -101,12 +101,13 @@ export default function BlogGrid() {
                 src={post.image}
                 alt={post.title}
                 fill
+                sizes="(max-width: 640px) 90vw, 350px"
                 className="object-cover group-hover:scale-110 transition-transform duration-300"
-                unoptimized
               />
             </div>
             
-            {/* Stats Badge */}
+            {/* Stats Badge — only show if real data exists */}
+            {(post.views > 0 || post.comments > 0) && (
             <div 
               className="absolute top-3 left-3 flex items-center gap-[10px] px-[10px] py-[5px] rounded-[20px]"
               style={{
@@ -116,28 +117,35 @@ export default function BlogGrid() {
               }}
             >
               {/* Views */}
+              {post.views > 0 && (
               <div className="flex items-center gap-1">
                 <EyeIcon className="w-4 h-4 text-[#222]" />
                 <span className="text-[#222] text-[12px] font-bold leading-none">
                   {post.views} views
                 </span>
               </div>
+              )}
               
               {/* Dot Separator */}
+              {post.views > 0 && post.comments > 0 && (
               <div className="w-1 h-1 rounded-full bg-[#222]" />
+              )}
               
               {/* Comments */}
+              {post.comments > 0 && (
               <div className="flex items-center gap-1">
                 <Message01Icon className="w-4 h-4 text-[#222]" />
                 <span className="text-[#222] text-[12px] font-bold leading-none">
                   {post.comments} comment{post.comments !== 1 ? 's' : ''}
                 </span>
               </div>
+              )}
             </div>
+            )}
           </div>
           
           {/* Title */}
-          <h3 className="text-[#3e3638] text-[16px] font-bold leading-[28px] break-normal" style={{ hyphens: "manual" }}>
+          <h3 className="text-[#222] text-[16px] font-extrabold leading-[28px] break-normal" style={{ hyphens: "manual" }}>
             {post.title}
           </h3>
         </Link>
