@@ -48,7 +48,6 @@ export default async function Partners() {
                 alt={partner.name}
                 fill
                 className="object-contain"
-                unoptimized
               />
             </div>
           ))}

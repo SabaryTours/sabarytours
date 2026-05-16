@@ -109,6 +109,77 @@ label {
   min-width: 0;
   overflow-wrap: break-word;
   word-break: normal;
+  line-height: 1.75;
+}
+
+.rich-text-content p {
+  margin: 0 0 1rem;
+}
+
+.rich-text-content p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-content h1,
+.rich-text-content h2,
+.rich-text-content h3,
+.rich-text-content h4 {
+  font-weight: 700;
+  color: inherit;
+  margin: 1.5rem 0 0.75rem;
+  line-height: 1.3;
+}
+
+.rich-text-content h1:first-child,
+.rich-text-content h2:first-child,
+.rich-text-content h3:first-child {
+  margin-top: 0;
+}
+
+.rich-text-content ul,
+.rich-text-content ol {
+  margin: 0 0 1rem;
+  padding-left: 1.5rem;
+}
+
+.rich-text-content ul {
+  list-style-type: disc;
+}
+
+.rich-text-content ol {
+  list-style-type: decimal;
+}
+
+.rich-text-content li {
+  margin-bottom: 0.35rem;
+}
+
+.rich-text-content li > p {
+  margin-bottom: 0.25rem;
+}
+
+.rich-text-content strong {
+  font-weight: 700;
+}
+
+.rich-text-content em {
+  font-style: italic;
+}
+
+.rich-text-content a {
+  color: #0060cc;
+  text-decoration: underline;
+}
+
+.rich-text-content a:hover {
+  color: #ff5e00;
+}
+
+.rich-text-content blockquote {
+  margin: 1rem 0;
+  padding-left: 1rem;
+  border-left: 3px solid #ff5e00;
+  color: #444;
 }
 
 .rich-text-content :is(pre) {
@@ -182,9 +253,7 @@ body {
   display: none;
 }
 
-p {
-  color: black !important;
-}
+/* Text color is handled by individual components — no global override */
 
 /* Hide Google Translate Top Banner Annoyance */
 .goog-te-banner-frame.skiptranslate,

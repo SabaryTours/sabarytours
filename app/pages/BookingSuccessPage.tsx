@@ -40,7 +40,6 @@ export default function BookingSuccessPage() {
                 alt="Booking successful"
                 fill
                 className="object-cover"
-                unoptimized
               />
             </div>
 

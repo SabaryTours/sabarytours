@@ -29,6 +29,7 @@ const nextConfig: NextConfig = {
         hostname: "**",
       },
     ],
+    qualities: [75, 82],
     unoptimized: false, // Keep optimization enabled
   },
 };

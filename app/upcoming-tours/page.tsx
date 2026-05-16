@@ -80,7 +80,7 @@ export default async function UpcomingToursPage() {
                     <article key={card.key} className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col">
                       <div className="relative aspect-[16/10] bg-gray-100">
                         {card.image_url ? (
-                          <Image src={card.image_url} alt={card.title} fill className="object-cover" unoptimized />
+                          <Image src={card.image_url} alt={card.title} fill className="object-cover" />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm font-sans">
                             No image yet

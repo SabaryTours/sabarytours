@@ -9,27 +9,26 @@ export default async function Packages() {
     <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7">
       {/* Background Container - matching hero section structure */}
       <div 
-        className="relative py-16 rounded-2xl overflow-visible"
+        className="relative py-16 pb-20 sm:pb-16 rounded-2xl"
         style={{
           backgroundColor: '#FEEFFF',
           borderRadius: '16px',
         }}
       >
-        {/* Pattern Overlay - all over the section */}
-        <div 
-          className="absolute inset-0 rounded-2xl"
+        {/* Pattern overlay — clip only the background, not the cards */}
+        <div
+          className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none"
           style={{
-            backgroundImage: 'url(/assets/pattern.svg)',
-            backgroundRepeat: 'repeat',
-            backgroundSize: 'auto',
+            backgroundImage: "url(/assets/pattern.svg)",
+            backgroundRepeat: "repeat",
+            backgroundSize: "auto",
             opacity: 0.8,
-            mixBlendMode: 'overlay',
-            pointerEvents: 'none',
-            borderRadius: '16px',
+            mixBlendMode: "overlay",
+            borderRadius: "16px",
           }}
         />
-        
-        <div className="container mx-auto px-3 sm:px-4 md:px-6 relative z-10">
+
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 relative z-10 overflow-visible">
           {/* Header Section */}
           <div className="flex flex-col gap-[20px] items-center mb-12">
             {/* Top Line - Icon + Subtitle */}

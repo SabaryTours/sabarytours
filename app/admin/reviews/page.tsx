@@ -5,6 +5,7 @@ import Image from "next/image";
 import { StarIcon, CheckmarkBadge01Icon, Cancel01Icon, Delete02Icon, PencilEdit01Icon } from "hugeicons-react";
 import { format } from "date-fns";
 import AdminSkeleton from '../components/AdminSkeleton';
+import ReviewSyncPanel from './components/ReviewSyncPanel';
 
 interface Review {
   id: string;
@@ -179,6 +180,8 @@ export default function AdminReviewsPage() {
         </div>
       )}
 
+      <ReviewSyncPanel onSynced={fetchReviews} />
+
       {/* Mobile: cards */}
       <div className="md:hidden flex flex-col gap-4">
         {reviews.length === 0 ? (
@@ -190,6 +193,11 @@ export default function AdminReviewsPage() {
                 <div>
                   <div className="font-bold text-gray-900">{review.name}</div>
                   <div className="text-xs text-gray-500">{format(new Date(review.created_at), "MMM d, yyyy")}</div>
+                  {review.source && review.source !== "website" && review.source !== "tour_comment" && (
+                    <span className="inline-block mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#0060cc] bg-blue-50 px-2 py-0.5 rounded">
+                      {review.source}
+                    </span>
+                  )}
                 </div>
                 <span className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium uppercase ${review.status === "approved" ? "bg-green-100 text-green-800" : review.status === "rejected" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}`}>{review.status}</span>
               </div>

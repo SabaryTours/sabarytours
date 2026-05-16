@@ -40,10 +40,8 @@ function PackageCard({ pkg, isMobile = false }: { pkg: PackageCategory; isMobile
         <Link
           href={`/packages/${pkg.slug}`}
       ref={cardRef}
-      className={`relative group overflow-hidden rounded-xl border-2 border-white block cursor-pointer isolate transition-all duration-300 ${
-        isMobile
-          ? "shrink-0 snap-center"
-          : "sm:rounded-2xl"
+      className={`relative group overflow-hidden rounded-2xl block cursor-pointer isolate transition-all duration-300 ${
+        isMobile ? "shrink-0 snap-center" : ""
       }`}
           style={{
             background: "linear-gradient(to bottom, #999, #1e1d1d)",
@@ -57,19 +55,19 @@ function PackageCard({ pkg, isMobile = false }: { pkg: PackageCategory; isMobile
           }}
         >
           {/* Image */}
-          <div className="absolute inset-0">
+          <div className="absolute inset-0 overflow-hidden rounded-2xl">
             <Image
               src={pkg.image || "/assets/package-img1.png"}
               alt={pkg.title}
               fill
+              sizes="(max-width: 640px) 85vw, (max-width: 1024px) 45vw, 30vw"
               className="object-cover transition-transform duration-300 group-hover:scale-110"
-              unoptimized
             />
           </div>
 
           {/* Gradient Fade Overlay */}
           <div
-            className="absolute bottom-0 left-0 right-0 h-[120px] pointer-events-none"
+            className="absolute bottom-0 left-0 right-0 h-[120px] pointer-events-none rounded-b-2xl"
             style={{
               background:
                 "linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.2) 70%, rgba(0,0,0,0) 100%)",
@@ -78,7 +76,7 @@ function PackageCard({ pkg, isMobile = false }: { pkg: PackageCategory; isMobile
 
           {/* Blur Overlay */}
           <div
-            className="absolute bottom-0 left-0 right-0 pointer-events-none"
+            className="absolute bottom-0 left-0 right-0 pointer-events-none rounded-b-2xl overflow-hidden"
             style={{
               height: "100px",
               backdropFilter: "blur(25px)",
@@ -113,7 +111,7 @@ export default function PackagesGrid({ packages = [] }: { packages: PackageCateg
     <>
       {/* Mobile: Horizontal Scroll Container */}
       <div
-        className="sm:hidden flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4"
+        className="sm:hidden flex gap-4 overflow-x-auto overflow-y-visible snap-x snap-mandatory scrollbar-hide pb-6 -mx-4 px-4"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",

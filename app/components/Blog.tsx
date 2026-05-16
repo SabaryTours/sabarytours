@@ -1,4 +1,12 @@
-import BlogGrid from "./BlogGrid";
+import dynamic from "next/dynamic";
+
+const BlogGrid = dynamic(() => import("./BlogGrid"), {
+  loading: () => (
+    <div className="flex justify-center items-center py-12">
+      <div className="w-8 h-8 border-3 border-[#ff5e00] border-t-transparent rounded-full animate-spin" />
+    </div>
+  ),
+});
 
 export default function Blog() {
   return (

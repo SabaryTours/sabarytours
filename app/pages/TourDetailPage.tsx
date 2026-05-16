@@ -12,6 +12,7 @@ import SafeHTML from "../components/SafeHTML";
 import TourComments from "../components/TourComments";
 import { useCurrency } from "../context/CurrencyContext";
 import { inferTierCurrency } from "../lib/tourPricing";
+import { safeImageUrl } from "../lib/safeImageUrl";
 
 interface TourDetailPageProps {
   tour: Tour;
@@ -26,7 +27,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
 
   const displayImages = Array.from(
     new Set([tour.image, ...(tour.gallery || [])].filter(Boolean))
-  );
+  ).map(img => safeImageUrl(img)).filter(src => src !== "/assets/placeholder-tour.jpg");
   const heroImages = displayImages.slice(0, 3);
   const groupSizeOptions =
     (tour.groupSizeOptions && tour.groupSizeOptions.length > 0
@@ -101,7 +102,6 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
               alt={tour.title}
               fill
               className="object-cover hover:scale-105 transition-transform duration-700"
-              unoptimized
             />
           </div>
           
@@ -114,7 +114,6 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
                   alt={`${tour.title} gallery`}
                   fill
                   className="object-cover hover:scale-105 transition-transform duration-700"
-                  unoptimized
                 />
               </div>
             )}
@@ -125,7 +124,6 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
                   alt={`${tour.title} gallery`}
                   fill
                   className="object-cover hover:scale-105 transition-transform duration-700"
-                  unoptimized
                 />
                 {displayImages.length > 3 && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center hover:bg-black/50 transition-colors">
@@ -189,9 +187,10 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
               <h2 className="text-2xl font-bold font-sans text-gray-900 mb-6 uppercase" style={{ fontFamily: 'var(--font-unlimited-pie)'}}>
                 About this tour
               </h2>
-              <div className="rich-text-content prose max-w-none min-w-0 text-gray-600 font-sans text-base leading-relaxed [&_*]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto">
-                <SafeHTML html={tour.description} />
-              </div>
+              <SafeHTML
+                html={tour.description}
+                className="prose max-w-none min-w-0 text-gray-600 font-sans text-base [&_*]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+              />
             </section>
           )}
 
@@ -452,7 +451,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
           <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
             {displayImages.map((img, i) => (
               <div key={i} className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-900 border border-gray-800">
-                <Image src={img} alt={`Gallery ${i}`} fill className="object-cover" unoptimized />
+                <Image src={img} alt={`Gallery ${i}`} fill className="object-cover" />
               </div>
             ))}
           </div>

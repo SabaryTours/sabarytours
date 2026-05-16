@@ -24,7 +24,7 @@ export default async function LandingPage() {
       <Hero initialImages={imageUrls} />
       
       <Packages />
-      <WhatsHappening events={happenings} />
+      {happenings.length > 0 && <WhatsHappening events={happenings} />}
       <WhyTravel />
       <YearAtAGlance year={new Date().getFullYear()} items={tripOutlineYear} />
       <Blog />

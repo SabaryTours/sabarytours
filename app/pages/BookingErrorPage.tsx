@@ -52,7 +52,6 @@ export default function BookingErrorPage() {
                 alt="Booking error"
                 fill
                 className="object-cover"
-                unoptimized
               />
             </div>
 

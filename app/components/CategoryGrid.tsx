@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { PackageCategory } from "./PackagesGrid";
+import { safeImageUrl } from "../lib/safeImageUrl";
 
 interface CategoryGridProps {
   packages?: PackageCategory[];
@@ -119,11 +120,10 @@ export default function CategoryGrid({
           {/* Image */}
           <div className="absolute inset-0">
             <Image
-              src={category.image}
+              src={safeImageUrl(category.image)}
               alt={category.title}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-110"
-              unoptimized
             />
           </div>
 

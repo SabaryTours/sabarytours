@@ -75,7 +75,6 @@ export default function AnnouncementModal() {
                 alt="Announcement" 
                 fill 
                 className="object-cover"
-                unoptimized
               />
             </div>
           )}
@@ -84,9 +83,10 @@ export default function AnnouncementModal() {
             {announcement.title}
           </h2>
           
-          <div className="prose max-w-none text-gray-600 font-sans text-sm sm:text-base leading-relaxed">
-            <SafeHTML html={announcement.content} />
-          </div>
+          <SafeHTML
+            html={announcement.content}
+            className="prose max-w-none text-gray-600 font-sans text-sm sm:text-base leading-relaxed"
+          />
         </div>
 
         {/* Footer */}

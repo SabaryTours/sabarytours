@@ -100,16 +100,16 @@ export default function WhyTravel() {
             </div>
           </div>
 
-          {/* Cards: horizontal scroll on mobile, grid from md */}
+          {/* Cards: full-width snap-scroll on mobile, grid from md */}
           <div
-            className="flex flex-row gap-6 overflow-x-auto overflow-y-visible pb-4 snap-x snap-mandatory scroll-pl-4 scroll-pr-4 -mx-1 px-1 [-webkit-overflow-scrolling:touch] overscroll-x-contain scrollbar-hide md:mx-0 md:grid md:grid-cols-2 md:gap-8 md:overflow-visible md:pb-0 md:px-0 md:snap-none lg:grid-cols-3"
+            className="flex flex-row gap-4 overflow-x-auto overflow-y-visible pb-4 snap-x snap-mandatory scroll-pl-4 scroll-pr-4 -mx-1 px-1 [-webkit-overflow-scrolling:touch] overscroll-x-contain scrollbar-hide md:mx-0 md:grid md:grid-cols-2 md:gap-8 md:overflow-visible md:pb-0 md:px-0 md:snap-none lg:grid-cols-3"
             role="list"
             aria-label="Why travel with Sabary"
           >
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="relative shrink-0 snap-start w-[min(88vw,360px)] max-w-[360px] rounded-2xl overflow-hidden flex items-center justify-center p-6 min-h-[200px] md:w-auto md:max-w-none md:min-w-0 md:shrink"
+                className="relative shrink-0 snap-center w-[calc(100vw-3rem)] max-w-[400px] rounded-2xl overflow-hidden flex items-center justify-center p-6 min-h-[220px] md:w-auto md:max-w-none md:min-w-0 md:shrink"
                 style={{
                   backgroundColor: feature.bgColor,
                 }}

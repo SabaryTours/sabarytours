@@ -89,7 +89,6 @@ export default function AuthCarousel() {
               fill
               className="object-cover"
               priority={currentSlide === 0}
-              unoptimized
             />
             <div className="absolute inset-0 bg-black opacity-50"></div>
           </motion.div>

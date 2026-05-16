@@ -44,7 +44,6 @@ function CircularImageCard({ item, isMobile = false }: { item: { src: string; al
           alt={item.alt}
           fill
           className="object-cover"
-          unoptimized
         />
       </div>
       {item.hasLogo && (
@@ -117,7 +116,6 @@ function TeamMemberCard({ member, isMobile = false }: { member: typeof teamMembe
           alt={member.name}
           fill
           className="object-cover"
-          unoptimized
         />
       </div>
       {/* Progressive Blur Overlay with Gradual Fade */}
@@ -201,7 +199,6 @@ export default function AboutPage() {
                   alt="Team member"
                   fill
                   className="object-cover"
-                  unoptimized
                 />
               </div>
             </div>
@@ -222,7 +219,6 @@ export default function AboutPage() {
                   alt="Team member"
                   fill
                   className="object-cover"
-                  unoptimized
                 />
               </div>
             </div>
@@ -243,7 +239,6 @@ export default function AboutPage() {
                   alt="Team member"
                   fill
                   className="object-cover"
-                  unoptimized
                 />
               </div>
             </div>
@@ -309,7 +304,6 @@ export default function AboutPage() {
                         alt="Travel should feel personal"
                         fill
                         className="object-cover"
-                        unoptimized
                       />
                     </div>
                     <p
@@ -349,7 +343,6 @@ export default function AboutPage() {
                         alt="Crafted by locals"
                         fill
                         className="object-cover"
-                        unoptimized
                       />
                     </div>
                     <p
@@ -389,7 +382,6 @@ export default function AboutPage() {
                         alt="Made just for you"
                         fill
                         className="object-cover"
-                        unoptimized
                       />
                     </div>
                     <p
@@ -449,7 +441,6 @@ export default function AboutPage() {
                       alt="Tour photo"
                       fill
                       className="object-cover"
-                      unoptimized
                     />
                   </div>
                   {/* Logo Overlay */}
@@ -468,7 +459,6 @@ export default function AboutPage() {
                       alt="Tour photo"
                       fill
                       className="object-cover"
-                      unoptimized
                     />
                   </div>
                   {/* Heart Icon */}
@@ -491,7 +481,6 @@ export default function AboutPage() {
                       alt="Tour photo"
                       fill
                       className="object-cover"
-                      unoptimized
                     />
                   </div>
                   {/* Heart Icon */}

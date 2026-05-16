@@ -2,6 +2,7 @@
 
 import Footer from "../components/Footer";
 import TourComments from "../components/TourComments";
+import ExternalReviewsBar from "../components/ExternalReviewsBar";
 
 export default function ReviewsPage() {
   return (
@@ -32,6 +33,7 @@ export default function ReviewsPage() {
 
       {/* 3. Global Comments Section (No tourSlug provided) */}
       <div className="flex-1 container mx-auto px-4 sm:px-6 md:px-12 py-12">
+        <ExternalReviewsBar />
         <TourComments />
       </div>
 
