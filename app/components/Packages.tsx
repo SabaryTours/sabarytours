@@ -1,9 +1,15 @@
 import PackagesGrid from "./PackagesGrid";
 import { createClient } from "../utils/supabase/server";
+import {
+  getPackageBookingCounts,
+  sortPackagesByPopularity,
+} from "../lib/packagePopularity";
 
 export default async function Packages() {
   const supabase = await createClient();
-  const { data: packages } = await supabase.from('packages').select('*').order('created_at', { ascending: true });
+  const { data: packages } = await supabase.from("packages").select("*");
+  const counts = await getPackageBookingCounts(supabase);
+  const sortedPackages = sortPackagesByPopularity(packages || [], counts);
 
   return (
     <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7">
@@ -80,7 +86,7 @@ export default async function Packages() {
               </div>
             </div>
 
-          <PackagesGrid packages={packages || []} />
+          <PackagesGrid packages={sortedPackages} />
         </div>
       </div>
     </section>

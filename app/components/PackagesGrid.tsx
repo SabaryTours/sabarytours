@@ -10,6 +10,7 @@ export interface PackageCategory {
   slug: string;
   image: string;
   description?: string;
+  bookingCount?: number;
 }
 
 function PackageCard({ pkg, isMobile = false }: { pkg: PackageCategory; isMobile?: boolean }) {
