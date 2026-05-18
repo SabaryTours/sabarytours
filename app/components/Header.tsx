@@ -177,7 +177,6 @@ export default function Header() {
 
           {/* Right Controls */}
           <div className="flex items-center gap-4">
-
             {/* Auth Buttons / User Menu */}
             {authenticated ? (
               <div className="relative z-50" ref={userMenuRef}>

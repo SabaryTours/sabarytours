@@ -5,6 +5,7 @@ import Link from "next/link";
 import Logo from "./Logo";
 import SocialMediaLinks from "./SocialMediaLinks";
 import { useState } from "react";
+import { formatCopyrightNotice } from "../lib/copyright";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
@@ -224,7 +225,7 @@ export default function Footer() {
         {/* Copyright */}
         <div className="container mx-auto pt-4 text-center relative z-10">
           <div className="text-white text-[14px] font-normal leading-[24px]">
-            Copyright © 2025 Sabary tours. All rights reserved.
+            {formatCopyrightNotice("Sabary tours", 2020)}
           </div>
         </div>
         </div>

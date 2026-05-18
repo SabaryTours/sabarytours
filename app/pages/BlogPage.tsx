@@ -1,4 +1,5 @@
 import BlogGrid from "../components/BlogGrid";
+import BlogTrendingSidebar from "../components/BlogTrendingSidebar";
 import Footer from "../components/Footer";
 
 export default function BlogPage() {
@@ -75,7 +76,14 @@ export default function BlogPage() {
             </h2>
           </div>
 
-          <BlogGrid />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+            <div className="lg:col-span-2">
+              <BlogGrid />
+            </div>
+            <div className="lg:col-span-1">
+              <BlogTrendingSidebar />
+            </div>
+          </div>
         </div>
       </section>
       <Footer />
