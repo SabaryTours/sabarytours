@@ -16,7 +16,7 @@ export default function CategoryGrid({
   initialQuery = "",
 }: CategoryGridProps) {
   const [query, setQuery] = useState(initialQuery);
-  const [sortBy, setSortBy] = useState("newest");
+  const [sortBy, setSortBy] = useState("popular");
 
   useEffect(() => {
     setQuery(initialQuery);
@@ -38,7 +38,13 @@ export default function CategoryGrid({
       });
     }
 
-    if (sortBy === "a-z") {
+    if (sortBy === "popular") {
+      data.sort(
+        (a, b) =>
+          ((b as PackageCategory & { bookingCount?: number }).bookingCount || 0) -
+          ((a as PackageCategory & { bookingCount?: number }).bookingCount || 0)
+      );
+    } else if (sortBy === "a-z") {
       data.sort((a, b) => a.title.localeCompare(b.title));
     } else if (sortBy === "oldest") {
       data.sort(
@@ -78,6 +84,7 @@ export default function CategoryGrid({
             onChange={(e) => setSortBy(e.target.value)}
             className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-sans text-gray-800 outline-none focus:border-[#ff5e00]"
           >
+            <option value="popular">Most popular</option>
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
             <option value="a-z">A to Z</option>

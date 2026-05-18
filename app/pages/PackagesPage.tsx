@@ -2,6 +2,10 @@ import Image from "next/image";
 import CategoryGrid from "../components/CategoryGrid";
 import Footer from "../components/Footer";
 import { createClient } from "../utils/supabase/server";
+import {
+  getPackageBookingCounts,
+  sortPackagesByPopularity,
+} from "../lib/packagePopularity";
 
 interface PackagesPageProps {
   searchQuery?: string;
@@ -13,14 +17,13 @@ export default async function PackagesPage({
   searchDate = "",
 }: PackagesPageProps) {
   const supabase = await createClient();
-  const { data: packages } = await supabase
-    .from("packages")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const { data: packages } = await supabase.from("packages").select("*");
+  const counts = await getPackageBookingCounts(supabase);
+  const sortedPackages = sortPackagesByPopularity(packages || [], counts);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredPackages = normalizedQuery
-    ? (packages || []).filter((pkg: any) => {
+    ? sortedPackages.filter((pkg: any) => {
         const title = String(pkg.title || "").toLowerCase();
         const description = String(pkg.description || "").toLowerCase();
         const slug = String(pkg.slug || "").toLowerCase();
@@ -30,7 +33,7 @@ export default async function PackagesPage({
           slug.includes(normalizedQuery)
         );
       })
-    : packages || [];
+    : sortedPackages;
 
   return (
     <div className="min-h-screen bg-white overflow-visible">
@@ -141,7 +144,13 @@ export default async function PackagesPage({
               Showing package results for date <span className="font-semibold">{searchDate}</span>.
             </p>
           ) : null}
-          <CategoryGrid packages={filteredPackages} initialQuery={searchQuery} />
+          <CategoryGrid
+            packages={filteredPackages.map((pkg) => ({
+              ...pkg,
+              bookingCount: counts[pkg.slug] || 0,
+            }))}
+            initialQuery={searchQuery}
+          />
         </div>
       </section>
       <Footer />

@@ -1,5 +1,6 @@
 import { createClient } from '../utils/supabase/server';
 import { Tour } from '../data/packages';
+import { getTourBookingCounts } from './packagePopularity';
 
 type TourImageRow = {
   image_url: string;
@@ -102,8 +103,10 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
     ratingMap[r.tour_slug].count += 1;
   });
 
-  // Map to frontend Tour interface
-  return typedTours.map((t) => {
+  const tourIds = typedTours.map((t) => String(t.id));
+  const bookingCounts = await getTourBookingCounts(supabase, tourIds);
+
+  const mapped = typedTours.map((t) => {
     // Sort images by order
     const sortedImages = [...(t.tour_images || [])].sort((a, b) => a.display_order - b.display_order);
     const gallery = sortedImages.map((img) => img.image_url);
@@ -130,10 +133,12 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
       price_tiers: t.tour_prices || [],
       rating: stats ? Math.round((stats.total / stats.count) * 10) / 10 : undefined,
       reviewCount: stats?.count || 0,
-      bookedCount: 0,
+      bookedCount: bookingCounts[String(t.id)] || 0,
       freeCancellation: true,
     } as Tour;
   });
+
+  return mapped.sort((a, b) => (b.bookedCount || 0) - (a.bookedCount || 0));
 }
 
 export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FilterIcon } from "hugeicons-react";
 import { Tour } from "../data/packages";
 import TourGrid from "./TourGrid";
@@ -12,10 +12,19 @@ interface CategoryToursSectionProps {
   categorySlug: string;
 }
 
+function sortToursByPopularity(list: Tour[]) {
+  return [...list].sort((a, b) => (b.bookedCount || 0) - (a.bookedCount || 0));
+}
+
 export default function CategoryToursSection({ tours, categorySlug }: CategoryToursSectionProps) {
-  const [filteredTours, setFilteredTours] = useState<Tour[]>(tours);
-  const [sortBy, setSortBy] = useState<string>("default");
+  const [filteredTours, setFilteredTours] = useState<Tour[]>(() => sortToursByPopularity(tours));
+  const [sortBy, setSortBy] = useState<string>("popular");
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
+  useEffect(() => {
+    setFilteredTours(sortToursByPopularity(tours));
+    setSortBy("popular");
+  }, [tours]);
 
   const handleSort = (sortType: string) => {
     setSortBy(sortType);
@@ -34,8 +43,9 @@ export default function CategoryToursSection({ tours, categorySlug }: CategoryTo
       case "popular":
         sorted.sort((a, b) => (b.bookedCount || 0) - (a.bookedCount || 0));
         break;
+      case "default":
       default:
-        // Keep current filtered results, just reset sort
+        sorted.sort((a, b) => (b.bookedCount || 0) - (a.bookedCount || 0));
         break;
     }
 
