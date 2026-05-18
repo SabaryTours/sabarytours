@@ -54,10 +54,40 @@ export default function BlogForm({ initialData }: BlogFormProps) {
   const editorKey = String(initialData?.id ?? "new");
   const initialHtml = initialData?.content ?? "";
   const contentDraftRef = useRef(initialHtml);
+  const quillRef = useRef<{ getEditor: () => { clipboard: { dangerouslyPasteHTML: (html: string, source?: string) => void } } } | null>(null);
+  const historyRef = useRef<string[]>([initialHtml]);
+  const historyIndexRef = useRef(0);
+  const [canUndo, setCanUndo] = useState(false);
 
   useEffect(() => {
     contentDraftRef.current = initialHtml;
+    historyRef.current = [initialHtml];
+    historyIndexRef.current = 0;
+    setCanUndo(false);
   }, [editorKey, initialHtml]);
+
+  const pushHistory = (html: string) => {
+    const stack = historyRef.current.slice(0, historyIndexRef.current + 1);
+    if (stack[stack.length - 1] === html) return;
+    stack.push(html);
+    if (stack.length > 50) stack.shift();
+    historyRef.current = stack;
+    historyIndexRef.current = stack.length - 1;
+    setCanUndo(historyIndexRef.current > 0);
+  };
+
+  const handleUndo = () => {
+    if (historyIndexRef.current <= 0) return;
+    historyIndexRef.current -= 1;
+    const html = historyRef.current[historyIndexRef.current];
+    contentDraftRef.current = html;
+    const editor = quillRef.current?.getEditor?.();
+    if (editor) {
+      editor.clipboard.dangerouslyPasteHTML(html, "silent");
+    }
+    setCanUndo(historyIndexRef.current > 0);
+    toast.success("Undone");
+  };
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
@@ -207,14 +237,26 @@ export default function BlogForm({ initialData }: BlogFormProps) {
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 font-sans mb-1">Article Content</label>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-gray-700 font-sans">Article Content</label>
+          <button
+            type="button"
+            onClick={handleUndo}
+            disabled={!canUndo}
+            className="px-3 py-1.5 text-xs font-semibold font-sans border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Undo
+          </button>
+        </div>
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden font-sans text-black placeholder:text-black">
           <ReactQuill
             key={editorKey}
             theme="snow"
             defaultValue={initialHtml}
+            forwardedRef={quillRef}
             onChange={(html: string) => {
               contentDraftRef.current = html;
+              pushHistory(html);
             }}
             className="h-64 mb-12 text-black placeholder:text-black"
           />

@@ -71,7 +71,7 @@ export default function Blog() {
               </div>
             </div>
 
-        <BlogGrid />
+        <BlogGrid limit={3} loadMoreHref="/blog" />
       </div>
     </section>
   );

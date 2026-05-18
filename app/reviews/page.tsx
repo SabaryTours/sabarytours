@@ -2,14 +2,13 @@
 
 import Footer from "../components/Footer";
 import TourComments from "../components/TourComments";
-import ExternalReviewsBar from "../components/ExternalReviewsBar";
+import ElfsightReviews from "../components/ElfsightReviews";
 
 export default function ReviewsPage() {
   return (
     <main className="min-h-screen bg-white font-sans flex flex-col">
 
-      {/* 2. Page Hero Section */}
-  <div
+      <div
   className="relative pt-32 pb-20 overflow-hidden bg-bottom bg-cover"
   style={{
     backgroundImage: `url("/assets/waterfall.png")`,
@@ -25,19 +24,17 @@ export default function ReviewsPage() {
       </h1>
 
       <div className="text-lg md:text-xl text-white max-w-2xl mx-auto leading-relaxed">
-        Read real stories and experiences from our community of travelers. We'd love to hear your story too!
+        Read real stories and experiences from our community of travelers. We&apos;d love to hear your story too!
       </div>
     </div>
   </div>
 </div>
 
-      {/* 3. Global Comments Section (No tourSlug provided) */}
-      <div className="flex-1 container mx-auto px-4 sm:px-6 md:px-12 py-12">
-        <ExternalReviewsBar />
+      <div className="flex-1 container mx-auto px-4 sm:px-6 md:px-12 py-12 space-y-16">
+        <ElfsightReviews />
         <TourComments />
       </div>
 
-      {/* 4. Footer */}
       <Footer />
     </main>
   );

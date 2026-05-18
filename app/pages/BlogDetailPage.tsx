@@ -5,6 +5,7 @@ import { type BlogPost, getRelatedPosts } from "../data/blog";
 import Footer from "../components/Footer";
 import SafeHTML from "../components/SafeHTML";
 import SocialMediaLinks from "../components/SocialMediaLinks";
+import NewsletterSubscribe from "../components/NewsletterSubscribe";
 
 interface BlogDetailPageProps {
   post: BlogPost;
@@ -85,9 +86,17 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
             )}
           </div>
 
-          {/* Social links — set NEXT_PUBLIC_SOCIAL_* in .env.local; WhatsApp defaults */}
-          <div className="mb-8 flex items-center">
-            <SocialMediaLinks variant="blogInline" />
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl bg-[#f0f7ff] border border-[#0060cc]/15">
+            <div>
+              <p className="text-sm font-bold text-[#222] mb-2">Share this article</p>
+              <SocialMediaLinks variant="blogInline" />
+            </div>
+            <Link
+              href="/packages"
+              className="inline-flex justify-center items-center px-5 py-2.5 rounded-full bg-[#ff5e00] text-white text-sm font-bold hover:bg-[#e55500] transition-colors shrink-0"
+            >
+              Book a tour
+            </Link>
           </div>
 
           {/* Main Image */}
@@ -104,8 +113,29 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
           {/* Article Content */}
           <SafeHTML
             html={articleHtml}
-            className="prose prose-lg max-w-none min-w-0 mb-12 text-[#222] text-[16px] leading-[28px] [&_*]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+            className="prose prose-lg max-w-none min-w-0 mb-10 text-[#222] text-[16px] leading-[28px] [&_*]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
           />
+
+          <div className="grid md:grid-cols-2 gap-6 mb-12">
+            <NewsletterSubscribe variant="card" />
+            <div className="rounded-2xl border border-[#ffdfcc] bg-[#fff7f0] p-6 flex flex-col justify-center text-center md:text-left">
+              <h3
+                className="text-xl font-bold text-[#222] mb-2 uppercase"
+                style={{ fontFamily: "var(--font-unlimited-pie)" }}
+              >
+                Ready to explore Ghana?
+              </h3>
+              <p className="text-sm text-gray-600 font-sans mb-4">
+                Turn inspiration into adventure — browse tours and book your trip today.
+              </p>
+              <Link
+                href="/packages"
+                className="inline-flex justify-center px-6 py-3 rounded-full bg-[#ff5e00] text-white font-bold text-sm hover:bg-[#e55500]"
+              >
+                Book a tour
+              </Link>
+            </div>
+          </div>
 
           {/* Comment Section */}
           <div className="mb-12">

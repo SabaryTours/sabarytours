@@ -5,8 +5,6 @@ import Image from "next/image";
 import { StarIcon, CheckmarkBadge01Icon, Cancel01Icon, Delete02Icon, PencilEdit01Icon } from "hugeicons-react";
 import { format } from "date-fns";
 import AdminSkeleton from '../components/AdminSkeleton';
-import ReviewSyncPanel from './components/ReviewSyncPanel';
-
 interface Review {
   id: string;
   name: string;
@@ -179,8 +177,6 @@ export default function AdminReviewsPage() {
           {error}
         </div>
       )}
-
-      <ReviewSyncPanel onSynced={fetchReviews} />
 
       {/* Mobile: cards */}
       <div className="md:hidden flex flex-col gap-4">

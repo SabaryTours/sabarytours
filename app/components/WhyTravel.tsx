@@ -1,4 +1,13 @@
-const features = [
+import Link from "next/link";
+
+const features: {
+  title: string;
+  description: string;
+  bgColor: string;
+  innerBgColor: string;
+  borderColor: string;
+  href?: string;
+}[] = [
   {
     title: "No Boring Tours Here!",
     description: "From hikes to heritage, it's all vibes and adventure in Ghana style.",
@@ -9,9 +18,10 @@ const features = [
   {
     title: "Your Trip, Your Style",
     description: "Whether you're here to explore, relax, or do both, we'll tailor your experience to fit you.",
-    bgColor: "#0060CC", // Blue
-    innerBgColor: "#E6F2FF", // Very light blue
+    bgColor: "#0060CC",
+    innerBgColor: "#E6F2FF",
     borderColor: "rgba(0,96,204,0.5)",
+    href: "/customized-package",
   },
   {
     title: "Comfort is Key",
@@ -141,6 +151,14 @@ export default function WhyTravel() {
                   <p className="text-[#555] text-[15px] leading-[26px]">
                     {feature.description}
                   </p>
+                  {feature.href && (
+                    <Link
+                      href={feature.href}
+                      className="mt-2 inline-flex justify-center px-4 py-2 rounded-full bg-[#0060cc] text-white text-sm font-bold hover:bg-[#004a9e] transition-colors"
+                    >
+                      Customized tours →
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}
