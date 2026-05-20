@@ -62,7 +62,7 @@ export default async function UpcomingToursPage() {
               Plan by month
             </p>
             <h1 className="text-3xl sm:text-4xl text-[#222] uppercase" style={{ fontFamily: "var(--font-unlimited-pie)" }}>
-              Featured & upcoming tours {year}
+              Upcoming tours {year}
             </h1>
             <p className="text-gray-600 font-sans text-sm max-w-2xl">
               A month-by-month view of what to expect this year. Each card is managed in the admin CMS.

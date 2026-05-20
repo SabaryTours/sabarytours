@@ -20,17 +20,17 @@ export default function CustomizedPackageSection() {
               className="text-2xl sm:text-3xl md:text-4xl uppercase font-bold"
               style={{ fontFamily: "var(--font-unlimited-pie)" }}
             >
-              Need a customized package?
+              Plan a customized trip
             </h2>
             <p className="text-white/90 text-sm sm:text-base leading-relaxed font-sans">
-              Tell us your group size, interests, dates, and budget — we&apos;ll design a
-              seamless Ghana experience just for you.
+              Share who&apos;s traveling, your interests, accommodation, and how you want
+              to feel — we&apos;ll craft a tailored Ghana itinerary for you.
             </p>
             <Link
               href="/customized-package"
               className="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-[#ff5e00] text-white font-bold font-sans hover:bg-[#e55500] transition-colors shadow-lg"
             >
-              Request a customized tour
+              Plan your Ghana trip
             </Link>
           </div>
         </div>

@@ -14,7 +14,7 @@ const statusDotColor: Record<string, string> = {
 
 export default function WhatsHappening({ events }: WhatsHappeningProps) {
   return (
-    <section className="w-full bg-[#0060CC] relative py-8 sm:py-12 md:py-16 overflow-visible">
+    <section id="upcoming-tours" className="w-full bg-[#0060CC] relative py-8 sm:py-12 md:py-16 overflow-visible scroll-mt-28">
       {/* Pattern background */}
       <div className="absolute inset-0 opacity-80">
         <div className="w-full h-full bg-repeat" style={{

@@ -64,7 +64,7 @@ export default function YearAtAGlance({ year, items }: { year: number; items: Tr
               className="text-3xl sm:text-4xl text-[#222] uppercase"
               style={{ fontFamily: "var(--font-unlimited-pie)" }}
             >
-              Featured & upcoming tours
+              Upcoming tours
             </h2>
             <p className="mt-2 text-gray-600 font-sans text-sm max-w-xl">
               Explore the year month-by-month to see what trips are coming up and when to book.
