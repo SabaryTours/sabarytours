@@ -50,6 +50,8 @@ export default function Header() {
     window.location.reload();
   };
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [toursMenuOpen, setToursMenuOpen] = useState(false);
+  const [mobileToursOpen, setMobileToursOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState<{ first_name?: string; email?: string } | null>(null);
@@ -61,6 +63,7 @@ export default function Header() {
   const currencyRef = useRef<HTMLDivElement>(null);
   const mobileCurrencyRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const toursMenuRef = useRef<HTMLDivElement>(null);
 
   const currencies = [
     { symbol: "$", code: "USD" as const },
@@ -77,15 +80,26 @@ export default function Header() {
 
   const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/packages", label: "Tours" },
     { href: "/gallery", label: "Gallery" },
     { href: "/blog", label: "Blog and News" },
     { href: "/about-us", label: "About us" },
     { href: "/contact", label: "Contact us" },
   ];
 
+  const toursMenuLinks = [
+    { href: "/featured-tours", label: "Book a Tour", key: "book" },
+    { href: "/customized-package", label: "Plan Your Trip", key: "plan" },
+    { href: "/upcoming-tours", label: "Upcoming Tours", key: "upcoming" },
+  ];
+
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname?.startsWith(href);
+
+  const isToursActive =
+    pathname?.startsWith("/packages") ||
+    pathname?.startsWith("/featured-tours") ||
+    pathname?.startsWith("/customized-package") ||
+    pathname?.startsWith("/upcoming-tours");
 
   /* Prevent body scroll when mobile menu is open */
   useEffect(() => {
@@ -132,14 +146,17 @@ export default function Header() {
       if (userMenuRef.current && !userMenuRef.current.contains(target)) {
         setUserMenuOpen(false);
       }
+
+      if (toursMenuRef.current && !toursMenuRef.current.contains(target)) {
+        setToursMenuOpen(false);
+      }
     }
 
-    // Use capture phase to ensure we catch the event
-    if (currencyOpen || userMenuOpen) {
+    if (currencyOpen || userMenuOpen || toursMenuOpen) {
       document.addEventListener("mousedown", handleClickOutside, true);
       return () => document.removeEventListener("mousedown", handleClickOutside, true);
     }
-  }, [currencyOpen, userMenuOpen]);
+  }, [currencyOpen, userMenuOpen, toursMenuOpen]);
 
   const handleLogout = async () => {
     await logout();
@@ -160,7 +177,66 @@ export default function Header() {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-2 lg:gap-[24px]">
-            {navLinks.map((link) => (
+            {navLinks.slice(0, 1).map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-[14px] font-semibold transition-colors ${
+                  isActive(link.href)
+                    ? "text-[#ff5e00] font-bold bg-gray-100 rounded-full px-4 py-2"
+                    : "text-[#222] hover:text-[#ff5e00]"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            <div className="relative" ref={toursMenuRef}>
+              <button
+                type="button"
+                aria-expanded={toursMenuOpen}
+                aria-haspopup="menu"
+                onClick={() => setToursMenuOpen((prev) => !prev)}
+                className={`text-[14px] font-semibold transition-colors inline-flex items-center gap-1 ${
+                  isToursActive
+                    ? "text-[#ff5e00] font-bold bg-gray-100 rounded-full px-4 py-2"
+                    : "text-[#222] hover:text-[#ff5e00] px-2 py-2"
+                }`}
+              >
+                Tours
+                <ArrowDown01Icon
+                  className={`w-4 h-4 transition-transform ${toursMenuOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {toursMenuOpen && (
+                <div
+                  className="absolute left-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-60"
+                  role="menu"
+                >
+                  {toursMenuLinks.map((item) => (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                      role="menuitem"
+                      onClick={() => setToursMenuOpen(false)}
+                      className="block px-4 py-2.5 text-[13px] font-semibold text-[#222] hover:bg-[#fff5e6] hover:text-[#ff5e00] transition-colors"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                  <Link
+                    href="/packages"
+                    role="menuitem"
+                    onClick={() => setToursMenuOpen(false)}
+                    className="block px-4 py-2.5 text-[13px] text-gray-600 hover:bg-gray-50 border-t border-gray-100 mt-1"
+                  >
+                    All packages
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {navLinks.slice(1).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -436,6 +512,48 @@ export default function Header() {
                   {link.label}
                 </Link>
               ))}
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setMobileToursOpen((p) => !p)}
+                  className={`flex w-full items-center justify-between text-[18px] font-bold tracking-wide ${
+                    isToursActive ? "text-[#ff5e00]" : "text-gray-900"
+                  }`}
+                >
+                  Tours
+                  <ArrowDown01Icon
+                    className={`w-5 h-5 transition-transform ${mobileToursOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {mobileToursOpen && (
+                  <div className="mt-3 ml-3 space-y-3 border-l-2 border-[#ff5e00]/30 pl-4">
+                    {toursMenuLinks.map((item) => (
+                      <Link
+                        key={item.key}
+                        href={item.href}
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileToursOpen(false);
+                        }}
+                        className="block text-[15px] font-semibold text-gray-700 hover:text-[#ff5e00]"
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                    <Link
+                      href="/packages"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        setMobileToursOpen(false);
+                      }}
+                      className="block text-[15px] font-medium text-gray-500 hover:text-[#ff5e00]"
+                    >
+                      All packages
+                    </Link>
+                  </div>
+                )}
+              </div>
 
               {/* Mobile Preferences (Currency/Language) */}
               <div className="pt-4 flex items-center gap-4 border-t border-gray-100 mt-6">

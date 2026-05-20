@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import HeroSearchForm from "./HeroSearchForm";
+import Link from "next/link";
 
 export default function Hero({ initialImages = [] }: { initialImages?: string[] }) {
-  const router = useRouter();
   const [images] = useState<string[]>(
     Array.from(new Set(initialImages.filter(Boolean))).length > 0
       ? Array.from(new Set(initialImages.filter(Boolean)))
@@ -16,17 +14,16 @@ export default function Hero({ initialImages = [] }: { initialImages?: string[] 
 
   useEffect(() => {
     if (images.length <= 1) return;
-    
+
     const intervalId = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 5000); // Change image every 5 seconds
-    
+    }, 5000);
+
     return () => clearInterval(intervalId);
   }, [images.length]);
 
   return (
     <section className="relative w-full h-[800px] sm:h-[750px] md:h-[700px] lg:h-[650px] xl:h-[600px] font-sans flex items-center justify-center bg-gray-900">
-      {/* Background images — Next/Image + priority on first slide improves LCP vs CSS backgrounds */}
       {images.map((imgUrl, index) => (
         <div
           key={imgUrl + index}
@@ -53,48 +50,45 @@ export default function Hero({ initialImages = [] }: { initialImages?: string[] 
         </div>
       ))}
 
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 md:px-12 flex flex-col items-center justify-center mt-10 sm:mt-14 text-center">
-        
-        {/* Main Headline */}
-        <div className="max-w-3xl mx-auto flex flex-col items-center gap-3 sm:gap-5 mb-8 sm:mb-10 animate-fade-in-up">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/25 backdrop-blur-md border border-white/15 text-white/90 text-[11px] sm:text-xs font-semibold tracking-wider font-sans mb-1">
-            <span className="w-2 h-2 rounded-full bg-[#ff5e00] animate-pulse"></span>
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 md:px-12 flex flex-col items-center justify-center pt-16 sm:pt-20 md:pt-24 text-center">
+        <div className="max-w-3xl mx-auto flex flex-col items-center gap-3 sm:gap-5 mb-10 sm:mb-12 animate-fade-in-up">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/25 backdrop-blur-md border border-white/15 text-white/90 text-[11px] sm:text-xs font-semibold tracking-wider font-sans">
+            <span className="w-2 h-2 rounded-full bg-[#ff5e00] animate-pulse" />
             DISCOVER THE UNDISCOVERED
           </div>
-          
-          <h1 
+
+          <h1
             className="text-[26px] sm:text-[36px] md:text-[48px] lg:text-[54px] xl:text-[60px] text-white leading-[1.04] tracking-tight uppercase"
-            style={{ 
-              fontFamily: 'var(--font-unlimited-pie)',
-              textShadow: '0 3px 20px rgba(0,0,0,0.45)'
+            style={{
+              fontFamily: "var(--font-unlimited-pie)",
+              textShadow: "0 3px 20px rgba(0,0,0,0.45)",
             }}
           >
             Discover the Beauty of Ghana
           </h1>
-          <div className="text-white/90 text-[14px] sm:text-[15px] md:text-[17px] max-w-xl font-sans mt-2 sm:mt-3 font-medium drop-shadow-md">
-            We plan the trips, you make the memories. From waterfalls to street food, we take you beyond the brochures.
-          </div>
+          <p className="text-white/90 text-[14px] sm:text-[15px] md:text-[17px] max-w-xl font-sans mt-3 sm:mt-4 font-medium drop-shadow-md">
+            We plan the trips, you make the memories. From waterfalls to street food,
+            we take you beyond the brochures.
+          </p>
         </div>
 
-        {/* Floating Search Bar (Client Component) */}
-        <HeroSearchForm />
-
-        {/* Popular searches tags */}
-        <div className="hidden sm:flex mt-6 flex-wrap items-center justify-center gap-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-          <span className="text-white/80 text-sm font-medium font-sans">Popular:</span>
-          {["Kakum", "Quad Bike", "Cape Coast & Elmina", "Accra City Tour", "Safari Valley"].map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              aria-label={`Search tours for ${tag}`}
-              className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-medium backdrop-blur-sm transition-all whitespace-nowrap"
-              onClick={() => router.push(`/packages?q=${encodeURIComponent(tag)}`)}
-            >
-              {tag}
-            </button>
-          ))}
+        <div
+          className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 w-full max-w-lg sm:max-w-none animate-fade-in-up"
+          style={{ animationDelay: "0.15s" }}
+        >
+          <Link
+            href="/featured-tours"
+            className="inline-flex justify-center items-center px-8 py-4 rounded-full bg-[#ff5e00] text-white font-bold text-sm sm:text-base hover:bg-[#e55500] transition-colors shadow-lg shadow-orange-900/30"
+          >
+            Book a Tour
+          </Link>
+          <Link
+            href="/customized-package"
+            className="inline-flex justify-center items-center px-8 py-4 rounded-full bg-white/95 text-[#222] font-bold text-sm sm:text-base hover:bg-white border border-white/50 transition-colors shadow-lg"
+          >
+            Plan Your Ghana Trip
+          </Link>
         </div>
-
       </div>
     </section>
   );

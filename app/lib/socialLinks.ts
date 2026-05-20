@@ -3,6 +3,7 @@
 export type SocialNetwork =
   | "facebook"
   | "instagram"
+  | "tiktok"
   | "youtube"
   | "linkedin"
   | "whatsapp"
@@ -19,6 +20,7 @@ const DEFAULT_LINKS: Record<SocialNetwork, string> = {
   facebook: "https://www.facebook.com/Sabaryco",
   instagram:
     "https://instagram.com/sabarytours?igshid=iuznzf668v60",
+  tiktok: "https://www.tiktok.com/@sabarytours",
   youtube: "https://www.youtube.com/channel/UC3LkE6ieyyA5E7CSF-iAFgw",
   linkedin: "https://www.linkedin.com/company/sabarytours/",
   whatsapp: "https://wa.me/message/HCCRQBKBLXEVI1",
@@ -28,6 +30,7 @@ const ENV_KEYS: Record<SocialNetwork, string> = {
   twitter: "NEXT_PUBLIC_SOCIAL_X",
   facebook: "NEXT_PUBLIC_SOCIAL_FACEBOOK",
   instagram: "NEXT_PUBLIC_SOCIAL_INSTAGRAM",
+  tiktok: "NEXT_PUBLIC_SOCIAL_TIKTOK",
   youtube: "NEXT_PUBLIC_SOCIAL_YOUTUBE",
   linkedin: "NEXT_PUBLIC_SOCIAL_LINKEDIN",
   whatsapp: "NEXT_PUBLIC_SOCIAL_WHATSAPP",
@@ -36,6 +39,7 @@ const ENV_KEYS: Record<SocialNetwork, string> = {
 const DISPLAY_ORDER: SocialNetwork[] = [
   "facebook",
   "instagram",
+  "tiktok",
   "youtube",
   "linkedin",
   "whatsapp",
@@ -58,6 +62,7 @@ export function resolveSocialLinks(): ResolvedSocialLink[] {
   const names: Record<SocialNetwork, string> = {
     facebook: "Facebook",
     instagram: "Instagram",
+    tiktok: "TikTok",
     youtube: "YouTube",
     linkedin: "LinkedIn",
     whatsapp: "WhatsApp",

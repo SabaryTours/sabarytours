@@ -1,6 +1,13 @@
 import { createClient } from '../utils/supabase/server';
 import { Tour } from '../data/packages';
 import { getTourBookingCounts } from './packagePopularity';
+import {
+  FEATURED_TOUR_MATCHERS,
+  matcherToFallbackCard,
+  matchTourByPatterns,
+  tourHref,
+  type FeaturedTourCard,
+} from './featuredTours';
 
 type TourImageRow = {
   image_url: string;
@@ -53,6 +60,62 @@ type ReviewRow = {
 
 // Helper to generate a slug if missing
 const generateSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+export async function getFeaturedTours(): Promise<FeaturedTourCard[]> {
+  const supabase = await createClient();
+  const { data: tours, error } = await supabase
+    .from("tours")
+    .select(
+      `
+      title,
+      slug,
+      category,
+      duration,
+      location,
+      tour_images(image_url, display_order)
+    `
+    )
+    .eq("status", "published");
+
+  if (error) {
+    console.error("getFeaturedTours:", error);
+    return FEATURED_TOUR_MATCHERS.map(matcherToFallbackCard);
+  }
+
+  const published = (tours || []) as Pick<
+    TourRow,
+    "title" | "slug" | "category" | "duration" | "location" | "tour_images"
+  >[];
+
+  return FEATURED_TOUR_MATCHERS.map((matcher) => {
+    const tour = matchTourByPatterns(published, matcher.titlePatterns);
+    if (!tour) return matcherToFallbackCard(matcher);
+
+    const slug = tour.slug || generateSlug(tour.title);
+    const sortedImages = [...(tour.tour_images || [])].sort(
+      (a, b) => a.display_order - b.display_order
+    );
+    const image =
+      sortedImages[0]?.image_url || "/assets/placeholder-tour.jpg";
+
+    const rawDuration = tour.duration ? String(tour.duration).trim() : "";
+    const duration =
+      rawDuration && /day|hour/i.test(rawDuration)
+        ? rawDuration
+        : rawDuration && /^\d+(\.\d+)?$/.test(rawDuration)
+          ? matcher.duration
+          : rawDuration || matcher.duration;
+
+    return {
+      title: matcher.displayTitle,
+      duration,
+      location: tour.location?.trim() || matcher.location,
+      highlights: matcher.highlights,
+      href: tourHref(tour.category, slug),
+      image,
+    };
+  });
+}
 
 export async function getPackageBySlug(slug: string) {
   const supabase = await createClient();
