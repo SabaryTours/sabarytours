@@ -10,6 +10,13 @@ import Footer from "../components/Footer";
 import { getHeroImages, getHappenings, getTripOutlineForYear } from "../lib/api";
 import YearAtAGlance from "../components/YearAtAGlance";
 import CustomizedPackageSection from "../components/CustomizedPackageSection";
+import { parseTripOutlineBody } from "../lib/tripOutline";
+
+function hasTripOutlineContent(item: { title?: string | null; description?: string | null; body?: string | null }) {
+  const meta = parseTripOutlineBody(item.body || "");
+  const description = item.description || meta.description || "";
+  return Boolean((item.title && item.title.trim()) || description.trim());
+}
 
 export default async function LandingPage() {
   const images = await getHeroImages(true);
@@ -20,6 +27,7 @@ export default async function LandingPage() {
     getHappenings(),
     getTripOutlineForYear(new Date().getFullYear()),
   ]);
+  const hasUpcomingContent = tripOutlineYear.some((item) => hasTripOutlineContent(item));
 
   return (
     <div className="min-h-screen bg-white">
@@ -29,7 +37,9 @@ export default async function LandingPage() {
       {happenings.length > 0 && <WhatsHappening events={happenings} />}
       <WhyTravel />
       <CustomizedPackageSection />
-      <YearAtAGlance year={new Date().getFullYear()} items={tripOutlineYear} />
+      {hasUpcomingContent ? (
+        <YearAtAGlance year={new Date().getFullYear()} items={tripOutlineYear} />
+      ) : null}
       <Blog />
       {/* <Testimonial /> */}
       <section className="py-16 md:py-20 bg-[#fafafa]">

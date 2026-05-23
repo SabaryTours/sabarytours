@@ -71,38 +71,43 @@ function SectionTitle({
   );
 }
 
-function RadioGroup<T extends string>({
+function SelectField<T extends string>({
   name,
   options,
   value,
   onChange,
   error,
+  placeholder,
 }: {
   name: string;
   options: readonly T[];
   value: T | "";
   onChange: (v: T) => void;
   error?: string;
+  placeholder?: string;
 }) {
   return (
-    <div className="space-y-2">
-      {options.map((opt) => (
-        <label
-          key={opt}
-          className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-[#ff5e00]/40 cursor-pointer has-checked:border-[#ff5e00] has-checked:bg-[#fff8f3]"
-        >
-          <input
-            type="radio"
-            name={name}
-            value={opt}
-            checked={value === opt}
-            onChange={() => onChange(opt)}
-            className="mt-1 accent-[#ff5e00]"
-          />
-          <span className="text-sm text-gray-800">{opt}</span>
-        </label>
-      ))}
-      {error ? <p className="text-red-500 text-xs">{error}</p> : null}
+    <div>
+      <select
+        name={name}
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+        className={`w-full px-4 py-3 rounded-xl border bg-gray-50/50 text-sm font-sans text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#ff5e00]/20 focus:border-[#ff5e00] ${
+          error ? "border-red-400" : "border-gray-200"
+        }`}
+      >
+        {placeholder ? (
+          <option value="" disabled>
+            {placeholder}
+          </option>
+        ) : null}
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+      {error ? <p className="text-red-500 text-xs mt-1">{error}</p> : null}
     </div>
   );
 }
@@ -138,19 +143,6 @@ export default function CustomizedPackageForm() {
         return next;
       });
     }
-  };
-
-  const toggleTourPreference = (pref: (typeof TOUR_PREFERENCES)[number]) => {
-    setFormData((prev) => {
-      const has = prev.tourPreferences.includes(pref);
-      return {
-        ...prev,
-        tourPreferences: has
-          ? prev.tourPreferences.filter((p) => p !== pref)
-          : [...prev.tourPreferences, pref],
-      };
-    });
-    clearError("tourPreferences");
   };
 
   const fieldClass = (name: keyof CustomizedPackageFormData) =>
@@ -331,7 +323,7 @@ export default function CustomizedPackageForm() {
         title="Traveler type"
         subtitle="Tell us who is traveling so we can design the right experience."
       />
-      <RadioGroup
+      <SelectField
         name="travelerType"
         options={TRAVELER_TYPES}
         value={formData.travelerType}
@@ -355,7 +347,7 @@ export default function CustomizedPackageForm() {
       )}
 
       <SectionTitle emoji="🚗" title="Pickup location" />
-      <RadioGroup
+      <SelectField
         name="pickupLocation"
         options={PICKUP_LOCATIONS}
         value={formData.pickupLocation}
@@ -367,7 +359,7 @@ export default function CustomizedPackageForm() {
       />
 
       <SectionTitle emoji="🚗" title="Transport preference" />
-      <RadioGroup
+      <SelectField
         name="transportPreference"
         options={TRANSPORT_PREFERENCES}
         value={formData.transportPreference}
@@ -383,86 +375,59 @@ export default function CustomizedPackageForm() {
         title="Accommodation preference"
         subtitle="Optional — we can recommend the best fit for your trip."
       />
-      <div className="space-y-2">
-        <label className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer has-checked:border-[#ff5e00] has-checked:bg-[#fff8f3]">
-          <input
-            type="radio"
-            name="accommodationPreference"
-            checked={!formData.accommodationPreference}
-            onChange={() =>
-              setFormData((p) => ({ ...p, accommodationPreference: "" }))
-            }
-            className="mt-1 accent-[#ff5e00]"
-          />
-          <span className="text-sm text-gray-800">No preference yet</span>
-        </label>
+      <select
+        name="accommodationPreference"
+        value={formData.accommodationPreference}
+        onChange={handleChange}
+        className={fieldClass("accommodationPreference")}
+      >
+        <option value="">No preference yet</option>
         {ACCOMMODATION_PREFERENCES.map((opt) => (
-          <label
-            key={opt}
-            className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-[#ff5e00]/40 cursor-pointer has-checked:border-[#ff5e00] has-checked:bg-[#fff8f3]"
-          >
-            <input
-              type="radio"
-              name="accommodationPreference"
-              checked={formData.accommodationPreference === opt}
-              onChange={() =>
-                setFormData((p) => ({ ...p, accommodationPreference: opt }))
-              }
-              className="mt-1 accent-[#ff5e00]"
-            />
-            <span className="text-sm text-gray-800">{opt}</span>
-          </label>
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
         ))}
-      </div>
+      </select>
 
       <SectionTitle title="Preferred accommodation area" subtitle="Optional" />
-      <div className="space-y-2">
-        <label className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer has-checked:border-[#ff5e00] has-checked:bg-[#fff8f3]">
-          <input
-            type="radio"
-            name="accommodationArea"
-            checked={!formData.accommodationArea}
-            onChange={() => setFormData((p) => ({ ...p, accommodationArea: "" }))}
-            className="mt-1 accent-[#ff5e00]"
-          />
-          <span className="text-sm text-gray-800">No area preference yet</span>
-        </label>
+      <select
+        name="accommodationArea"
+        value={formData.accommodationArea}
+        onChange={handleChange}
+        className={fieldClass("accommodationArea")}
+      >
+        <option value="">No area preference yet</option>
         {ACCOMMODATION_AREAS.map((opt) => (
-          <label
-            key={opt}
-            className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-[#ff5e00]/40 cursor-pointer has-checked:border-[#ff5e00] has-checked:bg-[#fff8f3]"
-          >
-            <input
-              type="radio"
-              name="accommodationArea"
-              checked={formData.accommodationArea === opt}
-              onChange={() => setFormData((p) => ({ ...p, accommodationArea: opt }))}
-              className="mt-1 accent-[#ff5e00]"
-            />
-            <span className="text-sm text-gray-800">{opt}</span>
-          </label>
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
         ))}
-      </div>
+      </select>
 
       <SectionTitle
         title="Tour preference"
         subtitle="What experiences would you like included? Select all that apply."
       />
-      <div className="grid sm:grid-cols-2 gap-2">
-        {TOUR_PREFERENCES.map((pref) => (
-          <label
-            key={pref}
-            className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-[#ff5e00]/40 cursor-pointer has-checked:border-[#ff5e00] has-checked:bg-[#fff8f3]"
-          >
-            <input
-              type="checkbox"
-              checked={formData.tourPreferences.includes(pref)}
-              onChange={() => toggleTourPreference(pref)}
-              className="mt-1 accent-[#ff5e00]"
-            />
-            <span className="text-sm text-gray-800">{pref}</span>
-          </label>
-        ))}
+      <div>
+        <select
+          name="tourPreferences"
+          multiple
+          value={formData.tourPreferences}
+          onChange={(e) => {
+            const selected = Array.from(e.target.selectedOptions, (option) => option.value) as (typeof TOUR_PREFERENCES)[number][];
+            setFormData((prev) => ({ ...prev, tourPreferences: selected }));
+            clearError("tourPreferences");
+          }}
+          className={fieldClass("tourPreferences")}
+          size={Math.min(TOUR_PREFERENCES.length, 8)}
+        >
+          {TOUR_PREFERENCES.map((pref) => (
+            <option key={pref} value={pref}>
+              {pref}
+            </option>
+          ))}
+        </select>
+        <p className="mt-2 text-xs text-gray-500">Hold Ctrl (Windows) or Cmd (Mac) to select multiple options.</p>
       </div>
       {errors.tourPreferences && (
         <p className="text-red-500 text-xs">{errors.tourPreferences}</p>
@@ -484,7 +449,7 @@ export default function CustomizedPackageForm() {
         title="Travel priority"
         subtitle="What matters most for your trip?"
       />
-      <RadioGroup
+      <SelectField
         name="travelPriority"
         options={TRAVEL_PRIORITIES}
         value={formData.travelPriority}
@@ -496,7 +461,7 @@ export default function CustomizedPackageForm() {
       />
 
       <SectionTitle title="How far along are you in planning?" />
-      <RadioGroup
+      <SelectField
         name="planningStage"
         options={PLANNING_STAGES}
         value={formData.planningStage}
@@ -508,7 +473,7 @@ export default function CustomizedPackageForm() {
       />
 
       <SectionTitle title="How would you like your trip to feel?" />
-      <RadioGroup
+      <SelectField
         name="tripFeel"
         options={TRIP_FEELS}
         value={formData.tripFeel}
@@ -520,7 +485,7 @@ export default function CustomizedPackageForm() {
       />
 
       <SectionTitle emoji="📲" title="Preferred contact method" />
-      <RadioGroup
+      <SelectField
         name="contactMethod"
         options={CONTACT_METHODS}
         value={formData.contactMethod}

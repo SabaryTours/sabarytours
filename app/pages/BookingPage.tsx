@@ -9,7 +9,6 @@ import AvailabilityCalendar from "../components/AvailabilityCalendar";
 import CustomDropdown from "../components/CustomDropdown";
 import PaymentOptions from "../components/PaymentOptions";
 import VoucherCode from "../components/VoucherCode";
-import PickupLocation from "../components/PickupLocation";
 import PaystackPayment from "../components/PaystackPayment";
 import TourGrid from "../components/TourGrid";
 import { useCurrency } from "../context/CurrencyContext";
@@ -530,10 +529,24 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                   </div>
                 </div>
 
+                {/* Map-enabled pickup selector disabled on booking page; keep address input only.
                 <div>
                   <PickupLocation
                     value={formData.pickupLocation}
                     onChange={(location) => setFormData({ ...formData, pickupLocation: location })}
+                  />
+                </div>
+                */}
+                <div>
+                  <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">
+                    Pick-up Address <span className="text-xs text-gray-500 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.pickupLocation}
+                    onChange={(e) => setFormData({ ...formData, pickupLocation: e.target.value })}
+                    placeholder="Enter your pick-up address"
+                    className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] font-sans"
                   />
                 </div>
               </div>
