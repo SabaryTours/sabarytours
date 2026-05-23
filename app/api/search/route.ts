@@ -43,8 +43,14 @@ export async function GET(request: Request) {
     const results = (tours || []).map((t: any) => {
       const sortedImages = (t.tour_images || []).sort((a: any, b: any) => a.display_order - b.display_order);
       const primaryImage = sortedImages[0]?.image_url || '/assets/placeholder-tour.jpg';
-      const basePrice = t.tour_prices?.[0]?.amount || 0;
-      const currency = t.tour_prices?.[0]?.currency || t.currency || 'GHS';
+      const validTiers = (t.tour_prices || [])
+        .map((tier: any) => ({ amount: Number(tier?.amount), currency: tier?.currency }))
+        .filter((tier: any) => Number.isFinite(tier.amount) && tier.amount > 0);
+      const lowestTier = validTiers.length
+        ? validTiers.reduce((acc: any, curr: any) => (curr.amount < acc.amount ? curr : acc))
+        : null;
+      const basePrice = lowestTier?.amount || 0;
+      const currency = lowestTier?.currency || t.currency || 'GHS';
 
       return {
         id: t.id,

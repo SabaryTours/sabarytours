@@ -58,6 +58,28 @@ type ReviewRow = {
   rating: number;
 };
 
+function getLowestTierPrice(
+  tiers: TourPriceRow[] | null | undefined,
+  fallbackCurrency?: string | null
+): { amount: number; currency: string } {
+  const normalized = (tiers || [])
+    .map((tier) => ({
+      amount: Number(tier?.amount),
+      currency: tier?.currency || null,
+    }))
+    .filter((tier) => Number.isFinite(tier.amount) && tier.amount > 0);
+
+  if (normalized.length === 0) {
+    return { amount: 0, currency: fallbackCurrency || 'GHS' };
+  }
+
+  const lowest = normalized.reduce((acc, curr) => (curr.amount < acc.amount ? curr : acc));
+  return {
+    amount: lowest.amount,
+    currency: lowest.currency || fallbackCurrency || 'GHS',
+  };
+}
+
 // Helper to generate a slug if missing
 const generateSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -175,8 +197,7 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
     const gallery = sortedImages.map((img) => img.image_url);
     const primaryImage = gallery[0] || '/assets/placeholder-tour.jpg'; // fallback
 
-    const basePrice = t.tour_prices?.[0]?.amount || 0;
-    const currency = t.tour_prices?.[0]?.currency || t.currency || 'GHS';
+    const { amount: basePrice, currency } = getLowestTierPrice(t.tour_prices, t.currency);
     const slug = t.slug || generateSlug(t.title);
     const stats = ratingMap[slug];
 
@@ -229,8 +250,7 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
   const gallery = sortedImages.map((img) => img.image_url);
   const primaryImage = gallery[0] || '/assets/placeholder-tour.jpg';
 
-  const basePrice = t.tour_prices?.[0]?.amount || 0;
-  const currency = t.tour_prices?.[0]?.currency || t.currency || 'GHS';
+  const { amount: basePrice, currency } = getLowestTierPrice(t.tour_prices, t.currency);
 
   // Itinerary from JSONB column
   const rawItinerary = Array.isArray(t.itinerary) ? t.itinerary : [];
