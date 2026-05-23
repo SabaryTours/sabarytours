@@ -8,8 +8,43 @@ import {
 export default async function Packages() {
   const supabase = await createClient();
   const { data: packages } = await supabase.from("packages").select("*");
+  const { data: tours } = await supabase
+    .from("tours")
+    .select("category, currency, tour_prices(amount, currency)")
+    .eq("status", "published");
+
+  const minPriceByCategory = new Map<string, { amount: number; currency: string }>();
+
+  (tours || []).forEach((tour) => {
+    const category = typeof tour.category === "string" ? tour.category : "";
+    if (!category) return;
+
+    const tiers = Array.isArray(tour.tour_prices) ? tour.tour_prices : [];
+    const amounts = tiers
+      .map((tier) => Number(tier?.amount))
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    if (amounts.length === 0) return;
+
+    const minAmount = Math.min(...amounts);
+    const tierCurrency = tiers.find((tier) => Number(tier?.amount) === minAmount)?.currency;
+    const currency = tierCurrency || tour.currency || "GHS";
+    const current = minPriceByCategory.get(category);
+
+    if (!current || minAmount < current.amount) {
+      minPriceByCategory.set(category, { amount: minAmount, currency });
+    }
+  });
+
   const counts = await getPackageBookingCounts(supabase);
-  const sortedPackages = sortPackagesByPopularity(packages || [], counts);
+  const sortedPackages = sortPackagesByPopularity(packages || [], counts).map((pkg) => {
+    const pricing = minPriceByCategory.get(pkg.slug);
+    return {
+      ...pkg,
+      startingPrice: pricing?.amount,
+      startingCurrency: pricing?.currency,
+    };
+  });
 
   return (
     <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7">
@@ -36,11 +71,11 @@ export default async function Packages() {
 
         <div className="container mx-auto px-3 sm:px-4 md:px-6 relative z-10 overflow-visible">
           {/* Header Section */}
-          <div className="flex flex-col gap-[20px] items-center mb-12">
+          <div className="flex flex-col gap-5 items-center mb-12">
             {/* Top Line - Icon + Subtitle */}
-            <div className="flex gap-[5px] items-center justify-center">
+            <div className="flex gap-1.25 items-center justify-center">
               {/* Road Trip Icon */}
-              <div className="h-5 w-[25px] relative">
+              <div className="h-5 w-6.25 relative">
                 <svg
                   viewBox="0 0 25 20"
                   fill="none"
@@ -57,13 +92,13 @@ export default async function Packages() {
                   <rect x="7" y="6" width="11" height="2" rx="1" fill="#0060CC" />
                 </svg>
               </div>
-              <p className="text-[#0060cc] text-[14px] font-bold leading-[24px]">
+              <p className="text-[#0060cc] text-[14px] font-bold leading-6">
                 Pick Your Adventure, We&apos;ll Handle the Rest
               </p>
       </div>
 
             {/* Main Heading */}
-            <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center overflow-visible px-2">
+            <div className="flex flex-col md:flex-row gap-3 items-center leading-none uppercase w-full justify-center overflow-visible px-2">
               <h2 
                 className="text-[32px] text-[#222] relative"
                 style={{

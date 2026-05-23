@@ -11,6 +11,8 @@ export interface PackageCategory {
   image: string;
   description?: string;
   bookingCount?: number;
+  startingPrice?: number;
+  startingCurrency?: string;
 }
 
 function PackageCard({ pkg, isMobile = false }: { pkg: PackageCategory; isMobile?: boolean }) {
@@ -68,7 +70,7 @@ function PackageCard({ pkg, isMobile = false }: { pkg: PackageCategory; isMobile
 
           {/* Gradient Fade Overlay */}
           <div
-            className="absolute bottom-0 left-0 right-0 h-[120px] pointer-events-none rounded-b-2xl"
+            className="absolute bottom-0 left-0 right-0 h-30 pointer-events-none rounded-b-2xl"
             style={{
               background:
                 "linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.2) 70%, rgba(0,0,0,0) 100%)",
@@ -91,6 +93,11 @@ function PackageCard({ pkg, isMobile = false }: { pkg: PackageCategory; isMobile
 
           {/* Title */}
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full px-3 py-10">
+            {typeof pkg.startingPrice === "number" && pkg.startingPrice > 0 ? (
+              <p className="mb-2 text-center text-[11px] font-bold font-sans uppercase tracking-wide text-white/90 drop-shadow-md">
+                Price starts from {pkg.startingCurrency || "GHS"} {pkg.startingPrice.toLocaleString()}
+              </p>
+            ) : null}
             <h3
           className={`text-white uppercase text-center drop-shadow-lg ${
             isMobile ? "text-[16px]" : "text-[16px] sm:text-[18px] md:text-[20px]"

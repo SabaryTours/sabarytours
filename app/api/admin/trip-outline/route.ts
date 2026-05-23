@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     if (!Number.isFinite(year) || year < 2000 || year > 2100) {
       return NextResponse.json({ error: "Valid year required" }, { status: 400 });
     }
-    if (!Array.isArray(rows) || rows.length === 0) {
+    if (!Array.isArray(rows)) {
       return NextResponse.json({ error: "rows array required" }, { status: 400 });
     }
 
@@ -124,8 +124,10 @@ export async function POST(request: Request) {
       sort_order: row.sort_order,
       updated_at: row.updated_at,
     }));
-    const { error } = await supabaseAdmin.from("trip_year_outline").insert(rowsToInsert);
-    if (error) throw error;
+    if (rowsToInsert.length > 0) {
+      const { error } = await supabaseAdmin.from("trip_year_outline").insert(rowsToInsert);
+      if (error) throw error;
+    }
     return NextResponse.json({ success: true, saved: rowsToInsert.length });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Save failed";
