@@ -17,6 +17,7 @@ export interface Tour {
   description: string;
   price: string;
   priceValue?: number; // For filtering
+  priceCurrency?: string; // Source currency of priceValue (e.g. "GHS" or "USD")
   price_tiers?: Array<{
     name?: string;
     amount?: number;

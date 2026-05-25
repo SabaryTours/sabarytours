@@ -28,7 +28,7 @@ export default function AdminToursPage() {
         category, 
         status, 
         currency,
-        tour_prices(amount),
+        tour_prices(amount, currency),
         tour_images(image_url)
       `)
       .order('created_at', { ascending: false });
@@ -163,7 +163,7 @@ export default function AdminToursPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm text-gray-600 font-sans capitalize">{tour.category?.replace(/_/g, " ") || "Unknown"}</span>
-                  <span className="text-sm font-semibold text-gray-800 font-sans">{tour.currency || "GHS"} {price}</span>
+                  <span className="text-sm font-semibold text-gray-800 font-sans">{tour.tour_prices?.[0]?.currency || "GHS"} {price}</span>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-sans border ${tour.status === "published" ? "bg-green-50 text-green-700 border-green-200" : "bg-yellow-50 text-yellow-700 border-yellow-200"}`}>
                     {tour.status === "published" ? "Published" : "Draft"}
                   </span>
@@ -210,7 +210,7 @@ export default function AdminToursPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4"><span className="text-sm text-gray-600 font-sans capitalize">{tour.category?.replace(/_/g, " ") || "Unknown"}</span></td>
-                    <td className="px-6 py-4"><span className="text-sm font-semibold text-gray-800 font-sans">{tour.currency || "GHS"} {price}</span></td>
+                    <td className="px-6 py-4"><span className="text-sm font-semibold text-gray-800 font-sans">{tour.tour_prices?.[0]?.currency || "GHS"} {price}</span></td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-sans border ${tour.status === "published" ? "bg-green-50 text-green-700 border-green-200" : "bg-yellow-50 text-yellow-700 border-yellow-200"}`}>
                         {tour.status === "published" ? "Published" : "Draft"}

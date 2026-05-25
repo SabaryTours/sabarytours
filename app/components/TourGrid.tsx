@@ -86,7 +86,7 @@ export default function TourGrid({ tours, categorySlug }: TourGridProps) {
             {/* Price and Booked Count */}
             <div className="flex items-center justify-between mt-auto">
               <span className="text-white text-[14px] sm:text-[16px] font-bold font-sans">
-                {symbol} {convert(tour.priceValue ?? 0, "GHS").toFixed(2)}
+                {symbol} {convert(tour.priceValue ?? 0, (tour.priceCurrency as "GHS" | "USD") ?? "GHS").toFixed(2)}
               </span>
               {tour.bookedCount && (
                 <span className="text-white/80 text-[12px] font-sans">
