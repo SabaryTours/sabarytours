@@ -19,7 +19,7 @@ export default async function EditTourPage({ params }: PageProps) {
     .from('tours')
     .select(`
       *,
-      tour_prices(amount),
+      tour_prices(name, amount, currency),
       tour_images(image_url)
     `)
     .eq('id', id)

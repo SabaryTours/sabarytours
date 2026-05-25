@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 import { useRouter } from "next/navigation";
 import { ArrowLeft01Icon, CheckmarkBadge01Icon, Calendar01Icon, UserIcon, CreditCardIcon } from "hugeicons-react";
 import { Tour } from "../data/packages";
@@ -519,12 +521,27 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                   </div>
                   <div>
                     <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">Phone Number <span className="text-red-500">*</span></label>
-                    <input
-                      type="tel"
+                    <PhoneInput
+                      country="gh"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+233..."
-                      className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] font-sans"
+                      onChange={(value) => setFormData({ ...formData, phone: `+${value}` })}
+                      enableSearch
+                      inputStyle={{
+                        width: "100%",
+                        height: "48px",
+                        borderRadius: "12px",
+                        border: "1px solid #e5e7eb",
+                        backgroundColor: "#f9fafb",
+                        fontSize: "14px",
+                        color: "#111827",
+                        paddingLeft: "52px",
+                      }}
+                      buttonStyle={{
+                        borderRadius: "12px 0 0 12px",
+                        border: "1px solid #e5e7eb",
+                        backgroundColor: "#f9fafb",
+                      }}
+                      containerStyle={{ width: "100%" }}
                     />
                   </div>
                 </div>

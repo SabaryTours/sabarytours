@@ -51,7 +51,7 @@ export default function AdminInvoicesPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!clientName || !clientEmail || !description || !amount) return;
 
@@ -110,7 +110,7 @@ export default function AdminInvoicesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-sans text-gray-900">Manage Invoices</h1>
-          <p className="text-sm text-gray-500 font-sans mt-1">Generate custom Paystack payment links for your clients.</p>
+          <p className="text-sm text-gray-500 font-sans mt-1">Generate invoices and send payment details to clients via email.</p>
         </div>
         
         <button
@@ -120,6 +120,17 @@ export default function AdminInvoicesPage() {
           <PlusSignIcon size={20} />
           Create Invoice
         </button>
+      </div>
+
+      {/* Payment details info card */}
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 font-sans">
+        <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-2">Payment Options sent with every invoice</p>
+        <div className="flex flex-wrap gap-4 text-sm text-blue-900">
+          <span><strong>MTN MoMo:</strong> 0598952236 — Sabary Travel and Tour</span>
+          <span><strong>Airtel Tigo:</strong> 0576093838 — Sabary Travel and Tour</span>
+          <span><strong>GT Bank:</strong> 206115998220 — Sabary Travel and Tour</span>
+          <span><strong>+ Paystack</strong> link (if generated)</span>
+        </div>
       </div>
 
       {successMsg && (
@@ -211,7 +222,7 @@ export default function AdminInvoicesPage() {
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden font-sans flex flex-col max-h-[90vh]">
             <div className="px-6 py-5 border-b border-gray-100">
               <h2 className="text-xl font-bold text-gray-900">Create New Invoice</h2>
-              <p className="text-sm text-gray-500 mt-1">This will instantly generate a Paystack link and email the client.</p>
+              <p className="text-sm text-gray-500 mt-1">This will email the client their invoice with all payment options.</p>
             </div>
             
             <div className="p-6 overflow-y-auto">
