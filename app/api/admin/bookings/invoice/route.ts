@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '../../../../utils/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { resend, FROM_EMAIL, PAYMENT_OPTIONS_HTML } from '../../../../lib/resend';
+import { buildEmailHtml } from '../../../../lib/emailTemplate';
+import { escapeHtml } from '../../../../lib/bookingReceiptEmailHtml';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
@@ -124,124 +126,113 @@ export async function POST(request: Request) {
 
     // 6. Send invoice email via Resend
     try {
-      const paystackSection = paymentUrl ? `
-        <tr>
-          <td style="padding: 0 24px 20px 24px; text-align: center;">
-            <a href="${paymentUrl}" style="background-color: #ff5e00; color: #ffffff; padding: 12px 32px; border-radius: 9999px; font-size: 14px; font-weight: 700; text-decoration: none; display: inline-block; box-shadow: 0 10px 25px rgba(255,94,0,0.35);">
-              Pay Online via Paystack
-            </a>
-            <p style="font-size: 12px; color: #6b7280; margin-top: 10px;">
-              Or copy this link: <span style="color:#0060cc; word-break: break-all;">${paymentUrl}</span>
-            </p>
-          </td>
-        </tr>` : '';
+      const paystackButton = paymentUrl
+        ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
+            <tr>
+              <td align="center">
+                <a href="${paymentUrl}"
+                   style="display:inline-block;background-color:#ff5e00;color:#ffffff;padding:14px 36px;border-radius:9999px;font-size:14px;font-weight:700;text-decoration:none;letter-spacing:0.3px;">
+                  Pay Online via Paystack
+                </a>
+                <p style="margin:10px 0 0;font-size:11px;color:#9ca3af;">
+                  Or copy: <a href="${paymentUrl}" style="color:#0060cc;word-break:break-all;">${paymentUrl}</a>
+                </p>
+              </td>
+            </tr>
+          </table>`
+        : '';
+
+      const bookingBody = `
+        <!-- Bill To / Booking Details -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+          <tr>
+            <td style="vertical-align:top;padding-right:20px;width:50%;">
+              <p style="margin:0 0 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#9ca3af;">Bill To</p>
+              <p style="margin:0 0 3px;font-size:15px;font-weight:700;color:#111827;">${escapeHtml(customer_name)}</p>
+              <p style="margin:0 0 2px;font-size:13px;color:#6b7280;">${escapeHtml(customer_email)}</p>
+              ${customer_phone ? `<p style="margin:0;font-size:13px;color:#6b7280;">${escapeHtml(customer_phone)}</p>` : ''}
+            </td>
+            <td style="vertical-align:top;padding-left:20px;border-left:3px solid #ff5e00;width:50%;">
+              <p style="margin:0 0 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#9ca3af;">Booking Details</p>
+              <p style="margin:0 0 4px;font-size:13px;color:#374151;"><span style="color:#9ca3af;">Tour:</span> <strong style="color:#111827;">${escapeHtml(tour_name)}</strong></p>
+              <p style="margin:0 0 4px;font-size:13px;color:#374151;"><span style="color:#9ca3af;">Date:</span> <strong style="color:#111827;">${escapeHtml(date)}${time_slot ? ` at ${escapeHtml(time_slot)}` : ''}</strong></p>
+              <p style="margin:0;font-size:13px;color:#374151;"><span style="color:#9ca3af;">Guests:</span> <strong style="color:#111827;">${escapeHtml(String(number_of_people))}</strong></p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Line items -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:2px solid #111827;margin-bottom:20px;">
+          <thead>
+            <tr>
+              <th align="left" style="padding:10px 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7280;">Description</th>
+              <th align="right" style="padding:10px 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7280;">Amount (GHS)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-top:1px solid #e5e7eb;">
+              <td style="padding:14px 0;vertical-align:top;">
+                <p style="margin:0 0 3px;font-size:14px;font-weight:700;color:#111827;">${escapeHtml(tour_name)}</p>
+                <p style="margin:0;font-size:12px;color:#9ca3af;">
+                  ${escapeHtml(String(number_of_people))} guest${parseInt(number_of_people) > 1 ? 's' : ''} &middot; ${escapeHtml(date)}${time_slot ? ` at ${escapeHtml(time_slot)}` : ''}
+                </p>
+                ${included_activities ? `<p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">${escapeHtml(included_activities)}</p>` : ''}
+              </td>
+              <td align="right" style="padding:14px 0;font-size:14px;font-weight:700;color:#111827;vertical-align:top;white-space:nowrap;">
+                ${parseFloat(total_cost).toFixed(2)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Total -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-left:auto;width:240px;margin-bottom:28px;">
+          <tr>
+            <td style="padding:4px 0;font-size:13px;color:#6b7280;">Subtotal</td>
+            <td align="right" style="padding:4px 0;font-size:13px;color:#6b7280;white-space:nowrap;">GHS ${parseFloat(total_cost).toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding:2px 0;"><hr style="border:none;border-top:2px solid #111827;margin:4px 0;" /></td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;font-size:15px;font-weight:700;color:#111827;">Total Due</td>
+            <td align="right" style="padding:6px 0;font-size:15px;font-weight:700;color:#ff5e00;white-space:nowrap;">GHS ${parseFloat(total_cost).toFixed(2)}</td>
+          </tr>
+        </table>
+
+        ${paystackButton}
+
+        <!-- Payment options -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+               style="border-top:1px solid #e5e7eb;padding-top:20px;">
+          <tr>
+            <td>
+              <p style="margin:0 0 12px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7280;">Other payment options</p>
+              ${PAYMENT_OPTIONS_HTML}
+            </td>
+          </tr>
+        </table>
+      `;
 
       await resend.emails.send({
         from: FROM_EMAIL,
         to: [customer_email],
-        subject: `Invoice & Receipt for your Booking: ${tour_name}`,
-        html: `
-          <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 640px; margin: 0 auto; background-color: #f5f7fb; padding: 24px;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; background-color: #ffffff; border-radius: 16px; overflow: hidden;">
-              <tr>
-                <td style="padding: 24px 24px 16px 24px; border-bottom: 4px solid #0060cc;">
-                  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-                    <tr>
-                      <td style="vertical-align: top;">
-                        <div style="font-weight: 700; font-size: 18px; color: #111827; margin-bottom: 4px;">Sabary Travel and Tours</div>
-                        <div style="font-size: 12px; color: #6b7280; line-height: 1.5;">
-                          Greda Estate, 6th Avenue<br/>Accra, Ghana<br/>bookings@sabarytours.com<br/>+233 576 093 838
-                        </div>
-                      </td>
-                      <td style="text-align: right; vertical-align: top;">
-                        <div style="font-size: 24px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #0060cc; margin-bottom: 8px;">Invoice & Receipt</div>
-                        <table cellpadding="0" cellspacing="0" style="font-size: 12px; color: #4b5563; margin-left: auto;">
-                          <tr><td style="padding: 2px 8px;">Date:</td><td style="padding: 2px 0;">${new Date().toLocaleDateString()}</td></tr>
-                          <tr><td style="padding: 2px 8px;">Invoice #:</td><td style="padding: 2px 0;">${reference}</td></tr>
-                          <tr><td style="padding: 2px 8px;">Customer:</td><td style="padding: 2px 0;">${customer_name}</td></tr>
-                          <tr><td style="padding: 2px 8px;">Due date:</td><td style="padding: 2px 0;">Upon receipt</td></tr>
-                        </table>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding: 20px 24px;">
-                  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-                    <tr>
-                      <td style="vertical-align: top; padding-right: 16px;">
-                        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: #9ca3af; margin-bottom: 4px;">Bill To</div>
-                        <div style="font-size: 14px; font-weight: 600; color: #111827;">${customer_name}</div>
-                        <div style="font-size: 13px; color: #6b7280; margin-top: 2px;">${customer_email}</div>
-                        ${customer_phone ? `<div style="font-size: 13px; color: #6b7280; margin-top: 2px;">${customer_phone}</div>` : ""}
-                      </td>
-                      <td style="vertical-align: top; padding-left: 16px; border-left: 1px solid #e5e7eb;">
-                        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: #9ca3af; margin-bottom: 4px;">Booking Details</div>
-                        <div style="font-size: 13px; color: #374151; line-height: 1.6;">
-                          <div><span style="color:#6b7280;">Tour / Package:</span> <strong>${tour_name}</strong></div>
-                          <div><span style="color:#6b7280;">Date:</span> <strong>${date}${time_slot ? ` at ${time_slot}` : ""}</strong></div>
-                          <div><span style="color:#6b7280;">Guests:</span> <strong>${number_of_people}</strong></div>
-                        </div>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding: 0 24px 20px 24px;">
-                  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border-top: 1px solid #e5e7eb;">
-                    <thead>
-                      <tr>
-                        <th align="left" style="padding: 12px 0; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6b7280;">Description</th>
-                        <th align="right" style="padding: 12px 0; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6b7280;">Amount (GHS)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td style="padding: 10px 0; font-size: 13px; color: #374151; border-top: 1px solid #e5e7eb;">
-                          <div style="font-weight: 600;">${tour_name}</div>
-                          <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">
-                            Tour booking for ${number_of_people} guest${parseInt(number_of_people) > 1 ? "s" : ""} on ${date}${time_slot ? ` at ${time_slot}` : ""}.
-                          </div>
-                          ${included_activities ? `<div style="font-size: 12px; color: #6b7280; margin-top: 6px;">${included_activities}</div>` : ""}
-                        </td>
-                        <td style="padding: 10px 0; font-size: 13px; color: #111827; font-weight: 600; border-top: 1px solid #e5e7eb;" align="right">${parseFloat(total_cost).toFixed(2)}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding: 0 24px 20px 24px;">
-                  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-                    <tr>
-                      <td></td>
-                      <td width="220" style="font-size: 13px; color: #374151;">
-                        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-                          <tr><td align="left" style="padding: 4px 0; color:#6b7280;">Subtotal</td><td align="right" style="padding: 4px 0;">GHS ${parseFloat(total_cost).toFixed(2)}</td></tr>
-                          <tr><td align="left" style="padding: 4px 0; font-weight:700; border-top:1px solid #e5e7eb; padding-top:8px;">Total Due</td><td align="right" style="padding: 4px 0; font-weight:700; border-top:1px solid #e5e7eb; padding-top:8px;">GHS ${parseFloat(total_cost).toFixed(2)}</td></tr>
-                        </table>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              ${paystackSection}
-              <tr>
-                <td style="padding: 0 24px 24px 24px;">
-                  ${PAYMENT_OPTIONS_HTML}
-                </td>
-              </tr>
-            </table>
-            <p style="margin-top: 16px; font-size: 11px; color: #9ca3af; text-align: center;">
-              Thank you for traveling with Sabary Tours. If you have any questions, please reply to this email.
-            </p>
-          </div>
-        `
+        subject: `Invoice for your booking: ${tour_name}`,
+        html: buildEmailHtml({
+          documentType: 'Invoice &amp; Receipt',
+          metaRows: [
+            { label: 'Invoice #', value: reference },
+            { label: 'Date', value: new Date().toLocaleDateString() },
+            { label: 'Customer', value: customer_name },
+            { label: 'Due date', value: 'Upon receipt' },
+          ],
+          body: bookingBody,
+        }),
+      }).then(({ error }) => {
+        if (error) console.error('[Resend] Walk-in invoice email failed:', JSON.stringify(error));
       });
     } catch (emailError) {
-      console.error("Failed to send walk-in invoice email:", emailError);
+      console.error('[Resend] Walk-in invoice email error:', emailError);
     }
 
     return NextResponse.json({ ...newBooking, payment_url: paymentUrl }, { status: 201 });

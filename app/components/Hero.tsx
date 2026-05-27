@@ -52,11 +52,6 @@ export default function Hero({ initialImages = [] }: { initialImages?: string[] 
 
       <div className="relative z-10 container mx-auto px-4 sm:px-6 md:px-12 flex flex-col items-center justify-center pt-16 sm:pt-20 md:pt-24 text-center">
         <div className="max-w-3xl mx-auto flex flex-col items-center gap-3 sm:gap-5 mb-10 sm:mb-12 animate-fade-in-up">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/25 backdrop-blur-md border border-white/15 text-white/90 text-[11px] sm:text-xs font-semibold tracking-wider font-sans">
-            <span className="w-2 h-2 rounded-full bg-[#ff5e00] animate-pulse" />
-            DISCOVER THE UNDISCOVERED
-          </div>
-
           <h1
             className="text-[26px] sm:text-[36px] md:text-[48px] lg:text-[54px] xl:text-[60px] text-white leading-[1.04] tracking-tight uppercase"
             style={{

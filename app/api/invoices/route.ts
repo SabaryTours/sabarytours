@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '../../utils/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { resend, FROM_EMAIL, PAYMENT_OPTIONS_HTML } from '../../lib/resend';
+import { buildEmailHtml } from '../../lib/emailTemplate';
+import { escapeHtml } from '../../lib/bookingReceiptEmailHtml';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
@@ -10,6 +12,8 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+type LineItem = { description: string; amount: number };
 
 export async function POST(request: Request) {
   try {
@@ -28,35 +32,72 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // 2. Parse Request
+    // 2. Parse Request — support both new line_items[] and legacy description+amount
     const body = await request.json();
-    const { client_name, client_email, description, amount } = body;
+    const {
+      client_name,
+      client_email,
+      line_items,
+      // legacy single-item support
+      description: legacyDescription,
+      amount: legacyAmount,
+    } = body;
 
-    if (!client_name || !client_email || !description || !amount) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!client_name || !client_email) {
+      return NextResponse.json({ error: 'client_name and client_email are required' }, { status: 400 });
     }
+
+    let lineItems: LineItem[];
+    if (Array.isArray(line_items) && line_items.length > 0) {
+      lineItems = line_items
+        .map((item: Record<string, unknown>) => ({
+          description: String(item.description || '').trim(),
+          amount: parseFloat(String(item.amount)) || 0,
+        }))
+        .filter((item) => item.description && item.amount > 0);
+    } else if (legacyDescription && legacyAmount) {
+      lineItems = [{ description: String(legacyDescription).trim(), amount: parseFloat(legacyAmount) }];
+    } else {
+      return NextResponse.json(
+        { error: 'Provide at least one line item with a description and amount' },
+        { status: 400 }
+      );
+    }
+
+    if (lineItems.length === 0) {
+      return NextResponse.json({ error: 'All line items must have a description and a positive amount' }, { status: 400 });
+    }
+
+    const totalAmount = lineItems.reduce((sum, item) => sum + item.amount, 0);
+    // Store line items as JSON so the detail page can render them individually
+    const descriptionForDB = JSON.stringify(lineItems);
+    // Human-readable summary for Paystack metadata / list fallback
+    const summaryDescription =
+      lineItems.length === 1
+        ? lineItems[0].description
+        : `${lineItems[0].description} (+${lineItems.length - 1} more)`;
 
     // 3. Optionally initialize Paystack transaction
     let paymentUrl: string | null = null;
     let reference: string = `INV-${Date.now()}`;
 
     if (PAYSTACK_SECRET_KEY) {
-      const amountInSmallestUnit = Math.round(parseFloat(amount) * 100);
+      const amountInSmallestUnit = Math.round(totalAmount * 100);
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
       const paystackRes = await fetch('https://api.paystack.co/transaction/initialize', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           email: client_email,
           amount: amountInSmallestUnit,
           currency: 'GHS',
           callback_url: `${baseUrl}/booking/verify`,
-          metadata: { client_name, description, is_custom_invoice: true }
-        })
+          metadata: { client_name, description: summaryDescription, is_custom_invoice: true },
+        }),
       });
 
       const paystackData = await paystackRes.json();
@@ -66,18 +107,18 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Save Invoice to Database (using admin client to bypass RLS)
+    // 4. Save Invoice to Database
     const { data: newInvoice, error: dbError } = await supabaseAdmin
       .from('invoices')
       .insert({
         client_name,
         client_email,
-        description,
-        amount: parseFloat(amount),
+        description: descriptionForDB,
+        amount: totalAmount,
         payment_url: paymentUrl,
-        reference: reference,
+        reference,
         status: 'pending',
-        created_by: user.id
+        created_by: user.id,
       })
       .select()
       .single();
@@ -89,123 +130,120 @@ export async function POST(request: Request) {
 
     // 5. Send invoice email via Resend
     try {
-      const paystackSection = paymentUrl ? `
-        <tr>
-          <td style="padding: 0 24px 20px 24px; text-align: center;">
-            <a href="${paymentUrl}" style="background-color: #ff5e00; color: #ffffff; padding: 12px 32px; border-radius: 9999px; font-size: 14px; font-weight: 700; text-decoration: none; display: inline-block; box-shadow: 0 10px 25px rgba(255,94,0,0.35);">
-              Pay Online via Paystack
-            </a>
-            <p style="font-size: 12px; color: #6b7280; margin-top: 10px;">
-              Or copy this link: <span style="color:#0060cc; word-break: break-all;">${paymentUrl}</span>
-            </p>
-          </td>
-        </tr>` : '';
+      const paystackButton = paymentUrl
+        ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
+            <tr>
+              <td align="center">
+                <a href="${paymentUrl}"
+                   style="display:inline-block;background-color:#ff5e00;color:#ffffff;padding:14px 36px;border-radius:9999px;font-size:14px;font-weight:700;text-decoration:none;letter-spacing:0.3px;">
+                  Pay Online via Paystack
+                </a>
+                <p style="margin:10px 0 0;font-size:11px;color:#9ca3af;">
+                  Or copy: <a href="${paymentUrl}" style="color:#0060cc;word-break:break-all;">${paymentUrl}</a>
+                </p>
+              </td>
+            </tr>
+          </table>`
+        : '';
+
+      // Build one row per line item
+      const lineItemRowsHtml = lineItems
+        .map(
+          (item) => `
+          <tr style="border-top:1px solid #e5e7eb;">
+            <td style="padding:12px 0;vertical-align:top;">
+              <p style="margin:0;font-size:14px;font-weight:700;color:#111827;">${escapeHtml(item.description)}</p>
+            </td>
+            <td align="right" style="padding:12px 0;font-size:14px;font-weight:700;color:#111827;vertical-align:top;white-space:nowrap;">
+              ${item.amount.toFixed(2)}
+            </td>
+          </tr>`
+        )
+        .join('');
+
+      const invoiceBody = `
+        <!-- Bill To / Invoice Details -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+          <tr>
+            <td style="vertical-align:top;padding-right:20px;width:50%;">
+              <p style="margin:0 0 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#9ca3af;">Bill To</p>
+              <p style="margin:0 0 3px;font-size:15px;font-weight:700;color:#111827;">${escapeHtml(client_name)}</p>
+              <p style="margin:0;font-size:13px;color:#6b7280;">${escapeHtml(client_email)}</p>
+            </td>
+            <td style="vertical-align:top;padding-left:20px;border-left:3px solid #ff5e00;width:50%;">
+              <p style="margin:0 0 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#9ca3af;">Invoice Details</p>
+              <p style="margin:0 0 4px;font-size:13px;color:#374151;"><span style="color:#9ca3af;">Items:</span> <strong style="color:#111827;">${lineItems.length} line item${lineItems.length > 1 ? 's' : ''}</strong></p>
+              <p style="margin:0;font-size:13px;color:#374151;"><span style="color:#9ca3af;">Status:</span> <strong style="color:#dc2626;">Pending payment</strong></p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Line items -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:2px solid #111827;margin-bottom:20px;">
+          <thead>
+            <tr>
+              <th align="left" style="padding:10px 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7280;">Description</th>
+              <th align="right" style="padding:10px 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7280;">Amount (GHS)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${lineItemRowsHtml}
+          </tbody>
+        </table>
+
+        <!-- Total -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-left:auto;width:240px;margin-bottom:28px;">
+          ${lineItems.length > 1 ? `
+          <tr>
+            <td style="padding:4px 0;font-size:13px;color:#6b7280;">Subtotal</td>
+            <td align="right" style="padding:4px 0;font-size:13px;color:#6b7280;white-space:nowrap;">GHS ${totalAmount.toFixed(2)}</td>
+          </tr>` : ''}
+          <tr>
+            <td colspan="2" style="padding:2px 0;"><hr style="border:none;border-top:2px solid #111827;margin:4px 0;" /></td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;font-size:15px;font-weight:700;color:#111827;">Total Due</td>
+            <td align="right" style="padding:6px 0;font-size:15px;font-weight:700;color:#ff5e00;white-space:nowrap;">GHS ${totalAmount.toFixed(2)}</td>
+          </tr>
+        </table>
+
+        ${paystackButton}
+
+        <!-- Payment options -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+               style="border-top:1px solid #e5e7eb;padding-top:20px;">
+          <tr>
+            <td>
+              <p style="margin:0 0 12px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7280;">Other payment options</p>
+              ${PAYMENT_OPTIONS_HTML}
+            </td>
+          </tr>
+        </table>
+      `;
 
       await resend.emails.send({
         from: FROM_EMAIL,
         to: [client_email],
-        subject: `Invoice & Receipt from Sabary Tours: ${description}`,
-        html: `
-          <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 640px; margin: 0 auto; background-color: #f5f7fb; padding: 24px;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; background-color: #ffffff; border-radius: 16px; overflow: hidden;">
-              <tr>
-                <td style="padding: 24px 24px 16px 24px; border-bottom: 4px solid #0060cc;">
-                  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-                    <tr>
-                      <td style="vertical-align: top;">
-                        <div style="font-weight: 700; font-size: 18px; color: #111827; margin-bottom: 4px;">Sabary Travel and Tours</div>
-                        <div style="font-size: 12px; color: #6b7280; line-height: 1.5;">
-                          Greda Estate, 6th Avenue<br/>Accra, Ghana<br/>bookings@sabarytours.com<br/>+233 576 093 838
-                        </div>
-                      </td>
-                      <td style="text-align: right; vertical-align: top;">
-                        <div style="font-size: 24px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #0060cc; margin-bottom: 8px;">Invoice & Receipt</div>
-                        <table cellpadding="0" cellspacing="0" style="font-size: 12px; color: #4b5563; margin-left: auto;">
-                          <tr><td style="padding: 2px 8px;">Date:</td><td style="padding: 2px 0;">${new Date().toLocaleDateString()}</td></tr>
-                          <tr><td style="padding: 2px 8px;">Invoice #:</td><td style="padding: 2px 0;">${reference}</td></tr>
-                          <tr><td style="padding: 2px 8px;">Customer:</td><td style="padding: 2px 0;">${client_name}</td></tr>
-                          <tr><td style="padding: 2px 8px;">Due date:</td><td style="padding: 2px 0;">Upon receipt</td></tr>
-                        </table>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding: 20px 24px;">
-                  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-                    <tr>
-                      <td style="vertical-align: top; padding-right: 16px;">
-                        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: #9ca3af; margin-bottom: 4px;">Bill To</div>
-                        <div style="font-size: 14px; font-weight: 600; color: #111827;">${client_name}</div>
-                        <div style="font-size: 13px; color: #6b7280; margin-top: 2px;">${client_email}</div>
-                      </td>
-                      <td style="vertical-align: top; padding-left: 16px; border-left: 1px solid #e5e7eb;">
-                        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: #9ca3af; margin-bottom: 4px;">Invoice Details</div>
-                        <div style="font-size: 13px; color: #374151; line-height: 1.6;">
-                          <div><span style="color:#6b7280;">Description:</span> <strong>${description}</strong></div>
-                          <div><span style="color:#6b7280;">Status:</span> <strong>Pending payment</strong></div>
-                        </div>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding: 0 24px 20px 24px;">
-                  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border-top: 1px solid #e5e7eb;">
-                    <thead>
-                      <tr>
-                        <th align="left" style="padding: 12px 0; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6b7280;">Description</th>
-                        <th align="right" style="padding: 12px 0; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6b7280;">Amount (GHS)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td style="padding: 10px 0; font-size: 13px; color: #374151; border-top: 1px solid #e5e7eb;">
-                          <div style="font-weight: 600;">${description}</div>
-                          <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Custom invoice issued by Sabary Tours.</div>
-                        </td>
-                        <td style="padding: 10px 0; font-size: 13px; color: #111827; font-weight: 600; border-top: 1px solid #e5e7eb;" align="right">${parseFloat(amount).toFixed(2)}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding: 0 24px 20px 24px;">
-                  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-                    <tr>
-                      <td></td>
-                      <td width="220" style="font-size: 13px; color: #374151;">
-                        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-                          <tr><td align="left" style="padding: 4px 0; color:#6b7280;">Subtotal</td><td align="right" style="padding: 4px 0;">GHS ${parseFloat(amount).toFixed(2)}</td></tr>
-                          <tr><td align="left" style="padding: 4px 0; font-weight:700; border-top:1px solid #e5e7eb; padding-top:8px;">Total Due</td><td align="right" style="padding: 4px 0; font-weight:700; border-top:1px solid #e5e7eb; padding-top:8px;">GHS ${parseFloat(amount).toFixed(2)}</td></tr>
-                        </table>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              ${paystackSection}
-              <tr>
-                <td style="padding: 0 24px 24px 24px;">
-                  ${PAYMENT_OPTIONS_HTML}
-                </td>
-              </tr>
-            </table>
-            <p style="margin-top: 16px; font-size: 11px; color: #9ca3af; text-align: center;">
-              Thank you for choosing Sabary Tours. If you have any questions, please reply to this email.
-            </p>
-          </div>
-        `
+        subject: `Invoice from Sabary Tours: ${summaryDescription}`,
+        html: buildEmailHtml({
+          documentType: 'Invoice &amp; Receipt',
+          metaRows: [
+            { label: 'Invoice #', value: reference },
+            { label: 'Date', value: new Date().toLocaleDateString() },
+            { label: 'Customer', value: client_name },
+            { label: 'Due date', value: 'Upon receipt' },
+          ],
+          body: invoiceBody,
+        }),
+      }).then(({ error }) => {
+        if (error) console.error('[Resend] Invoice email failed:', JSON.stringify(error));
       });
     } catch (emailError) {
-      console.error("Failed to send invoice email:", emailError);
+      console.error('[Resend] Invoice email error:', emailError);
     }
 
     return NextResponse.json(newInvoice, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Invoice Creation Error:', error);
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
@@ -237,7 +275,7 @@ export async function GET() {
     if (error) throw error;
 
     return NextResponse.json(invoices || [], { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching invoices:', error);
     return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 });
   }

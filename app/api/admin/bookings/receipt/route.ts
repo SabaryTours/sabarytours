@@ -5,8 +5,7 @@ import {
   buildOfflinePaymentReceiptEmailHtml,
   formatBookingReceiptNumber,
 } from "../../../../lib/bookingReceiptEmailHtml";
-
-const MAILCHIMP_TRANSACTIONAL_KEY = process.env.MAILCHIMP_TRANSACTIONAL_KEY;
+import { resend, FROM_EMAIL } from "../../../../lib/resend";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -142,29 +141,21 @@ export async function POST(request: Request) {
     });
 
     let email_sent = false;
-    if (send_email && MAILCHIMP_TRANSACTIONAL_KEY) {
+    if (send_email) {
       try {
-        const res = await fetch("https://mandrillapp.com/api/1.0/messages/send.json", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            key: MAILCHIMP_TRANSACTIONAL_KEY,
-            message: {
-              from_email: "bookings@sabarytours.com",
-              from_name: "Sabary Travel and Tours",
-              to: [{ email: customerEmail, name: customerName, type: "to" }],
-              subject: `Payment receipt — ${tourName} (${receiptNumber})`,
-              html,
-            },
-          }),
+        const { error: emailError } = await resend.emails.send({
+          from: FROM_EMAIL,
+          to: [customerEmail],
+          subject: `Payment receipt — ${tourName} (${receiptNumber})`,
+          html,
         });
-        if (!res.ok) {
-          console.error("Mandrill receipt send HTTP error:", await res.text());
+        if (emailError) {
+          console.error("[Resend] Receipt email failed:", JSON.stringify(emailError));
         } else {
           email_sent = true;
         }
       } catch (e) {
-        console.error("Mandrill receipt send failed:", e);
+        console.error("[Resend] Receipt email error:", e);
       }
     }
 

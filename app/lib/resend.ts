@@ -2,7 +2,11 @@ import { Resend } from 'resend';
 
 export const resend = new Resend(process.env.RESEND_API_KEY);
 
-export const FROM_EMAIL = 'Sabary Travel and Tours <bookings@sabarytours.com>';
+// Must match a verified domain in your Resend dashboard.
+// Until sabarytours.com is verified, set RESEND_FROM_EMAIL=onboarding@resend.dev in .env.local
+export const FROM_EMAIL =
+  process.env.RESEND_FROM_EMAIL ||
+  'Sabary Travel and Tours <bookings@sabarytours.com>';
 
 export const PAYMENT_OPTIONS_HTML = `
   <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-top:8px;">
