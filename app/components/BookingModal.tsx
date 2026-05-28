@@ -11,7 +11,6 @@ import PickupLocation from "./PickupLocation";
 import PaystackPayment from "./PaystackPayment";
 import { getUser } from "../lib/authService";
 import { useCurrency } from "../context/CurrencyContext";
-import TurnstileWidget from "./TurnstileWidget";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -37,7 +36,6 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
   const [voucherCode, setVoucherCode] = useState<string>("");
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const { symbol, convert } = useCurrency();
 
@@ -116,10 +114,6 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
-    if (!turnstileToken) {
-      setFormError("Please complete CAPTCHA verification.");
-      return;
-    }
     setShowPayment(true);
   };
 
@@ -138,7 +132,6 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
         tourId: tour.id,
         tourSlug: tour.slug,
         userId: currentUser?.id || null,
-        turnstileToken,
       };
 
       const response = await fetch("/api/bookings", {
@@ -447,7 +440,6 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
 
           {/* Payment Options */}
           {formError && <p className="text-sm text-red-600">{formError}</p>}
-          <TurnstileWidget onTokenChange={setTurnstileToken} />
           <PaymentOptions
             totalPrice={totalPrice}
             selectedOption={paymentOption}
