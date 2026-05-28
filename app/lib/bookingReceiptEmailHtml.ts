@@ -1,5 +1,125 @@
 import { buildEmailHtml } from "./emailTemplate";
 
+export type BookingConfirmationEmailInput = {
+  customerName: string;
+  customerEmail: string;
+  tourName: string;
+  tourDate: string;
+  timeSlot?: string | null;
+  numberOfPeople: number;
+  pickupLocation?: string | null;
+  paymentReference: string;
+  paymentOption: "full" | "deposit";
+  amountPaid: number;
+  totalCost: number;
+  currency: string;
+  bookingId: string;
+};
+
+export function buildBookingConfirmationEmailHtml(p: BookingConfirmationEmailInput): string {
+  const timePart = p.timeSlot ? ` at ${escapeHtml(p.timeSlot)}` : "";
+  const balanceDue = Math.max(p.totalCost - p.amountPaid, 0);
+  const isDeposit = p.paymentOption === "deposit" && balanceDue > 0.009;
+
+  const body = `
+    <!-- ── GREETING ── -->
+    <p style="margin:0 0 24px;font-size:16px;color:#374151;line-height:1.6;">
+      Hi <strong style="color:#111827;">${escapeHtml(p.customerName.split(" ")[0])}</strong>, your booking is confirmed!
+      We&rsquo;re excited to host you. Here are your booking details.
+    </p>
+
+    <!-- ── BOOKING DETAILS ── -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="background:#f9fafb;border-radius:12px;border:1px solid #e5e7eb;margin-bottom:28px;">
+      <tr>
+        <td style="padding:24px 28px;">
+          <p style="margin:0 0 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#9ca3af;">Tour details</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="padding:5px 0;font-size:13px;color:#6b7280;width:38%;vertical-align:top;">Tour</td>
+              <td style="padding:5px 0;font-size:13px;font-weight:700;color:#111827;vertical-align:top;">${escapeHtml(p.tourName)}</td>
+            </tr>
+            <tr>
+              <td style="padding:5px 0;font-size:13px;color:#6b7280;vertical-align:top;">Date &amp; time</td>
+              <td style="padding:5px 0;font-size:13px;font-weight:700;color:#111827;vertical-align:top;">${escapeHtml(p.tourDate)}${timePart}</td>
+            </tr>
+            <tr>
+              <td style="padding:5px 0;font-size:13px;color:#6b7280;vertical-align:top;">Guests</td>
+              <td style="padding:5px 0;font-size:13px;font-weight:700;color:#111827;vertical-align:top;">${p.numberOfPeople} guest${p.numberOfPeople > 1 ? "s" : ""}</td>
+            </tr>
+            ${p.pickupLocation ? `
+            <tr>
+              <td style="padding:5px 0;font-size:13px;color:#6b7280;vertical-align:top;">Pick-up</td>
+              <td style="padding:5px 0;font-size:13px;font-weight:700;color:#111827;vertical-align:top;">${escapeHtml(p.pickupLocation)}</td>
+            </tr>` : ""}
+            <tr>
+              <td style="padding:5px 0;font-size:13px;color:#6b7280;vertical-align:top;">Reference</td>
+              <td style="padding:5px 0;font-size:13px;font-weight:700;color:#111827;vertical-align:top;">${escapeHtml(p.paymentReference)}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- ── PAYMENT SUMMARY ── -->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"
+           style="margin-left:auto;width:280px;margin-bottom:28px;">
+      <tr>
+        <td style="padding:4px 0;font-size:13px;color:#6b7280;">Booking total</td>
+        <td align="right" style="padding:4px 0;font-size:13px;color:#6b7280;white-space:nowrap;">${escapeHtml(p.currency)} ${p.totalCost.toFixed(2)}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;font-size:13px;font-weight:700;color:#ff5e00;">Amount paid</td>
+        <td align="right" style="padding:4px 0;font-size:13px;font-weight:700;color:#ff5e00;white-space:nowrap;">${escapeHtml(p.currency)} ${p.amountPaid.toFixed(2)}</td>
+      </tr>
+      ${isDeposit ? `
+      <tr>
+        <td colspan="2" style="padding:2px 0;"><hr style="border:none;border-top:1px solid #e5e7eb;margin:4px 0;" /></td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;font-size:13px;color:#dc2626;font-weight:600;">Balance due</td>
+        <td align="right" style="padding:4px 0;font-size:13px;color:#dc2626;font-weight:600;white-space:nowrap;">${escapeHtml(p.currency)} ${balanceDue.toFixed(2)}</td>
+      </tr>` : ""}
+    </table>
+
+    <!-- ── STATUS BANNER ── -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+      <tr>
+        <td style="background-color:${isDeposit ? "#fff7ed" : "#f0fdf4"};border:1px solid ${isDeposit ? "#fed7aa" : "#86efac"};border-radius:10px;padding:16px 20px;text-align:center;">
+          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:${isDeposit ? "#c2410c" : "#15803d"};">
+            &#10003; ${isDeposit ? "Deposit received — booking secured!" : "Paid in full — you&rsquo;re all set!"}
+          </p>
+          <p style="margin:0;font-size:12px;color:${isDeposit ? "#9a3412" : "#166534"};">
+            ${isDeposit
+              ? `Please settle the remaining balance of <strong>${escapeHtml(p.currency)} ${balanceDue.toFixed(2)}</strong> before your tour date.`
+              : "No further payment is required. We look forward to seeing you!"}
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <!-- ── NEXT STEPS ── -->
+    <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.7;">
+      If you have any questions or need to make changes, reply to this email or reach us at
+      <a href="mailto:bookings@sabarytours.com" style="color:#ff5e00;font-weight:700;text-decoration:none;">bookings@sabarytours.com</a>.
+    </p>
+  `;
+
+  const issued = new Date();
+  const issuedLabel = issued.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+  return buildEmailHtml({
+    documentType: "Booking Confirmation",
+    metaRows: [
+      { label: "Booking ref", value: escapeHtml(p.paymentReference) },
+      { label: "Date", value: escapeHtml(issuedLabel) },
+      { label: "Customer", value: escapeHtml(p.customerName) },
+      { label: "Tour", value: escapeHtml(p.tourName) },
+    ],
+    body,
+  });
+}
+
 /** Stable receipt id for print + email (same day as server-issued receipts). */
 export function formatBookingReceiptNumber(bookingId: string, at: Date = new Date()) {
   const y = at.getFullYear();
