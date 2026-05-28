@@ -14,7 +14,6 @@ import VoucherCode from "../components/VoucherCode";
 import PaystackPayment from "../components/PaystackPayment";
 import TourGrid from "../components/TourGrid";
 import { useCurrency } from "../context/CurrencyContext";
-import TurnstileWidget from "../components/TurnstileWidget";
 import { inferTierCurrency, currencySymbol } from "../lib/tourPricing";
 
 function tierSelectionKey(index: number) {
@@ -76,7 +75,6 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
   const [voucherCode, setVoucherCode] = useState<string>("");
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const { symbol, convert, toGhs } = useCurrency();
@@ -228,12 +226,6 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
 
   const handlePaymentSuccess = async (reference: string) => {
     try {
-      if (!turnstileToken) {
-        setFormError("Please complete CAPTCHA verification before booking.");
-        setShowPayment(false);
-        return;
-      }
-      // Get current user to set user_id on booking
       const userData = await getUser();
       
       const bookingData = {
@@ -249,7 +241,6 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
         tourId: tour.id,
         tourSlug: tour.slug,
         userId: userData?.id || null,
-        turnstileToken,
       };
 
       const response = await fetch("/api/bookings", {
@@ -659,15 +650,10 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                         onSelectOption={setPaymentOption}
                         depositPercentage={30}
                       />
-                      <TurnstileWidget onTokenChange={setTurnstileToken} />
                       <button
                         type="button"
                         onClick={() => {
                           setFormError(null);
-                          if (!turnstileToken) {
-                            setFormError("Please complete CAPTCHA verification before continuing.");
-                            return;
-                          }
                           setShowPayment(true);
                         }}
                         className="w-full bg-[#ff5e00] text-white py-4 rounded-xl font-bold text-[16px] hover:bg-[#e55500] hover:shadow-xl transition-all font-sans"

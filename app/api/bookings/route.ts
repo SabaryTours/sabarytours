@@ -5,18 +5,10 @@ import { bookingSchema, type BookingInput } from "../../lib/validations/booking"
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-const turnstileSecret = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
-
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
 const bookingRateLimitStore = new Map<string, { count: number; resetAt: number }>();
-const TURNSTILE_ACTION = "booking_submit";
 const PRICE_TOLERANCE = 0.5;
-
-type TurnstileVerifyResult = {
-  valid: boolean;
-  reason?: string;
-};
 
 function getRequestIp(request: Request): string {
   const forwardedFor = request.headers.get("x-forwarded-for");
@@ -119,42 +111,6 @@ function roundCurrency(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-async function verifyTurnstileToken(
-  token: string,
-  ip: string,
-  expectedHostname: string
-): Promise<TurnstileVerifyResult> {
-  if (!turnstileSecret) {
-    return { valid: false, reason: "missing_secret" };
-  }
-
-  const body = new URLSearchParams();
-  body.append("secret", turnstileSecret);
-  body.append("response", token);
-  if (ip && ip !== "unknown") {
-    body.append("remoteip", ip);
-  }
-
-  const verifyRes = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: body.toString(),
-  });
-
-  const verifyData = await verifyRes.json();
-  if (!verifyData?.success) {
-    return { valid: false, reason: "challenge_failed" };
-  }
-  if (verifyData.action && verifyData.action !== TURNSTILE_ACTION) {
-    return { valid: false, reason: "action_mismatch" };
-  }
-  if (verifyData.hostname && expectedHostname && verifyData.hostname !== expectedHostname) {
-    return { valid: false, reason: "hostname_mismatch" };
-  }
-
-  return { valid: true };
-}
-
 async function computeExpectedPricing(body: BookingInput) {
   const { data: tour, error: tourError } = await supabaseAdmin
     .from("tours")
@@ -253,7 +209,6 @@ async function computeExpectedPricing(body: BookingInput) {
 export async function POST(request: Request) {
   const ip = getRequestIp(request);
   const userAgent = getUserAgent(request);
-  const expectedHostname = new URL(request.url).hostname;
 
   try {
     const rateLimitKey = `${ip}:${userAgent.slice(0, 80)}`;
@@ -296,20 +251,6 @@ export async function POST(request: Request) {
     }
 
     const body = parsed.data;
-
-    const captchaResult = await verifyTurnstileToken(body.turnstileToken, ip, expectedHostname);
-    if (!captchaResult.valid) {
-      await logSecurityEvent({
-        eventType: "turnstile_failed",
-        ip,
-        userAgent,
-        detail: `Turnstile failed: ${captchaResult.reason || "unknown"}`,
-      });
-      return NextResponse.json(
-        { success: false, error: "CAPTCHA verification failed. Please try again." },
-        { status: 400 }
-      );
-    }
 
     const expectedPricing = await computeExpectedPricing(body);
     if (Math.abs(expectedPricing.totalPrice - Number(body.totalPrice)) > PRICE_TOLERANCE) {
