@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { bookingSchema, type BookingInput } from "../../lib/validations/booking";
+import { resend, FROM_EMAIL } from "../../lib/resend";
+import { buildBookingConfirmationEmailHtml } from "../../lib/bookingReceiptEmailHtml";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -203,6 +205,7 @@ async function computeExpectedPricing(body: BookingInput) {
     paymentAmount,
     voucherDiscount,
     voucherCode: voucherCode || null,
+    tourTitle: String(tour.title || ""),
   };
 }
 
@@ -416,43 +419,37 @@ export async function POST(request: Request) {
       }
     }
 
-    // 2. Send Email via Mailchimp Transactional (Mandrill)
-    // Note: To use Mailchimp Transactional, you need `MAILCHIMP_API_KEY` in .env.local
-    if (process.env.MAILCHIMP_API_KEY) {
-      try {
-        const mailchimpRes = await fetch("https://mandrillapp.com/api/1.0/messages/send.json", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            key: process.env.MAILCHIMP_API_KEY,
-            message: {
-              from_email: "bookings@sabarytours.com",
-              from_name: "Sabary Travel and Tours",
-              to: [{ email: body.email, name: body.firstName, type: "to" }],
-              subject: `Booking Confirmed: ${body.tourSlug || "Tour"}`,
-              html: `
-                <h2>Hi ${body.firstName}, your booking is confirmed!</h2>
-                <p>We're excited to host you. Here are your details:</p>
-                <ul>
-                  <li><strong>Date:</strong> ${body.date} at ${body.timeSlot}</li>
-                  <li><strong>Guests:</strong> ${body.numberOfPeople}</li>
-                  <li><strong>Pickup:</strong> ${body.pickupLocation}</li>
-                  <li><strong>Total Paid:</strong> GHS ${expectedPricing.paymentAmount}</li>
-                </ul>
-                <p>If you have any questions, feel free to reply to this email.</p>
-              `
-            }
+    // 2. Send confirmation email via Resend
+    try {
+      const tourDateLabel = body.date
+        ? new Date(body.date + "T12:00:00").toLocaleDateString("en-GB", {
+            weekday: "long", day: "numeric", month: "long", year: "numeric",
           })
-        });
+        : body.date;
 
-        const mailchimpData = await mailchimpRes.json();
-        console.log("Mailchimp response:", mailchimpData);
-      } catch (mcError) {
-        console.error("Mailchimp Error:", mcError);
-        // Don't throw here so the booking still succeeds even if email fails
-      }
-    } else {
-      console.warn("MAILCHIMP_API_KEY is not set. Skipping email notification.");
+      const { error: emailError } = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: [body.email],
+        subject: `Booking Confirmed — ${expectedPricing.tourTitle || body.tourSlug}`,
+        html: buildBookingConfirmationEmailHtml({
+          customerName: `${body.firstName} ${body.lastName}`.trim(),
+          customerEmail: body.email,
+          tourName: expectedPricing.tourTitle || body.tourSlug,
+          tourDate: tourDateLabel,
+          timeSlot: body.timeSlot || null,
+          numberOfPeople: body.numberOfPeople,
+          pickupLocation: body.pickupLocation || null,
+          paymentReference: body.paymentReference,
+          paymentOption: body.paymentOption,
+          amountPaid: expectedPricing.paymentAmount,
+          totalCost: expectedPricing.totalPrice,
+          currency: "GHS",
+          bookingId: booking.id,
+        }),
+      });
+      if (emailError) console.error("[Resend] Booking confirmation email failed:", emailError);
+    } catch (emailErr) {
+      console.error("[Resend] Booking confirmation email error:", emailErr);
     }
 
     return NextResponse.json({ success: true, booking });

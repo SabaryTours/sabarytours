@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import { resend, FROM_EMAIL } from '../../../lib/resend';
+import { buildBookingConfirmationEmailHtml } from '../../../lib/bookingReceiptEmailHtml';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
 
@@ -136,26 +138,41 @@ export async function POST(req: Request) {
 
       console.log(`[Webhook] Successfully created booking for ${reference}`);
 
-      // Optional email notification
-      if (process.env.MAILCHIMP_API_KEY) {
-        try {
-          await fetch("https://mandrillapp.com/api/1.0/messages/send.json", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              key: process.env.MAILCHIMP_API_KEY,
-              message: {
-                from_email: "bookings@sabarytours.com",
-                from_name: "Sabary Travel and Tours",
-                to: [{ email: customer.email, type: "to" }],
-                subject: `Booking Confirmed: ${metadata.packageName}`,
-                html: `<h2>Your booking is confirmed!</h2><p>Reference: ${reference}</p>`
-              }
+      // Send confirmation email via Resend
+      try {
+        const tourDateRaw = metadata.date || "";
+        const tourDateLabel = tourDateRaw
+          ? new Date(tourDateRaw + (tourDateRaw.length <= 10 ? "T12:00:00" : "")).toLocaleDateString("en-GB", {
+              weekday: "long", day: "numeric", month: "long", year: "numeric",
             })
-          });
-        } catch (e) {
-          console.log("Email failed in webhook but booking succeeded");
-        }
+          : tourDateRaw;
+        const totalCost = metadata.totalCost || (amount / 100);
+        const amountPaid = metadata.paymentAmount || (amount / 100);
+        const paymentOption = metadata.paymentOption === "deposit" ? "deposit" : "full";
+
+        const { error: emailError } = await resend.emails.send({
+          from: FROM_EMAIL,
+          to: [customer.email],
+          subject: `Booking Confirmed — ${metadata.packageName || "Your Tour"}`,
+          html: buildBookingConfirmationEmailHtml({
+            customerName: metadata.customerName || customer.first_name || "Guest",
+            customerEmail: customer.email,
+            tourName: metadata.packageName || "Tour booking",
+            tourDate: tourDateLabel,
+            timeSlot: metadata.timeSlot || null,
+            numberOfPeople: metadata.numberOfPeople || 1,
+            pickupLocation: metadata.pickupLocation || null,
+            paymentReference: reference,
+            paymentOption,
+            amountPaid,
+            totalCost,
+            currency: "GHS",
+            bookingId: newBooking.id,
+          }),
+        });
+        if (emailError) console.error("[Resend] Webhook confirmation email failed:", emailError);
+      } catch (emailErr) {
+        console.error("[Resend] Webhook confirmation email error:", emailErr);
       }
 
       return NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });

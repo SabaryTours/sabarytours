@@ -6,7 +6,7 @@ import "react-phone-input-2/lib/style.css";
 import { useRouter } from "next/navigation";
 import { ArrowLeft01Icon, CheckmarkBadge01Icon, Calendar01Icon, UserIcon, CreditCardIcon } from "hugeicons-react";
 import { Tour } from "../data/packages";
-import { isAuthenticated, getUser } from "../lib/authService";
+import { getUser } from "../lib/authService";
 import AvailabilityCalendar from "../components/AvailabilityCalendar";
 import CustomDropdown from "../components/CustomDropdown";
 import PaymentOptions from "../components/PaymentOptions";
@@ -191,15 +191,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
         return;
       }
 
-      const isAuth = await isAuthenticated();
-      if (!isAuth) {
-        setFormError("Please create an account or log in to continue booking.");
-        // Redirect to login/signup with a return URL
-        router.push(`/login?redirect=/booking?tour=${tour.slug}`);
-        return;
-      }
-
-      // Pre-fill user data
+      // Pre-fill user data if logged in
       const userData = await getUser();
       if (userData) {
         setUserId(userData.id);
