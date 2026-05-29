@@ -7,7 +7,7 @@ interface PaystackPaymentProps {
   email: string;
   onSuccess: (reference: string) => void;
   onError: (error: string) => void;
-  metadata?: Record<string, string | number | null>;
+  metadata?: Record<string, unknown>;
 }
 
 declare global {
@@ -18,7 +18,7 @@ declare global {
         email: string;
         amount: number;
         ref: string;
-        metadata?: Record<string, string | number | null>;
+        metadata?: Record<string, unknown>;
         callback: (response: { reference: string }) => void;
         onClose: () => void;
       }) => { openIframe: () => void };
@@ -80,7 +80,6 @@ export default function PaystackPayment({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          amount: Math.round(amount * 100), // Convert to pesewas/kobo
           email,
           metadata,
         }),
@@ -92,15 +91,21 @@ export default function PaystackPayment({
       }
 
       const data = await response.json();
+      const amountInPesewas = Number(data.amount);
+      const serverMetadata = data.metadata || metadata;
+
+      if (!Number.isFinite(amountInPesewas) || amountInPesewas <= 0) {
+        throw new Error("Payment amount could not be verified");
+      }
 
       // 2. Try inline popup first, fallback to redirect
       if (window.PaystackPop) {
         const handler = window.PaystackPop.setup({
           key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
           email,
-          amount: Math.round(amount * 100), // Paystack expects pesewas/kobo
+          amount: amountInPesewas,
           ref: data.reference,
-          metadata,
+          metadata: serverMetadata,
           callback: function (response: { reference: string }) {
             onSuccess(response.reference);
             setIsProcessing(false);

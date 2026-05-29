@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "../../../../utils/supabase/server";
 import { createClient } from "@supabase/supabase-js";
+import { createTopupPricingSignature } from "../../../../lib/serverBookingPricing";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +31,7 @@ export async function POST(
 
     const { data: booking, error: fetchError } = await supabaseAdmin
       .from("bookings")
-      .select("id, user_id, tour_id, total_cost, amount_paid, package_name, customer_email, customer_name")
+      .select("id, user_id, total_cost, amount_paid, package_name, customer_email, customer_name")
       .eq("id", bookingId)
       .single();
 
@@ -60,36 +61,9 @@ export async function POST(
       );
     }
 
-    // Resolve remaining balance to GHS. Bookings for USD-priced tours store
-    // total_cost/amount_paid in USD, so we convert using the cached rate.
-    let remainingGhs = remaining;
-    if (booking.tour_id) {
-      const { data: tour } = await supabaseAdmin
-        .from("tours")
-        .select("currency, tour_prices(currency)")
-        .eq("id", booking.tour_id)
-        .maybeSingle();
-
-      const tierCurrency = Array.isArray(tour?.tour_prices)
-        ? (tour.tour_prices as { currency?: string }[]).find((t) => t.currency)?.currency
-        : null;
-      const tourCurrency = (tierCurrency ?? tour?.currency ?? "GHS").toUpperCase();
-
-      if (tourCurrency === "USD") {
-        const { data: rateRow } = await supabaseAdmin
-          .from("exchange_rates_cache")
-          .select("rates")
-          .eq("base_code", "USD")
-          .maybeSingle();
-        const ghsPerUsd = (rateRow?.rates as Record<string, number> | null)?.["GHS"];
-        if (typeof ghsPerUsd === "number" && ghsPerUsd > 0) {
-          remainingGhs = remaining * ghsPerUsd;
-        }
-      }
-    }
-
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const amountInPesewas = Math.round(remainingGhs * 100);
+    const amountInPesewas = Math.round(remaining * 100);
+    const topupSignature = createTopupPricingSignature(bookingId, amountInPesewas, PAYSTACK_SECRET_KEY);
 
     const paystackRes = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
@@ -105,6 +79,8 @@ export async function POST(
         metadata: {
           type: "booking_topup",
           booking_id: bookingId,
+          expectedPesewas: amountInPesewas,
+          pricingSignature: topupSignature,
           customerName: booking.customer_name,
           packageName: booking.package_name,
         },
@@ -126,10 +102,11 @@ export async function POST(
       reference: paystackData.data.reference,
       amount: remaining,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Top-up error:", err);
+    const message = err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: err?.message ?? "Internal server error" },
+      { error: message },
       { status: 500 }
     );
   }

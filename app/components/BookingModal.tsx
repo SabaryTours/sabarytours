@@ -11,6 +11,23 @@ import PickupLocation from "./PickupLocation";
 import PaystackPayment from "./PaystackPayment";
 import { getUser } from "../lib/authService";
 import { useCurrency } from "../context/CurrencyContext";
+import { currencySymbol, inferTierCurrency } from "../lib/tourPricing";
+
+function tierSelectionKey(index: number) {
+  return String(index);
+}
+
+function buildInitialTierSelections(tour: Tour): Record<string, number> {
+  const tiers = tour.price_tiers;
+  if (tiers && tiers.length > 0) {
+    const init: Record<string, number> = {};
+    tiers.forEach((_, i) => {
+      init[tierSelectionKey(i)] = i === 0 ? 1 : 0;
+    });
+    return init;
+  }
+  return { Base: 1 };
+}
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -37,7 +54,20 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const { symbol, convert } = useCurrency();
+  const [tierSelections, setTierSelections] = useState<Record<string, number>>(() =>
+    buildInitialTierSelections(tour),
+  );
+  const { symbol, convert, toGhs, hasGhsRate, loading: currencyLoading } = useCurrency();
+  const hasPriceTiers = Boolean(tour.price_tiers && tour.price_tiers.length > 0);
+  const totalPeople = hasPriceTiers
+    ? Object.values(tierSelections).reduce((a, b) => a + b, 0)
+    : formData.numberOfPeople;
+  const pricingBase = useMemo((): "USD" | "GHS" => {
+    if (tour.price_tiers && tour.price_tiers.length > 0) {
+      return inferTierCurrency(tour.price_tiers[0], tour.price_tiers);
+    }
+    return "GHS";
+  }, [tour.price_tiers]);
 
   // Generate available dates based on real tour rules
   const availableDates = useMemo(() => {
@@ -81,31 +111,40 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
     return dates;
   }, [tour.priceValue, tour.availableDays, tour.blockedDates, tour.timeSlots]);
 
-  // Calculate base price based on group size
-  const basePrice = useMemo(() => {
-    let price = tour.priceValue || 100;
-
-    if (formData.numberOfPeople >= 5) {
-      price = price * 0.9;
-    } else if (formData.numberOfPeople >= 3) {
-      price = price * 0.95;
+  const subtotal = useMemo(() => {
+    if (tour.price_tiers && tour.price_tiers.length > 0) {
+      return tour.price_tiers.reduce((sum, tier, index) => {
+        const qty = tierSelections[tierSelectionKey(index)] ?? 0;
+        return sum + (tier.amount || 0) * qty;
+      }, 0);
     }
-
-    return price;
-  }, [tour.priceValue, formData.numberOfPeople]);
-
-  const subtotal = basePrice * formData.numberOfPeople;
+    return (tour.priceValue || 100) * formData.numberOfPeople;
+  }, [formData.numberOfPeople, tierSelections, tour.priceValue, tour.price_tiers]);
   const discountAmount = (subtotal * voucherDiscount) / 100;
   const totalPrice = subtotal - discountAmount;
   const paymentAmount = paymentOption === "deposit" 
     ? (totalPrice * 30) / 100 
     : totalPrice;
+  const exchangeRatePending = pricingBase === "USD" && currencyLoading;
+  const exchangeRateUnavailable = pricingBase === "USD" && !currencyLoading && !hasGhsRate;
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
+    if (totalPeople < 1) {
+      setFormError("Please select at least one guest.");
+      return;
+    }
+    if (exchangeRatePending) {
+      setFormError("Please wait while we load the current exchange rate.");
+      return;
+    }
+    if (exchangeRateUnavailable) {
+      setFormError("We cannot load the current GHS exchange rate right now. Please try again before paying.");
+      return;
+    }
     setShowPayment(true);
   };
 
@@ -115,6 +154,8 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
       
       const bookingData = {
         ...formData,
+        numberOfPeople: totalPeople,
+        tierSelections,
         paymentReference: reference,
         paymentOption,
         voucherCode: voucherCode || null,
@@ -334,28 +375,74 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
             <label className="block text-[#222] text-[14px] font-bold mb-2 font-sans">
               Number of people
             </label>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={decrementPeople}
-                className="w-10 h-10 bg-[#ff5e00]  rounded-lg flex items-center justify-center font-bold hover:bg-[#e55500] transition-colors text-[#222] placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px]"
-              >
-                -
-              </button>
-              <input
-                type="number"
-                value={formData.numberOfPeople}
-                readOnly
-                className="w-20 px-4 py-3 rounded-lg border border-gray-300 text-center font-sans font-bold text-[#222] placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px]"
-              />
-              <button
-                type="button"
-                onClick={incrementPeople}
-                className="w-10 h-10 bg-[#ff5e00] text-white rounded-lg flex items-center justify-center font-bold hover:bg-[#e55500] transition-colors"
-              >
-                +
-              </button>
-            </div>
+            {tour.price_tiers && tour.price_tiers.length > 0 ? (
+              <div className="space-y-3">
+                {tour.price_tiers.map((tier, index) => {
+                  const key = tierSelectionKey(index);
+                  const tierCurrency = inferTierCurrency(tier, tour.price_tiers ?? []);
+                  const qty = tierSelections[key] || 0;
+
+                  return (
+                    <div key={key} className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <div>
+                        <p className="text-[#222] text-[14px] font-bold font-sans">
+                          {tier.name || `Price option ${index + 1}`}
+                        </p>
+                        <p className="text-[#666] text-[12px] font-sans">
+                          {currencySymbol(tierCurrency)} {(tier.amount || 0).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (qty > 0) {
+                              setTierSelections({ ...tierSelections, [key]: qty - 1 });
+                            }
+                          }}
+                          className="w-10 h-10 bg-[#ff5e00] rounded-lg flex items-center justify-center font-bold hover:bg-[#e55500] transition-colors text-white"
+                        >
+                          -
+                        </button>
+                        <span className="w-10 text-center font-sans font-bold text-[#222]">
+                          {qty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setTierSelections({ ...tierSelections, [key]: qty + 1 })}
+                          className="w-10 h-10 bg-[#ff5e00] text-white rounded-lg flex items-center justify-center font-bold hover:bg-[#e55500] transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={decrementPeople}
+                  className="w-10 h-10 bg-[#ff5e00]  rounded-lg flex items-center justify-center font-bold hover:bg-[#e55500] transition-colors text-[#222] placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px]"
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  value={formData.numberOfPeople}
+                  readOnly
+                  className="w-20 px-4 py-3 rounded-lg border border-gray-300 text-center font-sans font-bold text-[#222] placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px]"
+                />
+                <button
+                  type="button"
+                  onClick={incrementPeople}
+                  className="w-10 h-10 bg-[#ff5e00] text-white rounded-lg flex items-center justify-center font-bold hover:bg-[#e55500] transition-colors"
+                >
+                  +
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Date Picker with Availability */}
@@ -391,11 +478,11 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[#666] text-[14px] font-sans">
-                  Base Price × {formData.numberOfPeople}{" "}
-                  {formData.numberOfPeople === 1 ? "person" : "people"}
+                  Subtotal × {totalPeople}{" "}
+                  {totalPeople === 1 ? "person" : "people"}
                 </span>
                 <span className="text-[#222] text-[14px] font-bold font-sans">
-                  {symbol} {convert(subtotal, "GHS").toFixed(2)}
+                  {symbol} {convert(subtotal, pricingBase).toFixed(2)}
                 </span>
               </div>
               
@@ -409,7 +496,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
                 <div className="flex items-center justify-between text-[12px] text-green-600 font-sans">
                   <span>Voucher discount ({voucherDiscount}%)</span>
                   <span>
-                    -{symbol} {convert(discountAmount, "GHS").toFixed(2)}
+                    -{symbol} {convert(discountAmount, pricingBase).toFixed(2)}
                   </span>
                 </div>
               )}
@@ -421,7 +508,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
                     Subtotal
                   </span>
                   <span className="text-[#ff5e00] text-[20px] font-bold font-sans">
-                    {symbol} {convert(totalPrice, "GHS").toFixed(2)}
+                    {symbol} {convert(totalPrice, pricingBase).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -429,12 +516,22 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
 
           {/* Payment Options */}
           {formError && <p className="text-sm text-red-600">{formError}</p>}
-          <PaymentOptions
-            totalPrice={totalPrice}
-            selectedOption={paymentOption}
-            onSelectOption={setPaymentOption}
-            depositPercentage={30}
-          />
+          {exchangeRatePending && (
+            <p className="text-sm text-gray-600">Loading current exchange rate before payment...</p>
+          )}
+          {exchangeRateUnavailable && (
+            <p className="text-sm text-red-600">
+              We cannot load the current GHS exchange rate right now. Please try again before paying.
+            </p>
+          )}
+          {!exchangeRateUnavailable && (
+            <PaymentOptions
+              totalPrice={toGhs(totalPrice, pricingBase)}
+              selectedOption={paymentOption}
+              onSelectOption={setPaymentOption}
+              depositPercentage={30}
+            />
+          )}
 
           {/* Trust Indicators */}
           <div className="flex flex-wrap gap-4 text-[12px] text-[#666] font-sans">
@@ -468,7 +565,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
                   Complete Your Booking
                 </h3>
                 <PaystackPayment
-                  amount={paymentAmount}
+                  amount={toGhs(paymentAmount, pricingBase)}
                   email={formData.email}
                   onSuccess={handlePaymentSuccess}
                   onError={handlePaymentError}
@@ -478,14 +575,15 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
                     packageName: tour.title,
                     customerName: `${formData.firstName} ${formData.lastName}`.trim(),
                     customerPhone: formData.phone,
-                    numberOfPeople: formData.numberOfPeople,
+                    numberOfPeople: totalPeople,
                     date: formData.date,
                     timeSlot: formData.timeSlot,
                     pickupLocation: formData.pickupLocation,
                     paymentOption,
                     voucherCode: voucherCode || null,
-                    totalCost: totalPrice,
-                    paymentAmount: paymentAmount,
+                    tierSelections,
+                    totalCost: toGhs(totalPrice, pricingBase),
+                    paymentAmount: toGhs(paymentAmount, pricingBase),
                   }}
                 />
               </div>
@@ -500,9 +598,10 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
           ) : (
             <button
               type="submit"
+              disabled={exchangeRatePending || exchangeRateUnavailable}
               className="w-full bg-[#ff5e00] text-white py-3 rounded-lg font-bold text-[16px] hover:bg-[#e55500] transition-colors font-sans"
             >
-              Continue to Payment - {symbol} {convert(paymentAmount, "GHS").toFixed(2)}
+              Continue to Payment - {symbol} {convert(paymentAmount, pricingBase).toFixed(2)}
             </button>
           )}
         </form>

@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { verifyTopupPricingSignature } from "../../../lib/serverBookingPricing";
 import { NextResponse } from "next/server";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -76,6 +77,21 @@ export async function GET(request: Request) {
     // 2b. Top-up: update existing booking instead of creating
     if (metadata?.type === "booking_topup" && metadata?.booking_id) {
       const bookingId = String(metadata.booking_id);
+      const expectedPesewas = Number(metadata.expectedPesewas);
+      const topupSignatureValid =
+        Number.isFinite(expectedPesewas) &&
+        verifyTopupPricingSignature(
+          bookingId,
+          expectedPesewas,
+          metadata.pricingSignature,
+          paystackSecretKey,
+        );
+
+      if (!topupSignatureValid || amount !== expectedPesewas) {
+        console.warn(`[Verify] Rejected invalid top-up transaction for booking ${bookingId}`);
+        return NextResponse.json({ success: false, error: "Invalid top-up payment amount" }, { status: 400 });
+      }
+
       const { data: existing } = await supabaseAdmin
         .from("bookings")
         .select("id, total_cost, amount_paid, payment_status")
@@ -178,8 +194,9 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ success: true, booking });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Verify] Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
