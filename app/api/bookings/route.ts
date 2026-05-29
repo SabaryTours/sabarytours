@@ -1,8 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { bookingSchema, type BookingInput } from "../../lib/validations/booking";
+import { bookingSchema } from "../../lib/validations/booking";
 import { resend, FROM_EMAIL } from "../../lib/resend";
 import { buildBookingConfirmationEmailHtml } from "../../lib/bookingReceiptEmailHtml";
+import {
+  computeExpectedBookingPricing,
+  normalizeTierSelections,
+  stableStringify,
+  verifyBookingPricingSignature,
+} from "../../lib/serverBookingPricing";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -109,110 +115,6 @@ async function isRateLimitedPersistent(key: string): Promise<{ limited: boolean;
   return { limited: false };
 }
 
-function roundCurrency(value: number): number {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
-}
-
-async function computeExpectedPricing(body: BookingInput) {
-  const { data: tour, error: tourError } = await supabaseAdmin
-    .from("tours")
-    .select("id, slug, title, price, currency, tour_prices(name, amount, currency)")
-    .eq("status", "published")
-    .eq("slug", body.tourSlug)
-    .maybeSingle();
-
-  if (tourError || !tour) {
-    throw new Error("Tour pricing could not be resolved.");
-  }
-
-  const tourPriceTiers = Array.isArray(tour.tour_prices) ? tour.tour_prices : [];
-  const numberOfPeople = Number(body.numberOfPeople || 0);
-  if (!Number.isFinite(numberOfPeople) || numberOfPeople < 1) {
-    throw new Error("Invalid number of guests.");
-  }
-
-  let subtotal = 0;
-  if (tourPriceTiers.length > 0) {
-    const selections = body.tierSelections || {};
-    const hasSelections = Object.values(selections).some((qty) => Number(qty) > 0);
-    if (hasSelections) {
-      for (let i = 0; i < tourPriceTiers.length; i++) {
-        const tier = tourPriceTiers[i];
-        const tierName = String(tier?.name || "");
-        const sel = selections as Record<string, unknown>;
-        let qty = 0;
-        const byIndex = sel[String(i)];
-        if (byIndex !== undefined && byIndex !== null) {
-          qty = Number(byIndex) || 0;
-        } else if (tierName) {
-          qty = Number(sel[tierName] || 0) || 0;
-        }
-        if (qty > 0) {
-          subtotal += Number(tier.amount || 0) * qty;
-        }
-      }
-    } else {
-      subtotal = Number(tourPriceTiers[0]?.amount || 0) * numberOfPeople;
-    }
-  } else {
-    const basePrice = Number(tour.price || 0);
-    subtotal = basePrice * numberOfPeople;
-  }
-
-  if (!Number.isFinite(subtotal) || subtotal <= 0) {
-    throw new Error("Invalid computed pricing.");
-  }
-
-  if (numberOfPeople >= 5) {
-    subtotal *= 0.9;
-  } else if (numberOfPeople >= 3) {
-    subtotal *= 0.95;
-  }
-
-  let voucherDiscount = 0;
-  const voucherCode = typeof body.voucherCode === "string" ? body.voucherCode.trim().toUpperCase() : "";
-  if (voucherCode) {
-    const { data: voucher } = await supabaseAdmin
-      .from("vouchers")
-      .select("discount_percentage, expiry_date, active")
-      .eq("code", voucherCode)
-      .maybeSingle();
-
-    if (voucher?.active) {
-      const notExpired =
-        !voucher.expiry_date || new Date(voucher.expiry_date).getTime() >= Date.now() - 24 * 60 * 60 * 1000;
-      if (notExpired) {
-        voucherDiscount = Number(voucher.discount_percentage || 0);
-      }
-    }
-  }
-
-  const discountAmount = (subtotal * voucherDiscount) / 100;
-  const totalPrice = roundCurrency(subtotal - discountAmount);
-  const paymentAmount =
-    body.paymentOption === "deposit" ? roundCurrency((totalPrice * 30) / 100) : totalPrice;
-
-  // Infer pricing currency — mirrors frontend pricingBase / inferTierCurrency logic
-  let tourCurrency: "USD" | "GHS" = "GHS";
-  if (tourPriceTiers.length > 0) {
-    const firstWithCurrency = tourPriceTiers.find(
-      (t) => t.currency?.toUpperCase() === "USD" || t.currency?.toUpperCase() === "GHS"
-    );
-    if (firstWithCurrency?.currency?.toUpperCase() === "USD") tourCurrency = "USD";
-  } else if (tour.currency?.toUpperCase() === "USD") {
-    tourCurrency = "USD";
-  }
-
-  return {
-    totalPrice,
-    paymentAmount,
-    voucherDiscount,
-    voucherCode: voucherCode || null,
-    tourTitle: String(tour.title || ""),
-    tourCurrency,
-  };
-}
-
 export async function POST(request: Request) {
   const ip = getRequestIp(request);
   const userAgent = getUserAgent(request);
@@ -259,7 +161,7 @@ export async function POST(request: Request) {
 
     const body = parsed.data;
 
-    const expectedPricing = await computeExpectedPricing(body);
+    const expectedPricing = await computeExpectedBookingPricing(supabaseAdmin, body);
     if (Math.abs(expectedPricing.totalPrice - Number(body.totalPrice)) > PRICE_TOLERANCE) {
       await logSecurityEvent({
         eventType: "price_tamper_detected",
@@ -313,35 +215,33 @@ export async function POST(request: Request) {
         throw new Error("Payment verification failed. The transaction was not successful according to Paystack.");
       }
 
-      // Hard check: Paystack returns amount in pesewas (GHS × 100).
-      // For USD-priced tours we must convert using the cached exchange rate first.
-      let expectedPesewas: number | null = null;
-      if (expectedPricing.tourCurrency === "GHS") {
-        expectedPesewas = Math.round(expectedPricing.paymentAmount * 100);
-      } else {
-        try {
-          const { data: rateRow } = await supabaseAdmin
-            .from("exchange_rates_cache")
-            .select("rates")
-            .eq("base_code", "USD")
-            .maybeSingle();
-          const ghsPerUsd = (rateRow?.rates as Record<string, number> | null)?.["GHS"];
-          if (typeof ghsPerUsd === "number" && ghsPerUsd > 0) {
-            expectedPesewas = Math.round(expectedPricing.paymentAmount * ghsPerUsd * 100);
-          }
-        } catch {
-          // If rate lookup fails, skip strict pesewa check — Paystack "success" status is primary guard
-        }
-      }
-      if (expectedPesewas !== null && verifyData.data.amount < expectedPesewas) {
+      const verifiedAmount = Number(verifyData.data.amount);
+      const paystackMetadata = (verifyData.data.metadata || {}) as Record<string, unknown>;
+      const transactionExpectedPesewas = Number(paystackMetadata.expectedPesewas);
+      const signedPricingMatches =
+        verifyBookingPricingSignature(paystackMetadata, paystackMetadata.pricingSignature, paystackSecretKey) &&
+        paystackMetadata.tourSlug === body.tourSlug &&
+        Number(paystackMetadata.numberOfPeople) === Number(body.numberOfPeople) &&
+        paystackMetadata.paymentOption === body.paymentOption &&
+        (typeof paystackMetadata.voucherCode === "string" ? paystackMetadata.voucherCode : "") ===
+          (expectedPricing.voucherCode || "") &&
+        paystackMetadata.tierSelectionsJson === stableStringify(normalizeTierSelections(body.tierSelections)) &&
+        Math.abs(Number(paystackMetadata.rawTotalPrice) - expectedPricing.totalPrice) <= PRICE_TOLERANCE &&
+        Math.abs(Number(paystackMetadata.rawPaymentAmount) - expectedPricing.paymentAmount) <= PRICE_TOLERANCE &&
+        Number.isFinite(transactionExpectedPesewas);
+      const expectedPesewas = signedPricingMatches
+        ? transactionExpectedPesewas
+        : expectedPricing.expectedPesewas;
+
+      if (verifiedAmount !== expectedPesewas) {
         await logSecurityEvent({
           eventType: "paystack_underpayment",
           ip,
           userAgent,
-          detail: "Paystack verified amount was lower than expected",
+          detail: "Paystack verified amount did not match the server-computed amount",
           payload: {
             expectedPesewas,
-            paidPesewas: verifyData.data.amount,
+            paidPesewas: verifiedAmount,
             reference: body.paymentReference,
           },
         });
@@ -384,8 +284,8 @@ export async function POST(request: Request) {
         payment_option: body.paymentOption,
         voucher_code: expectedPricing.voucherCode,
         voucher_discount: expectedPricing.voucherDiscount,
-        total_cost: expectedPricing.totalPrice,
-        amount_paid: expectedPricing.paymentAmount,
+        total_cost: expectedPricing.totalPriceGhs,
+        amount_paid: expectedPricing.paymentAmountGhs,
         payment_status: "paid",
         booking_status: "confirmed"
       })
@@ -400,7 +300,7 @@ export async function POST(request: Request) {
     // 1.5 Give Sabary Miles (1 point per $10 spent)
     if (body.userId) {
       try {
-        const pointsEarned = Math.floor(expectedPricing.totalPrice / 10);
+        const pointsEarned = Math.floor(expectedPricing.totalPriceGhs / 10);
 
         // Fetch current points
         const { data: profile } = await supabaseAdmin
@@ -463,8 +363,8 @@ export async function POST(request: Request) {
           pickupLocation: body.pickupLocation || null,
           paymentReference: body.paymentReference,
           paymentOption: body.paymentOption,
-          amountPaid: expectedPricing.paymentAmount,
-          totalCost: expectedPricing.totalPrice,
+          amountPaid: expectedPricing.paymentAmountGhs,
+          totalCost: expectedPricing.totalPriceGhs,
           currency: "GHS",
           bookingId: booking.id,
         }),

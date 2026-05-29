@@ -77,7 +77,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
   const [showPayment, setShowPayment] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const { symbol, convert, toGhs } = useCurrency();
+  const { symbol, convert, toGhs, hasGhsRate, loading: currencyLoading } = useCurrency();
 
   /** Unit for raw totals (matches server sum of `tour_prices.amount`). */
   const pricingBase = useMemo((): "USD" | "GHS" => {
@@ -128,7 +128,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
     return dates;
   }, [tour.priceValue, tour.availableDays, tour.blockedDates, tour.timeSlots]);
 
-  // Base price before surcharges/discounts
+  // Raw subtotal in the tour's pricing currency.
   const baseSubtotal = useMemo(() => {
     if (tour.price_tiers && tour.price_tiers.length > 0) {
       return tour.price_tiers.reduce((sum, tier, i) => {
@@ -139,13 +139,14 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
     return (tour.priceValue || 100) * totalPeople;
   }, [tour.priceValue, tour.price_tiers, tierSelections, totalPeople]);
 
-  const groupDiscountRate = totalPeople >= 5 ? 0.1 : totalPeople >= 3 ? 0.05 : 0;
-  const groupDiscountAmount = baseSubtotal * groupDiscountRate;
-  const subtotal = baseSubtotal - groupDiscountAmount;
+  const subtotal = baseSubtotal;
 
   const discountAmount = (subtotal * voucherDiscount) / 100;
   const totalPrice = subtotal - discountAmount;
   const paymentAmount = paymentOption === "deposit" ? (totalPrice * 30) / 100 : totalPrice;
+  const requiresExchangeRate = pricingBase === "USD";
+  const exchangeRateUnavailable = requiresExchangeRate && !currencyLoading && !hasGhsRate;
+  const exchangeRatePending = requiresExchangeRate && currencyLoading;
 
   const handleVoucherApply = (code: string, discount: number) => {
     setVoucherCode(code);
@@ -593,15 +594,9 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
 
                   <div className="border-t border-gray-200 mt-6 pt-4 space-y-2">
                     <div className="flex justify-between text-sm text-gray-600 font-sans">
-                      <span>Base price</span>
+                      <span>Subtotal</span>
                       <span>{symbol} {convert(baseSubtotal, pricingBase).toFixed(2)}</span>
                     </div>
-                    {groupDiscountAmount > 0 && (
-                      <div className="flex justify-between text-sm text-green-600 font-sans">
-                        <span>Group discount (-{Math.round(groupDiscountRate * 100)}%)</span>
-                        <span>-{symbol} {convert(groupDiscountAmount, pricingBase).toFixed(2)}</span>
-                      </div>
-                    )}
                     {voucherDiscount > 0 && (
                       <div className="flex justify-between text-sm text-green-600 font-sans">
                         <span>Voucher discount ({voucherDiscount}%)</span>
@@ -622,18 +617,31 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                   {!showPayment ? (
                     <>
                       {formError && <p className="text-sm text-red-600">{formError}</p>}
-                      <PaymentOptions
-                        totalPrice={toGhs(totalPrice, pricingBase)}
-                        selectedOption={paymentOption}
-                        onSelectOption={setPaymentOption}
-                        depositPercentage={30}
-                      />
+                      {exchangeRatePending && (
+                        <p className="text-sm text-gray-600">
+                          Loading current exchange rate before payment...
+                        </p>
+                      )}
+                      {exchangeRateUnavailable && (
+                        <p className="text-sm text-red-600">
+                          We cannot load the current GHS exchange rate right now. Please try again before paying.
+                        </p>
+                      )}
+                      {!exchangeRateUnavailable && (
+                        <PaymentOptions
+                          totalPrice={toGhs(totalPrice, pricingBase)}
+                          selectedOption={paymentOption}
+                          onSelectOption={setPaymentOption}
+                          depositPercentage={30}
+                        />
+                      )}
                       <button
                         type="button"
                         onClick={() => {
                           setFormError(null);
                           setShowPayment(true);
                         }}
+                        disabled={exchangeRatePending || exchangeRateUnavailable}
                         className="w-full bg-[#ff5e00] text-white py-4 rounded-xl font-bold text-[16px] hover:bg-[#e55500] hover:shadow-xl transition-all font-sans"
                       >
                         Confirm & Pay {symbol} {convert(paymentAmount, pricingBase).toFixed(2)}
@@ -666,6 +674,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                             timeSlot: formData.timeSlot,
                             pickupLocation: formData.pickupLocation,
                             paymentOption,
+                            tierSelections,
                             totalCost: toGhs(totalPrice, pricingBase),
                             paymentAmount: toGhs(paymentAmount, pricingBase),
                             voucherCode: voucherCode || null,

@@ -1,8 +1,20 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import {
+  computeExpectedBookingPricing,
+  createBookingPricingSignature,
+  normalizeTierSelections,
+  stableStringify,
+} from "../../../lib/serverBookingPricing";
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
 
 export async function POST(req: Request) {
   try {
-    const { amount, email, metadata } = await req.json();
+    const { email, metadata } = await req.json();
 
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
 
@@ -15,6 +27,47 @@ export async function POST(req: Request) {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const tourSlug = typeof metadata?.tourSlug === "string" ? metadata.tourSlug : "";
+    const numberOfPeople = Number(metadata?.numberOfPeople || 0);
+    const paymentOption = metadata?.paymentOption === "deposit" ? "deposit" : "full";
+
+    if (!email || !tourSlug || !Number.isFinite(numberOfPeople) || numberOfPeople < 1) {
+      return NextResponse.json(
+        { error: "Invalid payment details" },
+        { status: 400 },
+      );
+    }
+
+    const pricing = await computeExpectedBookingPricing(supabaseAdmin, {
+      tourSlug,
+      numberOfPeople,
+      tierSelections: metadata?.tierSelections as Record<string, number> | undefined,
+      paymentOption,
+      voucherCode: typeof metadata?.voucherCode === "string" ? metadata.voucherCode : null,
+    });
+
+    const normalizedTierSelections = normalizeTierSelections(
+      metadata?.tierSelections as Record<string, unknown> | undefined,
+    );
+    const serverMetadata = {
+      ...metadata,
+      numberOfPeople,
+      paymentOption,
+      voucherCode: typeof metadata?.voucherCode === "string" ? metadata.voucherCode.toUpperCase() : null,
+      tierSelections: normalizedTierSelections,
+      tierSelectionsJson: stableStringify(normalizedTierSelections),
+      rawTotalPrice: pricing.totalPrice,
+      rawPaymentAmount: pricing.paymentAmount,
+      totalCost: pricing.totalPriceGhs,
+      paymentAmount: pricing.paymentAmountGhs,
+      expectedPesewas: pricing.expectedPesewas,
+      pricingCurrency: pricing.tourCurrency,
+      exchangeRateGhsPerUsd: pricing.exchangeRateGhsPerUsd,
+    };
+    const signedMetadata = {
+      ...serverMetadata,
+      pricingSignature: createBookingPricingSignature(serverMetadata, paystackSecretKey),
+    };
 
     // Initialize transaction with Paystack
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
@@ -25,10 +78,10 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         email,
-        amount, // amount should already be in pesewas/kobo from the client
+        amount: pricing.expectedPesewas,
         currency: "GHS",
         metadata: {
-          ...metadata,
+          ...signedMetadata,
           custom_fields: [
             { display_name: "Tour", variable_name: "tour", value: metadata?.packageName || metadata?.tourSlug || "Tour" },
             { display_name: "Guests", variable_name: "guests", value: metadata?.numberOfPeople || 1 },
@@ -53,8 +106,10 @@ export async function POST(req: Request) {
       authorization_url: data.data.authorization_url,
       access_code: data.data.access_code,
       reference: data.data.reference,
+      amount: pricing.expectedPesewas,
+      metadata: signedMetadata,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Paystack Initialize Error:", error);
     return NextResponse.json(
       { error: "Internal server error while initializing payment" },

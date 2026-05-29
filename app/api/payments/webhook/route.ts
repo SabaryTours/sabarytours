@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { resend, FROM_EMAIL } from '../../../lib/resend';
 import { buildBookingConfirmationEmailHtml } from '../../../lib/bookingReceiptEmailHtml';
+import { verifyTopupPricingSignature } from '../../../lib/serverBookingPricing';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
 
@@ -42,6 +43,21 @@ export async function POST(req: Request) {
       // Top-up: update existing booking
       if (metadata?.type === 'booking_topup' && metadata?.booking_id) {
         const bookingId = String(metadata.booking_id);
+        const expectedPesewas = Number(metadata.expectedPesewas);
+        const topupSignatureValid =
+          Number.isFinite(expectedPesewas) &&
+          verifyTopupPricingSignature(
+            bookingId,
+            expectedPesewas,
+            metadata.pricingSignature,
+            PAYSTACK_SECRET_KEY,
+          );
+
+        if (!topupSignatureValid || amount !== expectedPesewas) {
+          console.warn(`[Webhook] Rejected invalid top-up transaction for booking ${bookingId}`);
+          return NextResponse.json({ message: 'Invalid top-up amount' }, { status: 200 });
+        }
+
         const { data: existing } = await supabaseAdmin
           .from('bookings')
           .select('id, total_cost, amount_paid, payment_status')
@@ -192,8 +208,9 @@ export async function POST(req: Request) {
     // Ignore other events
     return NextResponse.json({ message: 'Event ignored' }, { status: 200 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Webhook error:', error);
-    return NextResponse.json({ message: 'Internal Server Error', error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ message: 'Internal Server Error', error: message }, { status: 500 });
   }
 }
