@@ -100,8 +100,9 @@ export const isAuthenticated = async (): Promise<boolean> => {
 
 export const forgotPassword = async (email: string) => {
   const supabase = createClient();
+  const redirectTo = `${window.location.origin}/auth/callback?next=/reset-password`;
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/reset-password`,
+    redirectTo,
   });
   if (error) throw new Error(error.message);
   return true;

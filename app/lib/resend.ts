@@ -2,11 +2,31 @@ import { Resend } from 'resend';
 
 export const resend = new Resend(process.env.RESEND_API_KEY);
 
+const SENDER_DISPLAY_NAME = "Sabary Tours";
+const DEFAULT_SENDER_ADDRESS = "bookings@sabarytours.com";
+
+/** Always show "Sabary Tours" as the sender name; env may supply only the address. */
+function buildFromAddress(): string {
+  const raw = process.env.RESEND_FROM_EMAIL?.trim();
+  if (!raw) {
+    return `${SENDER_DISPLAY_NAME} <${DEFAULT_SENDER_ADDRESS}>`;
+  }
+
+  const formatted = raw.match(/^[^<]*<([^>]+)>$/);
+  if (formatted) {
+    return `${SENDER_DISPLAY_NAME} <${formatted[1].trim()}>`;
+  }
+
+  if (raw.includes("@")) {
+    return `${SENDER_DISPLAY_NAME} <${raw}>`;
+  }
+
+  return `${SENDER_DISPLAY_NAME} <${DEFAULT_SENDER_ADDRESS}>`;
+}
+
 // Must match a verified domain in your Resend dashboard.
-// Until sabarytours.com is verified, set RESEND_FROM_EMAIL=onboarding@resend.dev in .env.local
-export const FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL ||
-  'Sabary Travel and Tours <bookings@sabarytours.com>';
+// RESEND_FROM_EMAIL can be `bookings@sabarytours.com` or `onboarding@resend.dev` — display name is always Sabary Tours.
+export const FROM_EMAIL = buildFromAddress();
 
 export const PAYMENT_OPTIONS_HTML = `
   <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-top:8px;">

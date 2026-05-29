@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Quicksand } from "next/font/google";
 import "./globals.css";
+import AuthHashHandler from "./components/AuthHashHandler";
 import ConditionalHeader from "./components/ConditionalHeader";
 import LayoutWrapper from "./components/LayoutWrapper";
 import AnnouncementModal from "./components/AnnouncementModal";
@@ -72,6 +74,9 @@ export default function RootLayout({
       <body className={`${quicksand.className} font-sans antialiased`}>
         <GoogleAnalytics />
         <GoogleTranslate />
+        <Suspense fallback={null}>
+          <AuthHashHandler />
+        </Suspense>
         <LayoutWrapper>
           <ConditionalHeader />
           <SplashScreen>

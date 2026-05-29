@@ -69,6 +69,29 @@ export async function POST(req: Request) {
       pricingSignature: createBookingPricingSignature(serverMetadata, paystackSecretKey),
     };
 
+    // Paystack metadata must stay compact — large payloads cause initialize failures.
+    const paystackMetadata: Record<string, string | number | null> = {
+      tourSlug,
+      tourId: typeof metadata?.tourId === "string" || typeof metadata?.tourId === "number" ? metadata.tourId : null,
+      userId: typeof metadata?.userId === "string" ? metadata.userId : null,
+      packageName: typeof metadata?.packageName === "string" ? metadata.packageName.slice(0, 120) : null,
+      customerName: typeof metadata?.customerName === "string" ? metadata.customerName.slice(0, 80) : null,
+      customerPhone: typeof metadata?.customerPhone === "string" ? metadata.customerPhone.slice(0, 30) : null,
+      numberOfPeople,
+      date: typeof metadata?.date === "string" ? metadata.date : null,
+      timeSlot: typeof metadata?.timeSlot === "string" ? metadata.timeSlot.slice(0, 40) : null,
+      paymentOption,
+      voucherCode: signedMetadata.voucherCode as string | null,
+      tierSelectionsJson: signedMetadata.tierSelectionsJson as string,
+      rawTotalPrice: pricing.totalPrice,
+      rawPaymentAmount: pricing.paymentAmount,
+      totalCost: pricing.totalPriceGhs,
+      paymentAmount: pricing.paymentAmountGhs,
+      expectedPesewas: pricing.expectedPesewas,
+      pricingCurrency: pricing.tourCurrency,
+      pricingSignature: signedMetadata.pricingSignature as string,
+    };
+
     // Initialize transaction with Paystack
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
@@ -81,10 +104,10 @@ export async function POST(req: Request) {
         amount: pricing.expectedPesewas,
         currency: "GHS",
         metadata: {
-          ...signedMetadata,
+          ...paystackMetadata,
           custom_fields: [
-            { display_name: "Tour", variable_name: "tour", value: metadata?.packageName || metadata?.tourSlug || "Tour" },
-            { display_name: "Guests", variable_name: "guests", value: metadata?.numberOfPeople || 1 },
+            { display_name: "Tour", variable_name: "tour", value: String(metadata?.packageName || metadata?.tourSlug || "Tour").slice(0, 80) },
+            { display_name: "Guests", variable_name: "guests", value: String(numberOfPeople) },
           ],
         },
         callback_url: `${baseUrl}/booking/verify`,
@@ -111,9 +134,9 @@ export async function POST(req: Request) {
     });
   } catch (error: unknown) {
     console.error("Paystack Initialize Error:", error);
-    return NextResponse.json(
-      { error: "Internal server error while initializing payment" },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Internal server error while initializing payment";
+    const status = message.includes("Exchange rate") || message.includes("pricing") ? 400 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
