@@ -34,7 +34,14 @@ export default function ForgotPasswordPage() {
       await forgotPassword(email);
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send reset email. Please try again.");
+      const msg = err instanceof Error ? err.message : "Failed to send reset email. Please try again.";
+      if (/rate limit|too many requests|429/i.test(msg)) {
+        setError(
+          "Too many reset attempts. Please wait about an hour before trying again, or contact bookings@sabarytours.com for help."
+        );
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }

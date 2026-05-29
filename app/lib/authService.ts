@@ -98,13 +98,22 @@ export const isAuthenticated = async (): Promise<boolean> => {
   return !!user;
 };
 
+/** Sends reset link via Resend (server API) — avoids Supabase built-in email rate limits. */
 export const forgotPassword = async (email: string) => {
-  const supabase = createClient();
-  const redirectTo = `${window.location.origin}/auth/callback?next=/reset-password`;
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo,
+  const res = await fetch("/api/auth/forgot-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email.trim() }),
   });
-  if (error) throw new Error(error.message);
+  const data = (await res.json().catch(() => ({}))) as {
+    message?: string;
+    error?: string;
+  };
+
+  if (!res.ok) {
+    const msg = data.message || data.error || "Failed to send reset email.";
+    throw new Error(msg);
+  }
   return true;
 };
 

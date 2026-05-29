@@ -1,23 +1,78 @@
 import crypto from "crypto";
-import { normalizeMoneyCurrency, type TourMoneyCurrency } from "./tourPricing";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { normalizeMoneyCurrency, slugFromTourTitle, type TourMoneyCurrency } from "./tourPricing";
 
-type SupabaseQuery = {
-  select: (columns: string) => SupabaseQuery;
-  eq: (column: string, value: unknown) => SupabaseQuery;
-  maybeSingle: () => Promise<{ data: unknown; error: { message?: string } | null }>;
-};
+type SupabaseAdminClient = SupabaseClient;
 
-type SupabaseAdminClient = {
-  from: (table: string) => unknown;
+const TOUR_PRICING_SELECT =
+  "id, slug, title, price, currency, tour_prices(name, amount, currency)";
+
+type TourPricingRow = {
+  id?: string;
+  slug?: string | null;
+  title?: string | null;
+  price?: number | string | null;
+  currency?: string | null;
+  tour_prices?: { name?: string | null; amount?: number | string | null; currency?: string | null }[];
 };
 
 export type BookingPricingInput = {
   tourSlug: string;
+  tourId?: string | number | null;
   numberOfPeople: number;
   tierSelections?: Record<string, number>;
   paymentOption: "full" | "deposit";
   voucherCode?: string | null;
 };
+
+function resolvedTourSlug(row: TourPricingRow): string {
+  return row.slug?.trim() || slugFromTourTitle(String(row.title || ""));
+}
+
+/** Same lookup rules as getTourBySlug on the frontend (id → slug column → generated slug). */
+async function resolveTourForPricing(
+  supabaseAdmin: SupabaseAdminClient,
+  input: { tourSlug: string; tourId?: string | number | null },
+): Promise<TourPricingRow | null> {
+  const slug = input.tourSlug?.trim();
+  const tourId = input.tourId != null && String(input.tourId).trim() !== "" ? String(input.tourId).trim() : "";
+
+  if (tourId) {
+    const { data, error } = await supabaseAdmin
+      .from("tours")
+      .select(TOUR_PRICING_SELECT)
+      .eq("id", tourId)
+      .eq("status", "published")
+      .maybeSingle();
+
+    if (!error && data) return data as TourPricingRow;
+  }
+
+  if (slug) {
+    const { data, error } = await supabaseAdmin
+      .from("tours")
+      .select(TOUR_PRICING_SELECT)
+      .eq("slug", slug)
+      .eq("status", "published")
+      .maybeSingle();
+
+    if (!error && data) return data as TourPricingRow;
+
+    const { data: published, error: listError } = await supabaseAdmin
+      .from("tours")
+      .select(TOUR_PRICING_SELECT)
+      .eq("status", "published");
+
+    if (!listError && Array.isArray(published)) {
+      const match = (published as TourPricingRow[]).find(
+        (row) => resolvedTourSlug(row) === slug,
+      );
+      if (match) return match;
+    }
+  }
+
+  return null;
+}
 
 export type ComputedBookingPricing = {
   totalPrice: number;
@@ -149,7 +204,8 @@ function inferServerTierCurrency(
 }
 
 async function getGhsPerUsd(supabaseAdmin: SupabaseAdminClient): Promise<number> {
-  const { data, error } = await (supabaseAdmin.from("exchange_rates_cache") as SupabaseQuery)
+  const { data, error } = await supabaseAdmin
+    .from("exchange_rates_cache")
     .select("rates")
     .eq("base_code", "USD")
     .maybeSingle();
@@ -171,20 +227,16 @@ export async function computeExpectedBookingPricing(
   supabaseAdmin: SupabaseAdminClient,
   input: BookingPricingInput,
 ): Promise<ComputedBookingPricing> {
-  const { data: tourData, error: tourError } = await (supabaseAdmin.from("tours") as SupabaseQuery)
-    .select("id, slug, title, price, currency, tour_prices(name, amount, currency)")
-    .eq("status", "published")
-    .eq("slug", input.tourSlug)
-    .maybeSingle();
+  const tour = await resolveTourForPricing(supabaseAdmin, {
+    tourSlug: input.tourSlug,
+    tourId: input.tourId,
+  });
 
-  const tour = tourData as {
-    title?: string | null;
-    price?: number | string | null;
-    currency?: string | null;
-    tour_prices?: { name?: string | null; amount?: number | string | null; currency?: string | null }[];
-  } | null;
-
-  if (tourError || !tour) {
+  if (!tour) {
+    console.error("[pricing] Tour not found for Paystack", {
+      tourSlug: input.tourSlug,
+      tourId: input.tourId ?? null,
+    });
     throw new Error("Tour pricing could not be resolved.");
   }
 
@@ -223,7 +275,8 @@ export async function computeExpectedBookingPricing(
   let voucherDiscount = 0;
   const voucherCode = typeof input.voucherCode === "string" ? input.voucherCode.trim().toUpperCase() : "";
   if (voucherCode) {
-    const { data: voucherData } = await (supabaseAdmin.from("vouchers") as SupabaseQuery)
+    const { data: voucherData } = await supabaseAdmin
+      .from("vouchers")
       .select("discount_percentage, expiry_date, active")
       .eq("code", voucherCode)
       .maybeSingle();

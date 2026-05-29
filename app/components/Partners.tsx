@@ -41,7 +41,7 @@ export default async function Partners() {
           {partners.map((partner) => (
             <div
               key={partner.id}
-              className="relative w-full max-w-[180px] h-[100px] flex items-center justify-center grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100"
+              className="relative w-full max-w-[180px] h-[100px] flex items-center justify-center"
             >
               <Image
                 src={partner.image_url || '/assets/placeholder-tour.jpg'}

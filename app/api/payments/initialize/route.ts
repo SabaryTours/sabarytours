@@ -27,11 +27,15 @@ export async function POST(req: Request) {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const tourSlug = typeof metadata?.tourSlug === "string" ? metadata.tourSlug : "";
+    const tourSlug = typeof metadata?.tourSlug === "string" ? metadata.tourSlug.trim() : "";
+    const tourId =
+      metadata?.tourId != null && String(metadata.tourId).trim() !== ""
+        ? String(metadata.tourId).trim()
+        : null;
     const numberOfPeople = Number(metadata?.numberOfPeople || 0);
     const paymentOption = metadata?.paymentOption === "deposit" ? "deposit" : "full";
 
-    if (!email || !tourSlug || !Number.isFinite(numberOfPeople) || numberOfPeople < 1) {
+    if (!email || (!tourSlug && !tourId) || !Number.isFinite(numberOfPeople) || numberOfPeople < 1) {
       return NextResponse.json(
         { error: "Invalid payment details" },
         { status: 400 },
@@ -39,7 +43,8 @@ export async function POST(req: Request) {
     }
 
     const pricing = await computeExpectedBookingPricing(supabaseAdmin, {
-      tourSlug,
+      tourSlug: tourSlug || "",
+      tourId,
       numberOfPeople,
       tierSelections: metadata?.tierSelections as Record<string, number> | undefined,
       paymentOption,

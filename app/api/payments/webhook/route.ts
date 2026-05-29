@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { resend, FROM_EMAIL } from '../../../lib/resend';
 import { buildBookingConfirmationEmailHtml } from '../../../lib/bookingReceiptEmailHtml';
 import { verifyTopupPricingSignature } from '../../../lib/serverBookingPricing';
+import { markInvoicePaidByReference } from '../../../lib/invoicePayment';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
 
@@ -101,6 +102,17 @@ export async function POST(req: Request) {
           console.log(`[Webhook] Top-up applied for booking ${bookingId}`);
           return NextResponse.json({ message: 'Top-up processed' }, { status: 200 });
         }
+      }
+
+      const invoiceResult = await markInvoicePaidByReference(supabaseAdmin, reference, amount, {
+        sendReceiptEmail: true,
+      });
+      if (invoiceResult.ok) {
+        console.log(`[Webhook] Invoice ${reference} marked paid.`);
+        return NextResponse.json({ message: 'Invoice processed' }, { status: 200 });
+      }
+      if (invoiceResult.reason !== 'not_found') {
+        console.warn(`[Webhook] Invoice ${reference} failed:`, invoiceResult.reason);
       }
 
       // Check if booking already exists (race condition or walk-in pending invoice)
