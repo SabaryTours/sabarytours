@@ -14,15 +14,42 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: "Missing payment reference" }, { status: 400 });
     }
 
-    // 1. Check if booking already exists (webhook may have created it)
+    // 1. Check if booking already exists
     const { data: existingBooking } = await supabaseAdmin
       .from("bookings")
-      .select("id")
+      .select("id, payment_status")
       .eq("payment_reference", reference)
       .maybeSingle();
 
     if (existingBooking) {
-      return NextResponse.json({ success: true, booking: existingBooking, note: "Already processed" });
+      // If already paid, nothing to do
+      if (existingBooking.payment_status === "paid") {
+        return NextResponse.json({ success: true, booking: existingBooking, note: "Already processed" });
+      }
+
+      // Booking exists but is still pending (e.g. walk-in invoice) — verify and mark paid
+      const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
+      if (paystackSecretKey) {
+        const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+          headers: { Authorization: `Bearer ${paystackSecretKey}` },
+        });
+        const verifyData = await verifyRes.json();
+
+        if (verifyData.status && verifyData.data.status === "success") {
+          await supabaseAdmin
+            .from("bookings")
+            .update({ payment_status: "paid", booking_status: "confirmed", amount_paid: verifyData.data.amount / 100 })
+            .eq("id", existingBooking.id);
+        }
+      }
+
+      const { data: updated } = await supabaseAdmin
+        .from("bookings")
+        .select("id, payment_status")
+        .eq("id", existingBooking.id)
+        .single();
+
+      return NextResponse.json({ success: true, booking: updated ?? existingBooking });
     }
 
     // 2. Verify with Paystack

@@ -87,16 +87,27 @@ export async function POST(req: Request) {
         }
       }
 
-      // Check if booking already exists (from frontend callback race condition)
+      // Check if booking already exists (race condition or walk-in pending invoice)
       const { data: existingBooking } = await supabaseAdmin
         .from('bookings')
-        .select('id')
+        .select('id, payment_status')
         .eq('payment_reference', reference)
         .maybeSingle();
 
       if (existingBooking) {
-        console.log(`[Webhook] Booking ${reference} already processed.`);
-        return NextResponse.json({ message: 'Already processed' }, { status: 200 });
+        if (existingBooking.payment_status === 'paid') {
+          console.log(`[Webhook] Booking ${reference} already paid.`);
+          return NextResponse.json({ message: 'Already processed' }, { status: 200 });
+        }
+
+        // Pending walk-in booking — mark it paid now that payment has arrived
+        await supabaseAdmin
+          .from('bookings')
+          .update({ payment_status: 'paid', booking_status: 'confirmed', amount_paid: amount / 100 })
+          .eq('id', existingBooking.id);
+
+        console.log(`[Webhook] Updated pending booking ${existingBooking.id} to paid.`);
+        return NextResponse.json({ message: 'Pending booking updated to paid' }, { status: 200 });
       }
 
       // If it doesn't exist, process it!

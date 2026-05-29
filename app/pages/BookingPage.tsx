@@ -128,38 +128,20 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
     return dates;
   }, [tour.priceValue, tour.availableDays, tour.blockedDates, tour.timeSlots]);
 
-  // Calculate total price based on selected tiers or fallback basePrice
-  const subtotal = useMemo(() => {
-    let tPrice = 0;
-    
+  // Base price before surcharges/discounts
+  const baseSubtotal = useMemo(() => {
     if (tour.price_tiers && tour.price_tiers.length > 0) {
-      tour.price_tiers.forEach((tier, i) => {
+      return tour.price_tiers.reduce((sum, tier, i) => {
         const qty = tierSelections[tierSelectionKey(i)] ?? 0;
-        tPrice += (tier.amount || 0) * qty;
-      });
-    } else {
-      // Legacy fallback
-      tPrice = (tour.priceValue || 100) * totalPeople;
+        return sum + (tier.amount || 0) * qty;
+      }, 0);
     }
+    return (tour.priceValue || 100) * totalPeople;
+  }, [tour.priceValue, tour.price_tiers, tierSelections, totalPeople]);
 
-    // Weekend surcharge check (optional legacy logic)
-    if (formData.date) {
-      const selectedDate = new Date(formData.date);
-      const dayOfWeek = selectedDate.getDay();
-      if (dayOfWeek === 0 || dayOfWeek === 6) {
-        tPrice = tPrice * 1.15; 
-      }
-    }
-
-    // Group discount (optional legacy logic)
-    if (totalPeople >= 5) {
-      tPrice = tPrice * 0.9;
-    } else if (totalPeople >= 3) {
-      tPrice = tPrice * 0.95; 
-    }
-
-    return tPrice;
-  }, [tour.priceValue, tour.price_tiers, tierSelections, formData.date, totalPeople]);
+  const groupDiscountRate = totalPeople >= 5 ? 0.1 : totalPeople >= 3 ? 0.05 : 0;
+  const groupDiscountAmount = baseSubtotal * groupDiscountRate;
+  const subtotal = baseSubtotal - groupDiscountAmount;
 
   const discountAmount = (subtotal * voucherDiscount) / 100;
   const totalPrice = subtotal - discountAmount;
@@ -611,14 +593,18 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
 
                   <div className="border-t border-gray-200 mt-6 pt-4 space-y-2">
                     <div className="flex justify-between text-sm text-gray-600 font-sans">
-                      <span>Subtotal</span>
-                      <span>
-                        {symbol} {convert(subtotal, pricingBase).toFixed(2)}
-                      </span>
+                      <span>Base price</span>
+                      <span>{symbol} {convert(baseSubtotal, pricingBase).toFixed(2)}</span>
                     </div>
+                    {groupDiscountAmount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600 font-sans">
+                        <span>Group discount (-{Math.round(groupDiscountRate * 100)}%)</span>
+                        <span>-{symbol} {convert(groupDiscountAmount, pricingBase).toFixed(2)}</span>
+                      </div>
+                    )}
                     {voucherDiscount > 0 && (
                       <div className="flex justify-between text-sm text-green-600 font-sans">
-                        <span>Discount ({voucherDiscount}%)</span>
+                        <span>Voucher discount ({voucherDiscount}%)</span>
                         <span>-{symbol} {convert(discountAmount, pricingBase).toFixed(2)}</span>
                       </div>
                     )}
@@ -637,7 +623,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                     <>
                       {formError && <p className="text-sm text-red-600">{formError}</p>}
                       <PaymentOptions
-                        totalPrice={totalPrice}
+                        totalPrice={toGhs(totalPrice, pricingBase)}
                         selectedOption={paymentOption}
                         onSelectOption={setPaymentOption}
                         depositPercentage={30}
@@ -680,8 +666,8 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                             timeSlot: formData.timeSlot,
                             pickupLocation: formData.pickupLocation,
                             paymentOption,
-                            totalCost: totalPrice,
-                            paymentAmount: paymentAmount,
+                            totalCost: toGhs(totalPrice, pricingBase),
+                            paymentAmount: toGhs(paymentAmount, pricingBase),
                             voucherCode: voucherCode || null,
                           }}
                         />
