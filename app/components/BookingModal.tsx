@@ -81,17 +81,9 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
     return dates;
   }, [tour.priceValue, tour.availableDays, tour.blockedDates, tour.timeSlots]);
 
-  // Calculate base price based on date and group size
+  // Calculate base price based on group size
   const basePrice = useMemo(() => {
     let price = tour.priceValue || 100;
-    
-    if (formData.date) {
-      const selectedDate = new Date(formData.date);
-      const dayOfWeek = selectedDate.getDay();
-      if (dayOfWeek === 0 || dayOfWeek === 6) {
-        price = price * 1.15;
-      }
-    }
 
     if (formData.numberOfPeople >= 5) {
       price = price * 0.9;
@@ -100,7 +92,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
     }
 
     return price;
-  }, [tour.priceValue, formData.date, formData.numberOfPeople]);
+  }, [tour.priceValue, formData.numberOfPeople]);
 
   const subtotal = basePrice * formData.numberOfPeople;
   const discountAmount = (subtotal * voucherDiscount) / 100;
@@ -410,9 +402,6 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
               {formData.date && (
                 <div className="flex items-center justify-between text-[12px] text-[#666] font-sans">
                   <span>Date: {new Date(formData.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                  {new Date(formData.date).getDay() === 0 || new Date(formData.date).getDay() === 6 ? (
-                    <span className="text-[#ff5e00]">Weekend pricing</span>
-                  ) : null}
                 </div>
               )}
 
