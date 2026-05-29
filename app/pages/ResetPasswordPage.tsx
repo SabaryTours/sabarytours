@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { LockIcon, EyeIcon, ArrowLeft01Icon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
 import { resetPassword } from "../lib/authService";
+import { createClient } from "../utils/supabase/client";
 import Logo from "../components/Logo";
 
 export default function ResetPasswordPage() {
@@ -16,20 +17,38 @@ export default function ResetPasswordPage() {
     confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [hasRecoverySession, setHasRecoverySession] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const tokenParam = searchParams.get("token");
-    if (tokenParam) {
-      setToken(tokenParam);
-    } else {
-      setError("Invalid reset link. Please request a new one.");
+    const supabase = createClient();
+
+    async function verifySession() {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        setHasRecoverySession(false);
+        setError("Your reset link is invalid or has expired. Please request a new one.");
+      } else {
+        setHasRecoverySession(true);
+        setError("");
+      }
+      setCheckingSession(false);
     }
-  }, [searchParams]);
+
+    verifySession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setHasRecoverySession(true);
+        setError("");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const togglePassword = () => setShowPassword((prev) => !prev);
   const toggleConfirmPassword = () => setShowConfirmPassword((prev) => !prev);
@@ -47,8 +66,8 @@ export default function ResetPasswordPage() {
     setLoading(true);
     setError("");
 
-    if (!token) {
-      setError("Invalid reset token");
+    if (!hasRecoverySession) {
+      setError("Your reset link is invalid or has expired. Please request a new one.");
       setLoading(false);
       return;
     }
@@ -84,10 +103,8 @@ export default function ResetPasswordPage() {
         <AuthCarousel />
       </div>
 
-      {/* Form Section */}
       <div className="md:w-1/2 w-full h-full flex flex-col justify-center items-center bg-white bg-opacity-95 z-10 overflow-y-auto">
         <div className="w-[85%] md:w-[57%] max-w-md bg-white p-6 md:p-8">
-          {/* Logo */}
           <div className="flex justify-center mb-6">
             <Logo />
           </div>
@@ -108,9 +125,18 @@ export default function ResetPasswordPage() {
               </p>
             </div>
 
+            {checkingSession && (
+              <p className="text-sm text-gray-500 text-center">Verifying your reset link...</p>
+            )}
+
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                 {error}
+                {!hasRecoverySession && (
+                  <Link href="/forgot-password" className="block mt-2 text-[#ff5e00] font-semibold hover:underline">
+                    Request a new reset link
+                  </Link>
+                )}
               </div>
             )}
 
@@ -121,7 +147,7 @@ export default function ResetPasswordPage() {
               </div>
             )}
 
-            {!success && token && (
+            {!success && !checkingSession && hasRecoverySession && (
               <>
                 <div className="space-y-3">
                   <div className="relative">
@@ -196,4 +222,3 @@ export default function ResetPasswordPage() {
     </div>
   );
 }
-

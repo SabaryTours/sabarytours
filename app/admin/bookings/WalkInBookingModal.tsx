@@ -147,10 +147,10 @@ export default function WalkInBookingModal({ availableTours, onClose, onSuccess 
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] text-sm bg-white mb-2"
                   >
                     <option value="" disabled>Select a Tour Package</option>
+                    <option value="custom">Create custom package</option>
                     {availableTours.map((t) => (
                       <option key={t.id} value={t.title}>{t.title}</option>
                     ))}
-                    <option value="custom">-- Create Custom Package --</option>
                   </select>
 
                   {isCustomTour && (
