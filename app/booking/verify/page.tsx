@@ -26,8 +26,11 @@ function VerifyContent() {
 
         if (data.success) {
           setStatus("success");
+          if (data.invoice) {
+            setMessage("Payment received! Thank you — a receipt has been sent to your email.");
+            return;
+          }
           setMessage("Payment verified! Redirecting to your booking confirmation...");
-          // Redirect to success page after a brief delay
           setTimeout(() => {
             router.push(`/booking/success?ref=${reference}`);
           }, 1500);

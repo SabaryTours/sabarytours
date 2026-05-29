@@ -28,3 +28,8 @@ export function inferTierCurrency(
 export function currencySymbol(c: TourMoneyCurrency): string {
   return c === "USD" ? "$" : "₵";
 }
+
+/** Matches slug resolution used on the public site (see lib/api.ts getTourBySlug). */
+export function slugFromTourTitle(title: string): string {
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}

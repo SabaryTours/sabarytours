@@ -9,6 +9,7 @@ import {
   Tick02Icon,
   Delete02Icon,
   Download06Icon,
+  Invoice01Icon,
 } from "hugeicons-react";
 import { format } from "date-fns";
 
@@ -246,14 +247,22 @@ export default function AdminInvoicesPage() {
                 <p className="text-gray-500 text-xs">
                   {format(new Date(inv.created_at), "MMM d, yyyy")}
                 </p>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Link
                     href={`/admin/invoices/${inv.id}`}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs text-[#ff5e00] font-bold bg-orange-50 hover:bg-orange-100 px-3 py-2 rounded-lg border border-orange-200"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs text-[#ff5e00] font-bold bg-orange-50 hover:bg-orange-100 px-3 py-2 rounded-lg border border-orange-200 min-w-[120px]"
                   >
                     <Download06Icon size={14} /> View / Print
                   </Link>
-                  {inv.payment_url ? (
+                  {inv.status === "paid" ? (
+                    <Link
+                      href={`/admin/invoices/receipt/${inv.id}`}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs text-green-700 font-bold bg-green-50 hover:bg-green-100 px-3 py-2 rounded-lg border border-green-200 min-w-[120px]"
+                    >
+                      <Invoice01Icon size={14} /> Receipt
+                    </Link>
+                  ) : null}
+                  {inv.payment_url && inv.status !== "paid" ? (
                     <button
                       onClick={() => copyToClipboard(inv.payment_url)}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs text-gray-600 font-bold bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-lg border border-gray-200"
@@ -317,14 +326,22 @@ export default function AdminInvoicesPage() {
                         {format(new Date(inv.created_at), "MMM d, yyyy")}
                       </td>
                       <td className="py-4 px-6">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-2 flex-wrap">
                           <Link
                             href={`/admin/invoices/${inv.id}`}
                             className="inline-flex items-center gap-1.5 text-xs text-[#ff5e00] font-bold hover:text-[#e55500] bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded border border-orange-200 whitespace-nowrap"
                           >
                             <Download06Icon size={13} /> View / Print
                           </Link>
-                          {inv.payment_url ? (
+                          {inv.status === "paid" ? (
+                            <Link
+                              href={`/admin/invoices/receipt/${inv.id}`}
+                              className="inline-flex items-center gap-1.5 text-xs text-green-700 font-bold hover:text-green-800 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded border border-green-200 whitespace-nowrap"
+                            >
+                              <Invoice01Icon size={13} /> Receipt
+                            </Link>
+                          ) : null}
+                          {inv.payment_url && inv.status !== "paid" ? (
                             <button
                               onClick={() => copyToClipboard(inv.payment_url)}
                               className="inline-flex items-center gap-1.5 text-xs text-gray-600 font-bold hover:text-gray-800 bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded border border-gray-200"

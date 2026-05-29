@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { createClient } from "../../../utils/supabase/client";
 import Logo from "../../../components/Logo";
-import { ArrowLeft01Icon, Download06Icon, Link01Icon } from "hugeicons-react";
+import { ArrowLeft01Icon, Download06Icon, Link01Icon, Invoice01Icon } from "hugeicons-react";
+import toast from "react-hot-toast";
+import { parseInvoiceLineItems } from "../../../lib/parseInvoiceLineItems";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-type LineItem = { description: string; amount: number };
 
 type InvoiceRow = {
   id: string;
@@ -22,25 +22,6 @@ type InvoiceRow = {
   status: "pending" | "paid" | "cancelled" | null;
   created_at: string | null;
 };
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Parse the DB description field — may be a JSON array (new) or plain text (legacy). */
-function parseLineItems(description: string | null, totalAmount: number): LineItem[] {
-  if (!description) return [{ description: "Invoice", amount: totalAmount }];
-  try {
-    const parsed = JSON.parse(description);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed.map((item: Record<string, unknown>) => ({
-        description: String(item.description || ""),
-        amount: parseFloat(String(item.amount)) || 0,
-      }));
-    }
-  } catch {
-    // plain text — treat as a single line item
-  }
-  return [{ description, amount: totalAmount }];
-}
 
 const STATUS_STYLES: Record<string, string> = {
   paid: "bg-green-100 text-green-800 border-green-200",
@@ -63,6 +44,7 @@ export default function AdminInvoiceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const loadInvoice = useCallback(async () => {
     if (!id) return;
@@ -98,6 +80,39 @@ export default function AdminInvoiceDetailPage() {
     });
   };
 
+  const updateStatus = async (
+    status: "pending" | "paid" | "cancelled",
+    opts?: { send_receipt?: boolean }
+  ) => {
+    if (!invoice) return;
+    setUpdatingStatus(true);
+    try {
+      const res = await fetch(`/api/invoices/${invoice.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status,
+          payment_method: status === "paid" ? "Manual (admin)" : undefined,
+          send_receipt: opts?.send_receipt === true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update status");
+      setInvoice(data.invoice as InvoiceRow);
+      toast.success(
+        status === "paid"
+          ? opts?.send_receipt
+            ? "Invoice marked paid and receipt emailed."
+            : "Invoice marked as paid."
+          : `Invoice marked as ${status}.`
+      );
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Update failed");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   // ── Loading / error states ──────────────────────────────────────────────────
 
   if (loading) {
@@ -125,7 +140,7 @@ export default function AdminInvoiceDetailPage() {
   // ── Derived data ───────────────────────────────────────────────────────────
 
   const total = Number(invoice.amount ?? 0);
-  const lineItems = parseLineItems(invoice.description, total);
+  const lineItems = parseInvoiceLineItems(invoice.description, total);
   const lineTotal = lineItems.reduce((s, i) => s + i.amount, 0);
 
   const issuedDate = invoice.created_at
@@ -401,8 +416,69 @@ export default function AdminInvoiceDetailPage() {
             </div>
           </div>
 
+          {/* Payment status */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 font-sans space-y-3">
+            <h2 className="font-bold text-gray-800 text-xs uppercase tracking-wider">Payment status</h2>
+            {status === "paid" ? (
+              <Link
+                href={`/admin/invoices/receipt/${invoice.id}`}
+                className="flex items-center justify-center gap-2 w-full py-2.5 bg-green-600 text-white rounded-full text-sm font-semibold hover:bg-green-700"
+              >
+                <Invoice01Icon size={16} />
+                View / print receipt
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href={`/admin/invoices/receipt/${invoice.id}`}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#ff5e00] text-white rounded-full text-sm font-semibold hover:bg-[#e55500]"
+                >
+                  Record payment &amp; receipt
+                </Link>
+                <button
+                  type="button"
+                  disabled={updatingStatus}
+                  onClick={() => updateStatus("paid")}
+                  className="w-full py-2 text-sm font-semibold text-gray-800 border border-gray-200 rounded-full hover:bg-gray-50 disabled:opacity-60"
+                >
+                  Mark as paid (no receipt email)
+                </button>
+              </>
+            )}
+            {status !== "cancelled" && status !== "paid" && (
+              <button
+                type="button"
+                disabled={updatingStatus}
+                onClick={() => updateStatus("cancelled")}
+                className="w-full py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-60"
+              >
+                Cancel invoice
+              </button>
+            )}
+            {status === "cancelled" && (
+              <button
+                type="button"
+                disabled={updatingStatus}
+                onClick={() => updateStatus("pending")}
+                className="w-full py-2 text-sm font-semibold text-gray-700 border border-gray-200 rounded-full hover:bg-gray-50 disabled:opacity-60"
+              >
+                Reopen as pending
+              </button>
+            )}
+            {status === "paid" && (
+              <button
+                type="button"
+                disabled={updatingStatus}
+                onClick={() => updateStatus("pending")}
+                className="w-full py-2 text-xs text-gray-500 hover:text-gray-800 disabled:opacity-60"
+              >
+                Revert to pending
+              </button>
+            )}
+          </div>
+
           {/* Copy Paystack link */}
-          {invoice.payment_url && (
+          {invoice.payment_url && status !== "paid" && (
             <div className="bg-white rounded-xl border border-gray-200 p-5 font-sans space-y-2">
               <h2 className="font-bold text-gray-800 text-xs uppercase tracking-wider">
                 Paystack Link

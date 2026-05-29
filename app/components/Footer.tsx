@@ -214,7 +214,7 @@ export default function Footer() {
                   src="/assets/paystack-logo.jpg"
                   fill
                   alt="Paystack"
-                  className="object-contain opacity-80 hover:opacity-100 transition-opacity"
+                  className="object-contain"
                 />
               </div>
             

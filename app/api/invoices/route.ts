@@ -226,7 +226,7 @@ export async function POST(request: Request) {
         to: [client_email],
         subject: `Invoice from Sabary Tours: ${summaryDescription}`,
         html: buildEmailHtml({
-          documentType: 'Invoice &amp; Receipt',
+          documentType: 'Invoice',
           metaRows: [
             { label: 'Invoice #', value: reference },
             { label: 'Date', value: new Date().toLocaleDateString() },
@@ -266,7 +266,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Fetch Invoices using admin client
+    // Fetch standalone invoices only (exclude legacy walk-in booking duplicates)
     const { data: invoices, error } = await supabaseAdmin
       .from('invoices')
       .select('*')
@@ -274,7 +274,12 @@ export async function GET() {
 
     if (error) throw error;
 
-    return NextResponse.json(invoices || [], { status: 200 });
+    const standalone = (invoices || []).filter((inv) => {
+      const desc = String(inv.description || '');
+      return !desc.startsWith('Booking:');
+    });
+
+    return NextResponse.json(standalone, { status: 200 });
   } catch (error: unknown) {
     console.error('Error fetching invoices:', error);
     return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 });

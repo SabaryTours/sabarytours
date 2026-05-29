@@ -39,7 +39,6 @@ export async function POST(request: Request) {
     }
 
     // 3. Optionally initialize Paystack transaction
-    const invoiceDescription = `Booking: ${tour_name} on ${date}`;
     let paymentUrl: string | null = null;
     let reference: string = `INV-${Date.now()}`;
 
@@ -106,25 +105,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to save booking to database' }, { status: 500 });
     }
 
-    // 5. Also Save as an Invoice for dual-tracking
-    const { error: invoiceError } = await supabaseAdmin
-      .from('invoices')
-      .insert({
-        client_name: customer_name,
-        client_email: customer_email,
-        description: invoiceDescription,
-        amount: parseFloat(total_cost),
-        payment_url: paymentUrl,
-        reference: reference,
-        status: 'pending',
-        created_by: user.id
-      });
-
-    if (invoiceError) {
-      console.error("Warning: Failed to dual-record into invoices table.", invoiceError);
-    }
-
-    // 6. Send invoice email via Resend
+    // 5. Send invoice email via Resend (booking is tracked in bookings only — not duplicated to invoices)
     try {
       const paystackButton = paymentUrl
         ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
@@ -142,8 +123,8 @@ export async function POST(request: Request) {
           </table>`
         : '';
 
-      const bookingBody = `
-        <!-- Bill To / Booking Details -->
+      const invoiceBody = `
+        <!-- Bill To / service details -->
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
           <tr>
             <td style="vertical-align:top;padding-right:20px;width:50%;">
@@ -153,8 +134,8 @@ export async function POST(request: Request) {
               ${customer_phone ? `<p style="margin:0;font-size:13px;color:#6b7280;">${escapeHtml(customer_phone)}</p>` : ''}
             </td>
             <td style="vertical-align:top;padding-left:20px;border-left:3px solid #ff5e00;width:50%;">
-              <p style="margin:0 0 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#9ca3af;">Booking Details</p>
-              <p style="margin:0 0 4px;font-size:13px;color:#374151;"><span style="color:#9ca3af;">Tour:</span> <strong style="color:#111827;">${escapeHtml(tour_name)}</strong></p>
+              <p style="margin:0 0 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#9ca3af;">Service Details</p>
+              <p style="margin:0 0 4px;font-size:13px;color:#374151;"><span style="color:#9ca3af;">Package:</span> <strong style="color:#111827;">${escapeHtml(tour_name)}</strong></p>
               <p style="margin:0 0 4px;font-size:13px;color:#374151;"><span style="color:#9ca3af;">Date:</span> <strong style="color:#111827;">${escapeHtml(date)}${time_slot ? ` at ${escapeHtml(time_slot)}` : ''}</strong></p>
               <p style="margin:0;font-size:13px;color:#374151;"><span style="color:#9ca3af;">Guests:</span> <strong style="color:#111827;">${escapeHtml(String(number_of_people))}</strong></p>
             </td>
@@ -217,16 +198,16 @@ export async function POST(request: Request) {
       await resend.emails.send({
         from: FROM_EMAIL,
         to: [customer_email],
-        subject: `Invoice for your booking: ${tour_name}`,
+        subject: `Invoice from Sabary Tours: ${tour_name}`,
         html: buildEmailHtml({
-          documentType: 'Invoice &amp; Receipt',
+          documentType: 'Invoice',
           metaRows: [
             { label: 'Invoice #', value: reference },
             { label: 'Date', value: new Date().toLocaleDateString() },
             { label: 'Customer', value: customer_name },
             { label: 'Due date', value: 'Upon receipt' },
           ],
-          body: bookingBody,
+          body: invoiceBody,
         }),
       }).then(({ error }) => {
         if (error) console.error('[Resend] Walk-in invoice email failed:', JSON.stringify(error));

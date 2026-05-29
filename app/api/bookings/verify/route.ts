@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { verifyTopupPricingSignature } from "../../../lib/serverBookingPricing";
+import { markInvoicePaidByReference } from "../../../lib/invoicePayment";
 import { NextResponse } from "next/server";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -73,6 +74,23 @@ export async function GET(request: Request) {
     }
 
     const { amount, customer, metadata } = verifyData.data;
+
+    const invoiceResult = await markInvoicePaidByReference(supabaseAdmin, reference, amount, {
+      sendReceiptEmail: true,
+    });
+    if (invoiceResult.ok) {
+      return NextResponse.json({
+        success: true,
+        invoice: invoiceResult.invoice,
+        note: invoiceResult.alreadyPaid ? "Invoice already paid" : "Invoice marked paid",
+      });
+    }
+    if (invoiceResult.reason !== "not_found") {
+      return NextResponse.json(
+        { success: false, error: invoiceResult.reason },
+        { status: invoiceResult.reason === "amount_mismatch" ? 400 : 500 }
+      );
+    }
 
     // 2b. Top-up: update existing booking instead of creating
     if (metadata?.type === "booking_topup" && metadata?.booking_id) {
