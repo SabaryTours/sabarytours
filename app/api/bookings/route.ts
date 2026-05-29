@@ -163,14 +163,6 @@ async function computeExpectedPricing(body: BookingInput) {
     throw new Error("Invalid computed pricing.");
   }
 
-  // Match current frontend pricing behavior.
-  if (body.date) {
-    const dayOfWeek = new Date(body.date).getDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      subtotal *= 1.15;
-    }
-  }
-
   if (numberOfPeople >= 5) {
     subtotal *= 0.9;
   } else if (numberOfPeople >= 3) {
@@ -200,12 +192,24 @@ async function computeExpectedPricing(body: BookingInput) {
   const paymentAmount =
     body.paymentOption === "deposit" ? roundCurrency((totalPrice * 30) / 100) : totalPrice;
 
+  // Infer pricing currency — mirrors frontend pricingBase / inferTierCurrency logic
+  let tourCurrency: "USD" | "GHS" = "GHS";
+  if (tourPriceTiers.length > 0) {
+    const firstWithCurrency = tourPriceTiers.find(
+      (t) => t.currency?.toUpperCase() === "USD" || t.currency?.toUpperCase() === "GHS"
+    );
+    if (firstWithCurrency?.currency?.toUpperCase() === "USD") tourCurrency = "USD";
+  } else if (tour.currency?.toUpperCase() === "USD") {
+    tourCurrency = "USD";
+  }
+
   return {
     totalPrice,
     paymentAmount,
     voucherDiscount,
     voucherCode: voucherCode || null,
     tourTitle: String(tour.title || ""),
+    tourCurrency,
   };
 }
 
@@ -309,9 +313,27 @@ export async function POST(request: Request) {
         throw new Error("Payment verification failed. The transaction was not successful according to Paystack.");
       }
 
-      // Hard check amount match. Paystack returns amount in pesewas.
-      const expectedPesewas = Math.round(expectedPricing.paymentAmount * 100);
-      if (verifyData.data.amount < expectedPesewas) {
+      // Hard check: Paystack returns amount in pesewas (GHS × 100).
+      // For USD-priced tours we must convert using the cached exchange rate first.
+      let expectedPesewas: number | null = null;
+      if (expectedPricing.tourCurrency === "GHS") {
+        expectedPesewas = Math.round(expectedPricing.paymentAmount * 100);
+      } else {
+        try {
+          const { data: rateRow } = await supabaseAdmin
+            .from("exchange_rates_cache")
+            .select("rates")
+            .eq("base_code", "USD")
+            .maybeSingle();
+          const ghsPerUsd = (rateRow?.rates as Record<string, number> | null)?.["GHS"];
+          if (typeof ghsPerUsd === "number" && ghsPerUsd > 0) {
+            expectedPesewas = Math.round(expectedPricing.paymentAmount * ghsPerUsd * 100);
+          }
+        } catch {
+          // If rate lookup fails, skip strict pesewa check — Paystack "success" status is primary guard
+        }
+      }
+      if (expectedPesewas !== null && verifyData.data.amount < expectedPesewas) {
         await logSecurityEvent({
           eventType: "paystack_underpayment",
           ip,

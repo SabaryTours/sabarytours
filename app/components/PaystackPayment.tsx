@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 
 interface PaystackPaymentProps {
   amount: number;
@@ -63,14 +62,11 @@ export default function PaystackPayment({
   metadata,
 }: PaystackPaymentProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [scriptReady, setScriptReady] = useState(false);
 
   useEffect(() => {
-    loadPaystackScript()
-      .then(() => setScriptReady(true))
-      .catch(() => {
-        console.warn("Paystack inline script could not be loaded, will use redirect fallback");
-      });
+    loadPaystackScript().catch(() => {
+      console.warn("Paystack inline script could not be loaded, will use redirect fallback");
+    });
   }, []);
 
   const handlePayment = async () => {
@@ -158,7 +154,7 @@ export default function PaystackPayment({
           type="button"
           onClick={handlePayment}
           disabled={isProcessing}
-          className="w-full bg-[#0060CC] text-white py-4 rounded-lg font-bold text-[16px] hover:bg-[#0052a3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-sans flex items-center justify-center gap-2"
+          className="w-full bg-[#ff5e00] text-white py-4 rounded-lg font-bold text-[16px] hover:bg-[#e55500] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-sans flex items-center justify-center gap-2"
         >
           {isProcessing ? (
             <>
@@ -178,35 +174,6 @@ export default function PaystackPayment({
           )}
         </button>
 
-        <div className="flex items-center justify-center gap-2 mt-3">
-          <div className="relative w-12 h-6">
-            <Image
-              src="/assets/payments/visa.svg"
-              alt="Visa"
-              fill
-              className="object-contain opacity-60"
-              onError={() => {}}
-            />
-          </div>
-          <div className="relative w-12 h-6">
-            <Image
-              src="/assets/payments/mastercard.svg"
-              alt="Mastercard"
-              fill
-              className="object-contain opacity-60"
-              onError={() => {}}
-            />
-          </div>
-          <div className="relative w-12 h-6">
-            <Image
-              src="/assets/payments/mobile-money.svg"
-              alt="Mobile Money"
-              fill
-              className="object-contain opacity-60"
-              onError={() => {}}
-            />
-          </div>
-        </div>
       </div>
     </div>
   );

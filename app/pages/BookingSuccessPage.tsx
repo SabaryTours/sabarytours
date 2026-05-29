@@ -34,7 +34,7 @@ export default function BookingSuccessPage() {
           {/* Content */}
           <div className="text-center">
             {/* Illustration */}
-            <div className="w-48 h-48 mx-auto mb-6 rounded-full bg-[#FFDFCC] overflow-hidden">
+            <div className="relative w-48 h-48 mx-auto mb-6 rounded-full bg-[#FFDFCC] overflow-hidden">
               <Image
                 src="/assets/success.png"
                 alt="Booking successful"
