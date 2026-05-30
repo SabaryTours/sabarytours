@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { createClient } from "../utils/supabase/client";
 
 /**
  * Supabase auth errors sometimes land on the site root (/) in query or hash.
@@ -13,10 +14,29 @@ export default function AuthHashHandler() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (pathname !== "/") return;
-
     const hash = typeof window !== "undefined" ? window.location.hash.slice(1) : "";
     const hashParams = new URLSearchParams(hash);
+
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token");
+    const type = hashParams.get("type");
+
+    if (accessToken && refreshToken && type === "recovery") {
+      const supabase = createClient();
+      supabase.auth
+        .setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error }) => {
+          if (error) {
+            router.replace(`/forgot-password?error=${encodeURIComponent(error.message)}`);
+            return;
+          }
+          window.history.replaceState(null, "", window.location.pathname);
+          router.replace("/reset-password");
+        });
+      return;
+    }
+
+    if (pathname !== "/") return;
 
     const errorCode =
       searchParams.get("error_code") ||

@@ -1,17 +1,22 @@
 import crypto from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { normalizeMoneyCurrency, slugFromTourTitle, type TourMoneyCurrency } from "./tourPricing";
+import {
+  getLowestTierPrice,
+  normalizeMoneyCurrency,
+  slugFromTourTitle,
+  sortTourPriceTiers,
+  type TourMoneyCurrency,
+} from "./tourPricing";
 
 type SupabaseAdminClient = SupabaseClient;
 
 const TOUR_PRICING_SELECT =
-  "id, slug, title, price, currency, tour_prices(name, amount, currency)";
+  "id, slug, title, currency, tour_prices(name, amount, currency)";
 
 type TourPricingRow = {
-  id?: string;
+  id?: string | number;
   slug?: string | null;
   title?: string | null;
-  price?: number | string | null;
   currency?: string | null;
   tour_prices?: { name?: string | null; amount?: number | string | null; currency?: string | null }[];
 };
@@ -21,7 +26,7 @@ export type BookingPricingInput = {
   tourId?: string | number | null;
   numberOfPeople: number;
   tierSelections?: Record<string, number>;
-  paymentOption: "full" | "deposit";
+  paymentOption: "full" | "deposit" | "cash";
   voucherCode?: string | null;
 };
 
@@ -29,46 +34,44 @@ function resolvedTourSlug(row: TourPricingRow): string {
   return row.slug?.trim() || slugFromTourTitle(String(row.title || ""));
 }
 
-/** Same lookup rules as getTourBySlug on the frontend (id → slug column → generated slug). */
+/** Same lookup rules as getTourBySlug (id → slug column → title-generated slug). */
 async function resolveTourForPricing(
   supabaseAdmin: SupabaseAdminClient,
   input: { tourSlug: string; tourId?: string | number | null },
 ): Promise<TourPricingRow | null> {
-  const slug = input.tourSlug?.trim();
-  const tourId = input.tourId != null && String(input.tourId).trim() !== "" ? String(input.tourId).trim() : "";
+  const slug = input.tourSlug?.trim().toLowerCase();
+  const tourId =
+    input.tourId != null && String(input.tourId).trim() !== ""
+      ? String(input.tourId).trim()
+      : "";
+
+  const { data: published, error: listError } = await supabaseAdmin
+    .from("tours")
+    .select(TOUR_PRICING_SELECT)
+    .eq("status", "published");
+
+  if (listError) {
+    console.error("[pricing] Failed to load published tours:", listError.message);
+    return null;
+  }
+
+  const rows = (published || []) as TourPricingRow[];
 
   if (tourId) {
-    const { data, error } = await supabaseAdmin
-      .from("tours")
-      .select(TOUR_PRICING_SELECT)
-      .eq("id", tourId)
-      .eq("status", "published")
-      .maybeSingle();
-
-    if (!error && data) return data as TourPricingRow;
+    const byId = rows.find((row) => String(row.id) === tourId);
+    if (byId) return byId;
   }
 
   if (slug) {
-    const { data, error } = await supabaseAdmin
-      .from("tours")
-      .select(TOUR_PRICING_SELECT)
-      .eq("slug", slug)
-      .eq("status", "published")
-      .maybeSingle();
+    const bySlugColumn = rows.find(
+      (row) => (row.slug || "").trim().toLowerCase() === slug,
+    );
+    if (bySlugColumn) return bySlugColumn;
 
-    if (!error && data) return data as TourPricingRow;
-
-    const { data: published, error: listError } = await supabaseAdmin
-      .from("tours")
-      .select(TOUR_PRICING_SELECT)
-      .eq("status", "published");
-
-    if (!listError && Array.isArray(published)) {
-      const match = (published as TourPricingRow[]).find(
-        (row) => resolvedTourSlug(row) === slug,
-      );
-      if (match) return match;
-    }
+    const byGeneratedSlug = rows.find(
+      (row) => resolvedTourSlug(row).toLowerCase() === slug,
+    );
+    if (byGeneratedSlug) return byGeneratedSlug;
   }
 
   return null;
@@ -240,7 +243,9 @@ export async function computeExpectedBookingPricing(
     throw new Error("Tour pricing could not be resolved.");
   }
 
-  const tourPriceTiers = Array.isArray(tour.tour_prices) ? tour.tour_prices : [];
+  const tourPriceTiers = sortTourPriceTiers(
+    Array.isArray(tour.tour_prices) ? tour.tour_prices : [],
+  );
   const numberOfPeople = Number(input.numberOfPeople || 0);
   if (!Number.isFinite(numberOfPeople) || numberOfPeople < 1) {
     throw new Error("Invalid number of guests.");
@@ -254,8 +259,14 @@ export async function computeExpectedBookingPricing(
     if (hasSelections) {
       for (let i = 0; i < tourPriceTiers.length; i++) {
         const tier = tourPriceTiers[i];
-        const tierName = String(tier?.name || "");
-        const qty = Number(selections[String(i)] ?? (tierName ? selections[tierName] : 0) ?? 0) || 0;
+        const tierName = String(tier?.name || "").trim();
+        const qty =
+          Number(
+            selections[String(i)] ??
+              (tierName ? selections[tierName] : 0) ??
+              selections["Base"] ??
+              0,
+          ) || 0;
 
         if (qty > 0) {
           subtotal += Number(tier.amount || 0) * qty;
@@ -265,11 +276,14 @@ export async function computeExpectedBookingPricing(
       subtotal = Number(tourPriceTiers[0]?.amount || 0) * numberOfPeople;
     }
   } else {
-    subtotal = Number(tour.price || 0) * numberOfPeople;
+    const { amount } = getLowestTierPrice([], tour.currency);
+    subtotal = amount * numberOfPeople;
   }
 
   if (!Number.isFinite(subtotal) || subtotal <= 0) {
-    throw new Error("Invalid computed pricing.");
+    throw new Error(
+      "This tour has no valid pricing configured. Please update tour prices in admin or contact support.",
+    );
   }
 
   let voucherDiscount = 0;
@@ -299,7 +313,11 @@ export async function computeExpectedBookingPricing(
   const discountAmount = (subtotal * voucherDiscount) / 100;
   const totalPrice = roundCurrency(subtotal - discountAmount);
   const paymentAmount =
-    input.paymentOption === "deposit" ? roundCurrency((totalPrice * 30) / 100) : totalPrice;
+    input.paymentOption === "cash"
+      ? 0
+      : input.paymentOption === "deposit"
+        ? roundCurrency((totalPrice * 30) / 100)
+        : totalPrice;
 
   let tourCurrency: TourMoneyCurrency = "GHS";
   if (tourPriceTiers.length > 0) {

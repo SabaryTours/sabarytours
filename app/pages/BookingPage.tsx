@@ -71,7 +71,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
   );
 
   const totalPeople = Object.values(tierSelections).reduce((a, b) => a + b, 0);
-  const [paymentOption, setPaymentOption] = useState<"full" | "deposit">("full");
+  const [paymentOption, setPaymentOption] = useState<"full" | "deposit" | "cash">("full");
   const [voucherCode, setVoucherCode] = useState<string>("");
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
@@ -143,7 +143,8 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
 
   const discountAmount = (subtotal * voucherDiscount) / 100;
   const totalPrice = subtotal - discountAmount;
-  const paymentAmount = paymentOption === "deposit" ? (totalPrice * 30) / 100 : totalPrice;
+  const paymentAmount =
+    paymentOption === "cash" ? 0 : paymentOption === "deposit" ? (totalPrice * 30) / 100 : totalPrice;
   const requiresExchangeRate = pricingBase === "USD";
   const exchangeRateUnavailable = requiresExchangeRate && !currencyLoading && !hasGhsRate;
   const exchangeRatePending = requiresExchangeRate && currencyLoading;
@@ -199,41 +200,57 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
     }
   };
 
+  const createBooking = async (reference: string) => {
+    const userData = await getUser();
+    const bookingData = {
+      ...formData,
+      numberOfPeople: totalPeople,
+      tierSelections,
+      paymentReference: reference,
+      paymentOption,
+      voucherCode: voucherCode || null,
+      voucherDiscount,
+      totalPrice,
+      paymentAmount,
+      tourId: tour.id,
+      tourSlug: tour.slug,
+      userId: userData?.id || null,
+    };
+
+    const response = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(bookingData),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "Booking failed");
+    }
+
+    return result;
+  };
+
   const handlePaymentSuccess = async (reference: string) => {
     try {
-      const userData = await getUser();
-      
-      const bookingData = {
-        ...formData,
-        numberOfPeople: totalPeople,
-        tierSelections,
-        paymentReference: reference,
-        paymentOption,
-        voucherCode: voucherCode || null,
-        voucherDiscount,
-        totalPrice,
-        paymentAmount,
-        tourId: tour.id,
-        tourSlug: tour.slug,
-        userId: userData?.id || null,
-      };
-
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bookingData),
-      });
-
-      const result = await response.json();
-      if (response.ok && result.success) {
-        router.push(`/booking/success?tour=${tour.slug}&ref=${reference}`);
-      } else {
-        throw new Error(result.error || "Booking failed");
-      }
+      await createBooking(reference);
+      router.push(`/booking/success?tour=${tour.slug}&ref=${reference}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Booking failed";
       setFormError(message);
       router.push(`/booking/error?tour=${tour.slug}`);
+    }
+  };
+
+  const handleCashBooking = async () => {
+    try {
+      setFormError(null);
+      const reference = `CASH-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+      await createBooking(reference);
+      router.push(`/booking/success?tour=${tour.slug}&ref=${reference}&payment=cash`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Booking failed";
+      setFormError(message);
     }
   };
 
@@ -637,14 +654,16 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                       )}
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={paymentOption === "cash" ? handleCashBooking : () => {
                           setFormError(null);
                           setShowPayment(true);
                         }}
                         disabled={exchangeRatePending || exchangeRateUnavailable}
                         className="w-full bg-[#ff5e00] text-white py-4 rounded-xl font-bold text-[16px] hover:bg-[#e55500] hover:shadow-xl transition-all font-sans"
                       >
-                        Confirm & Pay {symbol} {convert(paymentAmount, pricingBase).toFixed(2)}
+                        {paymentOption === "cash"
+                          ? `Reserve Booking — Pay ${symbol} ${convert(totalPrice, pricingBase).toFixed(2)} in Person`
+                          : `Confirm & Pay ${symbol} ${convert(paymentAmount, pricingBase).toFixed(2)}`}
                       </button>
                       <button
                         type="button"

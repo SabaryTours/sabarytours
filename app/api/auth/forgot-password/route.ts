@@ -52,7 +52,9 @@ export async function POST(request: Request) {
     }
 
     const origin = siteOrigin(request);
-    const redirectTo = `${origin}/auth/callback?next=/reset-password`;
+    // Supabase recovery links can complete with tokens in the URL hash.
+    // Point directly at the client reset page because URL fragments are not sent to server routes.
+    const redirectTo = `${origin}/reset-password`;
 
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",

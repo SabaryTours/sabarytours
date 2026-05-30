@@ -1,12 +1,14 @@
 import { createClient } from '../utils/supabase/server';
 import { Tour } from '../data/packages';
 import { getTourBookingCounts } from './packagePopularity';
+import { getLowestTierPrice, sortTourPriceTiers } from './tourPricing';
 import {
   FEATURED_TOUR_MATCHERS,
   matcherToFallbackCard,
   matchTourByPatterns,
-  tourHref,
+  tourToFeaturedCard,
   type FeaturedTourCard,
+  type TourForFeaturedCard,
 } from './featuredTours';
 
 type TourImageRow = {
@@ -58,45 +60,42 @@ type ReviewRow = {
   rating: number;
 };
 
-function getLowestTierPrice(
-  tiers: TourPriceRow[] | null | undefined,
-  fallbackCurrency?: string | null
-): { amount: number; currency: string } {
-  const normalized = (tiers || [])
-    .map((tier) => ({
-      amount: Number(tier?.amount),
-      currency: tier?.currency || null,
-    }))
-    .filter((tier) => Number.isFinite(tier.amount) && tier.amount > 0);
-
-  if (normalized.length === 0) {
-    return { amount: 0, currency: fallbackCurrency || 'GHS' };
-  }
-
-  const lowest = normalized.reduce((acc, curr) => (curr.amount < acc.amount ? curr : acc));
-  return {
-    amount: lowest.amount,
-    currency: lowest.currency || fallbackCurrency || 'GHS',
-  };
-}
-
 // Helper to generate a slug if missing
 const generateSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
+const FEATURED_TOUR_SELECT = `
+  title,
+  slug,
+  category,
+  duration,
+  location,
+  description,
+  whats_included,
+  tour_images(image_url, display_order)
+`;
+
+/** Featured tours marked in admin (`is_featured`), with legacy title-matcher fallback. */
 export async function getFeaturedTours(): Promise<FeaturedTourCard[]> {
   const supabase = await createClient();
+
+  const { data: adminFeatured, error: featuredError } = await supabase
+    .from("tours")
+    .select(FEATURED_TOUR_SELECT)
+    .eq("status", "published")
+    .eq("is_featured", true)
+    .order("updated_at", { ascending: false });
+
+  if (!featuredError && adminFeatured && adminFeatured.length > 0) {
+    return (adminFeatured as TourForFeaturedCard[]).map((tour) => tourToFeaturedCard(tour));
+  }
+
+  if (featuredError && !/is_featured/i.test(featuredError.message)) {
+    console.error("getFeaturedTours (admin featured):", featuredError);
+  }
+
   const { data: tours, error } = await supabase
     .from("tours")
-    .select(
-      `
-      title,
-      slug,
-      category,
-      duration,
-      location,
-      tour_images(image_url, display_order)
-    `
-    )
+    .select(FEATURED_TOUR_SELECT)
     .eq("status", "published");
 
   if (error) {
@@ -104,39 +103,29 @@ export async function getFeaturedTours(): Promise<FeaturedTourCard[]> {
     return FEATURED_TOUR_MATCHERS.map(matcherToFallbackCard);
   }
 
-  const published = (tours || []) as Pick<
-    TourRow,
-    "title" | "slug" | "category" | "duration" | "location" | "tour_images"
-  >[];
+  const published = (tours || []) as TourForFeaturedCard[];
 
   return FEATURED_TOUR_MATCHERS.map((matcher) => {
     const tour = matchTourByPatterns(published, matcher.titlePatterns);
     if (!tour) return matcherToFallbackCard(matcher);
 
-    const slug = tour.slug || generateSlug(tour.title);
-    const sortedImages = [...(tour.tour_images || [])].sort(
-      (a, b) => a.display_order - b.display_order
-    );
-    const image =
-      sortedImages[0]?.image_url || "/assets/placeholder-tour.jpg";
-
-    const rawDuration = tour.duration ? String(tour.duration).trim() : "";
-    const duration =
-      rawDuration && /day|hour/i.test(rawDuration)
-        ? rawDuration
-        : rawDuration && /^\d+(\.\d+)?$/.test(rawDuration)
-          ? matcher.duration
-          : rawDuration || matcher.duration;
-
-    return {
+    return tourToFeaturedCard(tour, {
       title: matcher.displayTitle,
-      duration,
+      duration: formatTourDurationFromMatcher(tour.duration, matcher.duration),
       location: tour.location?.trim() || matcher.location,
       highlights: matcher.highlights,
-      href: tourHref(tour.category, slug),
-      image,
-    };
+    });
   });
+}
+
+function formatTourDurationFromMatcher(
+  tourDuration: string | null | undefined,
+  matcherDuration: string
+): string {
+  const raw = tourDuration ? String(tourDuration).trim() : "";
+  if (raw && /day|hour|min/i.test(raw)) return raw;
+  if (raw && /^\d+(\.\d+)?$/.test(raw)) return matcherDuration;
+  return raw || matcherDuration;
 }
 
 export async function getPackageBySlug(slug: string) {
@@ -197,7 +186,8 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
     const gallery = sortedImages.map((img) => img.image_url);
     const primaryImage = gallery[0] || '/assets/placeholder-tour.jpg'; // fallback
 
-    const { amount: basePrice, currency } = getLowestTierPrice(t.tour_prices, t.currency);
+    const sortedTiers = sortTourPriceTiers(t.tour_prices || []);
+    const { amount: basePrice, currency } = getLowestTierPrice(sortedTiers, t.currency);
     const slug = t.slug || generateSlug(t.title);
     const stats = ratingMap[slug];
 
@@ -215,7 +205,7 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
       duration: t.duration || 'Full Day',
       location: t.location || 'Ghana',
       map_url: t.map_url,
-      price_tiers: t.tour_prices || [],
+      price_tiers: sortedTiers,
       rating: stats ? Math.round((stats.total / stats.count) * 10) / 10 : undefined,
       reviewCount: stats?.count || 0,
       bookedCount: bookingCounts[String(t.id)] || 0,
@@ -251,7 +241,8 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
   const gallery = sortedImages.map((img) => img.image_url);
   const primaryImage = gallery[0] || '/assets/placeholder-tour.jpg';
 
-  const { amount: basePrice, currency } = getLowestTierPrice(t.tour_prices, t.currency);
+  const sortedTiers = sortTourPriceTiers(t.tour_prices || []);
+  const { amount: basePrice, currency } = getLowestTierPrice(sortedTiers, t.currency);
 
   // Itinerary from JSONB column
   const rawItinerary = Array.isArray(t.itinerary) ? t.itinerary : [];
@@ -300,7 +291,7 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
     duration: t.duration || 'Full Day',
     location: t.location || 'Ghana',
     map_url: t.map_url,
-    price_tiers: t.tour_prices || [],
+    price_tiers: sortedTiers,
     whatsIncluded: whatsIncluded,
     exclusions,
     whatToBring,

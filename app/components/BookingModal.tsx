@@ -49,7 +49,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
   });
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
-  const [paymentOption, setPaymentOption] = useState<"full" | "deposit">("full");
+  const [paymentOption, setPaymentOption] = useState<"full" | "deposit" | "cash">("full");
   const [voucherCode, setVoucherCode] = useState<string>("");
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
@@ -122,13 +122,44 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
   }, [formData.numberOfPeople, tierSelections, tour.priceValue, tour.price_tiers]);
   const discountAmount = (subtotal * voucherDiscount) / 100;
   const totalPrice = subtotal - discountAmount;
-  const paymentAmount = paymentOption === "deposit" 
-    ? (totalPrice * 30) / 100 
-    : totalPrice;
+  const paymentAmount =
+    paymentOption === "cash" ? 0 : paymentOption === "deposit" ? (totalPrice * 30) / 100 : totalPrice;
   const exchangeRatePending = pricingBase === "USD" && currencyLoading;
   const exchangeRateUnavailable = pricingBase === "USD" && !currencyLoading && !hasGhsRate;
 
   if (!isOpen) return null;
+
+  const createBooking = async (reference: string) => {
+    const currentUser = await getUser();
+    const bookingData = {
+      ...formData,
+      numberOfPeople: totalPeople,
+      tierSelections,
+      paymentReference: reference,
+      paymentOption,
+      voucherCode: voucherCode || null,
+      voucherDiscount,
+      totalPrice,
+      paymentAmount,
+      tourId: tour.id,
+      tourSlug: tour.slug,
+      userId: currentUser?.id || null,
+    };
+
+    const response = await fetch("/api/bookings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(bookingData),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "Booking failed");
+    }
+    return result;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,42 +176,25 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
       setFormError("We cannot load the current GHS exchange rate right now. Please try again before paying.");
       return;
     }
+    if (paymentOption === "cash") {
+      try {
+        const reference = `CASH-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+        await createBooking(reference);
+        setShowSuccess(true);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Booking failed";
+        setFormError(message);
+        setShowError(true);
+      }
+      return;
+    }
     setShowPayment(true);
   };
 
   const handlePaymentSuccess = async (reference: string) => {
     try {
-      const currentUser = await getUser();
-      
-      const bookingData = {
-        ...formData,
-        numberOfPeople: totalPeople,
-        tierSelections,
-        paymentReference: reference,
-        paymentOption,
-        voucherCode: voucherCode || null,
-        voucherDiscount,
-        totalPrice,
-        paymentAmount,
-        tourId: tour.id,
-        tourSlug: tour.slug,
-        userId: currentUser?.id || null,
-      };
-
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(bookingData),
-      });
-
-      const result = await response.json();
-      if (response.ok && result.success) {
-        setShowSuccess(true);
-      } else {
-        throw new Error(result.error || "Booking failed");
-      }
+      await createBooking(reference);
+      setShowSuccess(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Booking failed";
       setFormError(message);
@@ -601,7 +615,9 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
               disabled={exchangeRatePending || exchangeRateUnavailable}
               className="w-full bg-[#ff5e00] text-white py-3 rounded-lg font-bold text-[16px] hover:bg-[#e55500] transition-colors font-sans"
             >
-              Continue to Payment - {symbol} {convert(paymentAmount, pricingBase).toFixed(2)}
+              {paymentOption === "cash"
+                ? `Reserve Booking - Pay ${symbol} ${convert(totalPrice, pricingBase).toFixed(2)} in Person`
+                : `Continue to Payment - ${symbol} ${convert(paymentAmount, pricingBase).toFixed(2)}`}
             </button>
           )}
         </form>
