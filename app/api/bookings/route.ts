@@ -160,6 +160,7 @@ export async function POST(request: Request) {
     }
 
     const body = parsed.data;
+    const isCashBooking = body.paymentOption === "cash";
 
     const expectedPricing = await computeExpectedBookingPricing(supabaseAdmin, body);
     if (Math.abs(expectedPricing.totalPrice - Number(body.totalPrice)) > PRICE_TOLERANCE) {
@@ -198,8 +199,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // 0. Verify with Paystack (Source of Truth)
-    if (body.paymentReference && body.paymentReference !== 'cash') {
+    // 0. Verify with Paystack (Source of Truth) for online payments.
+    if (!isCashBooking && body.paymentReference) {
       const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
       if (!paystackSecretKey) throw new Error("Missing Paystack secret key");
 
@@ -285,9 +286,9 @@ export async function POST(request: Request) {
         voucher_code: expectedPricing.voucherCode,
         voucher_discount: expectedPricing.voucherDiscount,
         total_cost: expectedPricing.totalPriceGhs,
-        amount_paid: expectedPricing.paymentAmountGhs,
-        payment_status: "paid",
-        booking_status: "confirmed"
+        amount_paid: isCashBooking ? 0 : expectedPricing.paymentAmountGhs,
+        payment_status: isCashBooking ? "pending" : "paid",
+        booking_status: isCashBooking ? "pending" : "confirmed"
       })
       .select()
       .single();
@@ -352,7 +353,7 @@ export async function POST(request: Request) {
       const { error: emailError } = await resend.emails.send({
         from: FROM_EMAIL,
         to: [body.email],
-        subject: `Booking Confirmed — ${expectedPricing.tourTitle || body.tourSlug}`,
+        subject: `${isCashBooking ? "Booking Received" : "Booking Confirmed"} — ${expectedPricing.tourTitle || body.tourSlug}`,
         html: buildBookingConfirmationEmailHtml({
           customerName: `${body.firstName} ${body.lastName}`.trim(),
           customerEmail: body.email,
@@ -363,7 +364,7 @@ export async function POST(request: Request) {
           pickupLocation: body.pickupLocation || null,
           paymentReference: body.paymentReference,
           paymentOption: body.paymentOption,
-          amountPaid: expectedPricing.paymentAmountGhs,
+          amountPaid: isCashBooking ? 0 : expectedPricing.paymentAmountGhs,
           totalCost: expectedPricing.totalPriceGhs,
           currency: "GHS",
           bookingId: booking.id,

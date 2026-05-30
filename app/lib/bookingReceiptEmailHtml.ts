@@ -9,7 +9,7 @@ export type BookingConfirmationEmailInput = {
   numberOfPeople: number;
   pickupLocation?: string | null;
   paymentReference: string;
-  paymentOption: "full" | "deposit";
+  paymentOption: "full" | "deposit" | "cash";
   amountPaid: number;
   totalCost: number;
   currency: string;
@@ -20,11 +20,12 @@ export function buildBookingConfirmationEmailHtml(p: BookingConfirmationEmailInp
   const timePart = p.timeSlot ? ` at ${escapeHtml(p.timeSlot)}` : "";
   const balanceDue = Math.max(p.totalCost - p.amountPaid, 0);
   const isDeposit = p.paymentOption === "deposit" && balanceDue > 0.009;
+  const isCash = p.paymentOption === "cash";
 
   const body = `
     <!-- ── GREETING ── -->
     <p style="margin:0 0 24px;font-size:16px;color:#374151;line-height:1.6;">
-      Hi <strong style="color:#111827;">${escapeHtml(p.customerName.split(" ")[0])}</strong>, your booking is confirmed!
+      Hi <strong style="color:#111827;">${escapeHtml(p.customerName.split(" ")[0])}</strong>, your booking ${isCash ? "has been received" : "is confirmed"}!
       We&rsquo;re excited to host you. Here are your booking details.
     </p>
 
@@ -69,15 +70,15 @@ export function buildBookingConfirmationEmailHtml(p: BookingConfirmationEmailInp
         <td align="right" style="padding:4px 0;font-size:13px;color:#6b7280;white-space:nowrap;">${escapeHtml(p.currency)} ${p.totalCost.toFixed(2)}</td>
       </tr>
       <tr>
-        <td style="padding:4px 0;font-size:13px;font-weight:700;color:#ff5e00;">Amount paid</td>
+        <td style="padding:4px 0;font-size:13px;font-weight:700;color:#ff5e00;">${isCash ? "Amount paid now" : "Amount paid"}</td>
         <td align="right" style="padding:4px 0;font-size:13px;font-weight:700;color:#ff5e00;white-space:nowrap;">${escapeHtml(p.currency)} ${p.amountPaid.toFixed(2)}</td>
       </tr>
-      ${isDeposit ? `
+      ${(isDeposit || isCash) ? `
       <tr>
         <td colspan="2" style="padding:2px 0;"><hr style="border:none;border-top:1px solid #e5e7eb;margin:4px 0;" /></td>
       </tr>
       <tr>
-        <td style="padding:4px 0;font-size:13px;color:#dc2626;font-weight:600;">Balance due</td>
+        <td style="padding:4px 0;font-size:13px;color:#dc2626;font-weight:600;">${isCash ? "Due in person" : "Balance due"}</td>
         <td align="right" style="padding:4px 0;font-size:13px;color:#dc2626;font-weight:600;white-space:nowrap;">${escapeHtml(p.currency)} ${balanceDue.toFixed(2)}</td>
       </tr>` : ""}
     </table>
@@ -85,12 +86,14 @@ export function buildBookingConfirmationEmailHtml(p: BookingConfirmationEmailInp
     <!-- ── STATUS BANNER ── -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
       <tr>
-        <td style="background-color:${isDeposit ? "#fff7ed" : "#f0fdf4"};border:1px solid ${isDeposit ? "#fed7aa" : "#86efac"};border-radius:10px;padding:16px 20px;text-align:center;">
-          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:${isDeposit ? "#c2410c" : "#15803d"};">
-            &#10003; ${isDeposit ? "Deposit received — booking secured!" : "Paid in full — you&rsquo;re all set!"}
+        <td style="background-color:${isCash || isDeposit ? "#fff7ed" : "#f0fdf4"};border:1px solid ${isCash || isDeposit ? "#fed7aa" : "#86efac"};border-radius:10px;padding:16px 20px;text-align:center;">
+          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:${isCash || isDeposit ? "#c2410c" : "#15803d"};">
+            &#10003; ${isCash ? "Booking received — payment due in person" : isDeposit ? "Deposit received — booking secured!" : "Paid in full — you&rsquo;re all set!"}
           </p>
-          <p style="margin:0;font-size:12px;color:${isDeposit ? "#9a3412" : "#166534"};">
-            ${isDeposit
+          <p style="margin:0;font-size:12px;color:${isCash || isDeposit ? "#9a3412" : "#166534"};">
+            ${isCash
+              ? `Please bring <strong>${escapeHtml(p.currency)} ${balanceDue.toFixed(2)}</strong> and pay in person on the day of your tour.`
+              : isDeposit
               ? `Please settle the remaining balance of <strong>${escapeHtml(p.currency)} ${balanceDue.toFixed(2)}</strong> before your tour date.`
               : "No further payment is required. We look forward to seeing you!"}
           </p>

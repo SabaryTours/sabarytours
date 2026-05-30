@@ -33,3 +33,36 @@ export function currencySymbol(c: TourMoneyCurrency): string {
 export function slugFromTourTitle(title: string): string {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
+
+/** Stable tier order so booking UI indices match server Paystack pricing. */
+export function sortTourPriceTiers<T extends { name?: string | null; amount?: number | string | null }>(
+  tiers: T[],
+): T[] {
+  return [...tiers].sort((a, b) => {
+    const byName = String(a.name || "").localeCompare(String(b.name || ""));
+    if (byName !== 0) return byName;
+    return Number(a.amount || 0) - Number(b.amount || 0);
+  });
+}
+
+export function getLowestTierPrice(
+  tiers: { amount?: number | string | null; currency?: string | null }[] | null | undefined,
+  fallbackCurrency?: string | null,
+): { amount: number; currency: TourMoneyCurrency } {
+  const normalized = (tiers || [])
+    .map((tier) => ({
+      amount: Number(tier?.amount),
+      currency: tier?.currency || null,
+    }))
+    .filter((tier) => Number.isFinite(tier.amount) && tier.amount > 0);
+
+  if (normalized.length === 0) {
+    return { amount: 0, currency: normalizeMoneyCurrency(fallbackCurrency) || "GHS" };
+  }
+
+  const lowest = normalized.reduce((acc, curr) => (curr.amount < acc.amount ? curr : acc));
+  return {
+    amount: lowest.amount,
+    currency: normalizeMoneyCurrency(lowest.currency) || normalizeMoneyCurrency(fallbackCurrency) || "GHS",
+  };
+}

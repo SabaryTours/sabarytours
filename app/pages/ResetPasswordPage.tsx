@@ -27,6 +27,28 @@ export default function ResetPasswordPage() {
     const supabase = createClient();
 
     async function verifySession() {
+      const hash = typeof window !== "undefined" ? window.location.hash.slice(1) : "";
+      const hashParams = new URLSearchParams(hash);
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      const type = hashParams.get("type");
+
+      if (accessToken && refreshToken && type === "recovery") {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (sessionError) {
+          setHasRecoverySession(false);
+          setError("Your reset link is invalid or has expired. Please request a new one.");
+          setCheckingSession(false);
+          return;
+        }
+
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         setHasRecoverySession(false);
