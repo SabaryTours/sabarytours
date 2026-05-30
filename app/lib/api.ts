@@ -1,3 +1,4 @@
+import { resolveBlogImageUrl } from './blogImages';
 import { createClient } from '../utils/supabase/server';
 import { Tour } from '../data/packages';
 import { getTourBookingCounts } from './packagePopularity';
@@ -332,11 +333,13 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
 
   if (error || !post) return null;
 
+  const resolvedSlug = post.slug || generateSlug(post.title);
+
   return {
     id: post.id.toString(),
     title: post.title,
-    slug: post.slug || generateSlug(post.title),
-    image: post.image_url || '/assets/placeholder-blog.jpg',
+    slug: resolvedSlug,
+    image: resolveBlogImageUrl(post.image_url, resolvedSlug),
     views: post.view_count ?? 0,
     comments: post.comment_count ?? 0,
     author: 'Sabary Tours',
@@ -344,6 +347,39 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
     content: post.content || '',
     excerpt: post.summary || '',
   } as BlogPost;
+}
+
+export async function getRelatedBlogPosts(
+  currentSlug: string,
+  limit = 3,
+): Promise<BlogPost[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('status', 'published')
+    .neq('slug', currentSlug)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  return data.map((post) => {
+    const resolvedSlug = post.slug || generateSlug(post.title);
+    return {
+      id: post.id.toString(),
+      title: post.title,
+      slug: resolvedSlug,
+      image: resolveBlogImageUrl(post.image_url, resolvedSlug),
+      views: post.view_count ?? 0,
+      comments: post.comment_count ?? 0,
+      author: 'Sabary Tours',
+      date: new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      content: post.content || '',
+      excerpt: post.summary || '',
+    } as BlogPost;
+  });
 }
 
 // Hero Images

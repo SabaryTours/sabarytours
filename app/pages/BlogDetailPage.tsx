@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { EyeIcon } from "hugeicons-react";
-import { type BlogPost, getRelatedPosts } from "../data/blog";
+import { type BlogPost } from "../lib/api";
 import Footer from "../components/Footer";
 import SafeHTML from "../components/SafeHTML";
 import SocialMediaLinks from "../components/SocialMediaLinks";
@@ -9,6 +9,7 @@ import NewsletterSubscribe from "../components/NewsletterSubscribe";
 
 interface BlogDetailPageProps {
   post: BlogPost;
+  relatedPosts?: BlogPost[];
 }
 
 function plainTextToHtml(raw: string): string {
@@ -19,8 +20,8 @@ function plainTextToHtml(raw: string): string {
     .join("");
 }
 
-export default function BlogDetailPage({ post }: BlogDetailPageProps) {
-  const relatedPosts = getRelatedPosts(post.slug, 3);
+export default function BlogDetailPage({ post, relatedPosts = [] }: BlogDetailPageProps) {
+  const articleRelatedPosts = relatedPosts;
   const rawContent = post.content || "";
   const articleHtml = /<[^>]+>/.test(rawContent) ? rawContent : plainTextToHtml(rawContent);
 
@@ -177,11 +178,11 @@ export default function BlogDetailPage({ post }: BlogDetailPageProps) {
           )}
 
           {/* Related Posts */}
-          {relatedPosts.length > 0 && (
+          {articleRelatedPosts.length > 0 && (
             <div className="mb-12">
               <h3 className="text-[24px] font-bold text-[#222] mb-6">Related posts</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {relatedPosts.map((relatedPost) => (
+                {articleRelatedPosts.map((relatedPost) => (
                   <Link
                     key={relatedPost.id}
                     href={`/blog/${relatedPost.slug}`}

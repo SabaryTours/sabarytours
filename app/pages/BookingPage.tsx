@@ -15,6 +15,7 @@ import PaystackPayment from "../components/PaystackPayment";
 import TourGrid from "../components/TourGrid";
 import { useCurrency } from "../context/CurrencyContext";
 import { inferTierCurrency, currencySymbol } from "../lib/tourPricing";
+import { computeClientPaymentAmount, roundBookingCurrency } from "../lib/bookingPricingClient";
 
 function tierSelectionKey(index: number) {
   return String(index);
@@ -75,6 +76,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
   const [voucherCode, setVoucherCode] = useState<string>("");
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const { symbol, convert, toGhs, hasGhsRate, loading: currencyLoading } = useCurrency();
@@ -142,9 +144,8 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
   const subtotal = baseSubtotal;
 
   const discountAmount = (subtotal * voucherDiscount) / 100;
-  const totalPrice = subtotal - discountAmount;
-  const paymentAmount =
-    paymentOption === "cash" ? 0 : paymentOption === "deposit" ? (totalPrice * 30) / 100 : totalPrice;
+  const totalPrice = roundBookingCurrency(subtotal - discountAmount);
+  const paymentAmount = computeClientPaymentAmount(totalPrice, paymentOption);
   const requiresExchangeRate = pricingBase === "USD";
   const exchangeRateUnavailable = requiresExchangeRate && !currencyLoading && !hasGhsRate;
   const exchangeRatePending = requiresExchangeRate && currencyLoading;
@@ -245,13 +246,36 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
   const handleCashBooking = async () => {
     try {
       setFormError(null);
+      setIsSubmitting(true);
       const reference = `CASH-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
       await createBooking(reference);
       router.push(`/booking/success?tour=${tour.slug}&ref=${reference}&payment=cash`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Booking failed";
       setFormError(message);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleBackFromStep = () => {
+    if (step === 3) {
+      setShowPayment(false);
+      setFormError(null);
+    }
+    if (step > 1) {
+      setStep((step - 1) as 1 | 2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    router.back();
+  };
+
+  const handleBackToDetails = () => {
+    setShowPayment(false);
+    setFormError(null);
+    setStep(2);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -274,11 +298,11 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
 
         <div className="max-w-4xl mx-auto relative z-10">
           <button
-            onClick={() => step > 1 ? setStep(step - 1 as 1 | 2) : router.back()}
+            onClick={handleBackFromStep}
             className="text-gray-300 hover:text-white text-[14px] font-sans mb-6 inline-flex items-center gap-2 transition-colors relative z-20"
           >
             <ArrowLeft01Icon className="w-4 h-4" />
-            {step > 1 ? "Go Back" : "Cancel Booking"}
+            {step > 1 ? (step === 3 && showPayment ? "Back to your details" : "Go Back") : "Cancel Booking"}
           </button>
           
           <h1 
@@ -658,10 +682,18 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                           setFormError(null);
                           setShowPayment(true);
                         }}
-                        disabled={exchangeRatePending || exchangeRateUnavailable}
-                        className="w-full bg-[#ff5e00] text-white py-4 rounded-xl font-bold text-[16px] hover:bg-[#e55500] hover:shadow-xl transition-all font-sans"
+                        disabled={exchangeRatePending || exchangeRateUnavailable || isSubmitting}
+                        className="w-full bg-[#ff5e00] text-white py-4 rounded-xl font-bold text-[16px] hover:bg-[#e55500] hover:shadow-xl transition-all font-sans disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
-                        {paymentOption === "cash"
+                        {isSubmitting ? (
+                          <>
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden>
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Reserving your spot…
+                          </>
+                        ) : paymentOption === "cash"
                           ? `Reserve Booking — Pay ${symbol} ${convert(totalPrice, pricingBase).toFixed(2)} in Person`
                           : `Confirm & Pay ${symbol} ${convert(paymentAmount, pricingBase).toFixed(2)}`}
                       </button>
@@ -680,7 +712,10 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                           amount={toGhs(paymentAmount, pricingBase)}
                           email={formData.email}
                           onSuccess={handlePaymentSuccess}
-                          onError={(err) => alert(`Payment error: ${err}`)}
+                          onError={(err) => {
+                            setFormError(err);
+                            setShowPayment(false);
+                          }}
                           metadata={{
                             tourId: tour.id,
                             tourSlug: tour.slug,
@@ -700,12 +735,20 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                           }}
                         />
                       </div>
+                      {formError && <p className="text-sm text-red-600">{formError}</p>}
                       <button
                         type="button"
                         onClick={() => setShowPayment(false)}
                         className="w-full text-gray-500 font-bold font-sans hover:text-[#ff5e00] underline"
                       >
-                        Change Payment Option
+                        Change payment option
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleBackToDetails}
+                        className="w-full text-center text-[#0060cc] font-bold font-sans hover:text-[#ff5e00]"
+                      >
+                        Back to your details
                       </button>
                     </div>
                   )}

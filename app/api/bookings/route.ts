@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { bookingSchema } from "../../lib/validations/booking";
 import { resend, FROM_EMAIL } from "../../lib/resend";
 import { buildBookingConfirmationEmailHtml } from "../../lib/bookingReceiptEmailHtml";
+import { sendBookingAdminNotification } from "../../lib/sendBookingAdminNotification";
 import {
   computeExpectedBookingPricing,
   normalizeTierSelections,
@@ -342,14 +343,14 @@ export async function POST(request: Request) {
       }
     }
 
+    const tourDateLabel = body.date
+      ? new Date(body.date + "T12:00:00").toLocaleDateString("en-GB", {
+          weekday: "long", day: "numeric", month: "long", year: "numeric",
+        })
+      : body.date;
+
     // 2. Send confirmation email via Resend
     try {
-      const tourDateLabel = body.date
-        ? new Date(body.date + "T12:00:00").toLocaleDateString("en-GB", {
-            weekday: "long", day: "numeric", month: "long", year: "numeric",
-          })
-        : body.date;
-
       const { error: emailError } = await resend.emails.send({
         from: FROM_EMAIL,
         to: [body.email],
@@ -373,6 +374,27 @@ export async function POST(request: Request) {
       if (emailError) console.error("[Resend] Booking confirmation email failed:", emailError);
     } catch (emailErr) {
       console.error("[Resend] Booking confirmation email error:", emailErr);
+    }
+
+    try {
+      await sendBookingAdminNotification({
+        customerName: `${body.firstName} ${body.lastName}`.trim(),
+        customerEmail: body.email,
+        customerPhone: body.phone,
+        tourName: expectedPricing.tourTitle || body.tourSlug,
+        tourDate: tourDateLabel,
+        timeSlot: body.timeSlot || null,
+        numberOfPeople: body.numberOfPeople,
+        pickupLocation: body.pickupLocation || null,
+        paymentReference: body.paymentReference,
+        paymentOption: body.paymentOption,
+        amountPaid: isCashBooking ? 0 : expectedPricing.paymentAmountGhs,
+        totalCost: expectedPricing.totalPriceGhs,
+        currency: "GHS",
+        bookingId: booking.id,
+      });
+    } catch (notifyErr) {
+      console.error("[Resend] Booking admin notification error:", notifyErr);
     }
 
     return NextResponse.json({ success: true, booking });

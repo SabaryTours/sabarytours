@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { resend, FROM_EMAIL } from '../../../lib/resend';
 import { buildBookingConfirmationEmailHtml } from '../../../lib/bookingReceiptEmailHtml';
+import { sendBookingAdminNotification } from '../../../lib/sendBookingAdminNotification';
 import { verifyTopupPricingSignature } from '../../../lib/serverBookingPricing';
 import { markInvoicePaidByReference } from '../../../lib/invoicePayment';
 
@@ -177,18 +178,18 @@ export async function POST(req: Request) {
 
       console.log(`[Webhook] Successfully created booking for ${reference}`);
 
+      const tourDateRaw = metadata.date || "";
+      const tourDateLabel = tourDateRaw
+        ? new Date(tourDateRaw + (tourDateRaw.length <= 10 ? "T12:00:00" : "")).toLocaleDateString("en-GB", {
+            weekday: "long", day: "numeric", month: "long", year: "numeric",
+          })
+        : tourDateRaw;
+      const totalCost = metadata.totalCost || (amount / 100);
+      const amountPaid = metadata.paymentAmount || (amount / 100);
+      const paymentOption = metadata.paymentOption === "deposit" ? "deposit" : "full";
+
       // Send confirmation email via Resend
       try {
-        const tourDateRaw = metadata.date || "";
-        const tourDateLabel = tourDateRaw
-          ? new Date(tourDateRaw + (tourDateRaw.length <= 10 ? "T12:00:00" : "")).toLocaleDateString("en-GB", {
-              weekday: "long", day: "numeric", month: "long", year: "numeric",
-            })
-          : tourDateRaw;
-        const totalCost = metadata.totalCost || (amount / 100);
-        const amountPaid = metadata.paymentAmount || (amount / 100);
-        const paymentOption = metadata.paymentOption === "deposit" ? "deposit" : "full";
-
         const { error: emailError } = await resend.emails.send({
           from: FROM_EMAIL,
           to: [customer.email],
@@ -212,6 +213,27 @@ export async function POST(req: Request) {
         if (emailError) console.error("[Resend] Webhook confirmation email failed:", emailError);
       } catch (emailErr) {
         console.error("[Resend] Webhook confirmation email error:", emailErr);
+      }
+
+      try {
+        await sendBookingAdminNotification({
+          customerName: metadata.customerName || customer.first_name || "Guest",
+          customerEmail: customer.email,
+          customerPhone: metadata.customerPhone || customer.phone || "",
+          tourName: metadata.packageName || "Tour booking",
+          tourDate: tourDateLabel,
+          timeSlot: metadata.timeSlot || null,
+          numberOfPeople: metadata.numberOfPeople || 1,
+          pickupLocation: metadata.pickupLocation || null,
+          paymentReference: reference,
+          paymentOption,
+          amountPaid,
+          totalCost,
+          currency: "GHS",
+          bookingId: newBooking.id,
+        });
+      } catch (notifyErr) {
+        console.error("[Resend] Webhook admin notification error:", notifyErr);
       }
 
       return NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });

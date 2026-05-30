@@ -33,11 +33,23 @@ export async function POST(req: Request) {
         ? String(metadata.tourId).trim()
         : null;
     const numberOfPeople = Number(metadata?.numberOfPeople || 0);
-    const paymentOption = metadata?.paymentOption === "deposit" ? "deposit" : "full";
+    const paymentOption =
+      metadata?.paymentOption === "deposit"
+        ? "deposit"
+        : metadata?.paymentOption === "cash"
+          ? "cash"
+          : "full";
 
     if (!email || (!tourSlug && !tourId) || !Number.isFinite(numberOfPeople) || numberOfPeople < 1) {
       return NextResponse.json(
         { error: "Invalid payment details" },
+        { status: 400 },
+      );
+    }
+
+    if (paymentOption === "cash") {
+      return NextResponse.json(
+        { error: "Cash bookings do not require online payment." },
         { status: 400 },
       );
     }

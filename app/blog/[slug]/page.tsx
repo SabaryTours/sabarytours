@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getBlogPostBySlug } from "../../lib/api";
+import { getBlogPostBySlug, getRelatedBlogPosts } from "../../lib/api";
 import BlogDetailPage from "../../pages/BlogDetailPage";
 import BlogViewTracker from "../../components/BlogViewTracker";
 
@@ -26,10 +26,12 @@ export default async function BlogPostPage({ params }: PageProps) {
     notFound();
   }
 
+  const relatedPosts = await getRelatedBlogPosts(slug, 3);
+
   return (
     <>
       <BlogViewTracker slug={post.slug} title={post.title} />
-      <BlogDetailPage post={post} />
+      <BlogDetailPage post={post} relatedPosts={relatedPosts} />
     </>
   );
 }

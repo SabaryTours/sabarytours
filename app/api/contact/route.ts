@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import mailchimp from '@mailchimp/mailchimp_marketing';
 import { createClient } from '../../utils/supabase/server';
 import { rateLimit } from '../../lib/rateLimit';
+import { sendInquiryAdminNotification } from '../../lib/sendInquiryAdminNotification';
 
 // Initialize Mailchimp
 const API_KEY = process.env.MAILCHIMP_API_KEY;
@@ -106,6 +107,17 @@ export async function POST(request: Request) {
       if (dbError) {
         console.error('Local DB tracking error:', dbError);
         // We do not fail the request if Mailchimp succeeded but DB failed
+      }
+
+      if (message) {
+        await sendInquiryAdminNotification({
+          source: "contact",
+          name: `${firstName} ${lastName}`.trim(),
+          email,
+          phone: phone || null,
+          subject: subject || "General Inquiry",
+          message,
+        });
       }
 
       return NextResponse.json(
