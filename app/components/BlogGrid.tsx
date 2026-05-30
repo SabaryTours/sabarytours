@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { EyeIcon, Message01Icon } from "hugeicons-react";
 import TourLoader from "./TourLoader";
+import { resolveBlogImageUrl } from "../lib/blogImages";
 
 const PAGE_SIZE = 6;
 
@@ -44,7 +45,7 @@ export default function BlogGrid({ limit, loadMoreHref }: BlogGridProps) {
     const mapped =
       data?.map((p) => ({
         ...p,
-        image: p.image_url || "/assets/placeholder-blog.jpg",
+        image: resolveBlogImageUrl(p.image_url, p.slug),
         views: p.view_count || 0,
         comments: p.comment_count || 0,
       })) || [];

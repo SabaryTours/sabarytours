@@ -12,6 +12,7 @@ import PaystackPayment from "./PaystackPayment";
 import { getUser } from "../lib/authService";
 import { useCurrency } from "../context/CurrencyContext";
 import { currencySymbol, inferTierCurrency } from "../lib/tourPricing";
+import { computeClientPaymentAmount, roundBookingCurrency } from "../lib/bookingPricingClient";
 
 function tierSelectionKey(index: number) {
   return String(index);
@@ -53,6 +54,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
   const [voucherCode, setVoucherCode] = useState<string>("");
   const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [showPayment, setShowPayment] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [tierSelections, setTierSelections] = useState<Record<string, number>>(() =>
     buildInitialTierSelections(tour),
@@ -121,9 +123,8 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
     return (tour.priceValue || 100) * formData.numberOfPeople;
   }, [formData.numberOfPeople, tierSelections, tour.priceValue, tour.price_tiers]);
   const discountAmount = (subtotal * voucherDiscount) / 100;
-  const totalPrice = subtotal - discountAmount;
-  const paymentAmount =
-    paymentOption === "cash" ? 0 : paymentOption === "deposit" ? (totalPrice * 30) / 100 : totalPrice;
+  const totalPrice = roundBookingCurrency(subtotal - discountAmount);
+  const paymentAmount = computeClientPaymentAmount(totalPrice, paymentOption);
   const exchangeRatePending = pricingBase === "USD" && currencyLoading;
   const exchangeRateUnavailable = pricingBase === "USD" && !currencyLoading && !hasGhsRate;
 
@@ -178,6 +179,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
     }
     if (paymentOption === "cash") {
       try {
+        setIsSubmitting(true);
         const reference = `CASH-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
         await createBooking(reference);
         setShowSuccess(true);
@@ -185,6 +187,8 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
         const message = error instanceof Error ? error.message : "Booking failed";
         setFormError(message);
         setShowError(true);
+      } finally {
+        setIsSubmitting(false);
       }
       return;
     }
@@ -203,7 +207,8 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
   };
 
   const handlePaymentError = (error: string) => {
-    alert(`Payment error: ${error}`);
+    setFormError(error);
+    setShowPayment(false);
   };
 
   const handleVoucherApply = (code: string, discount: number) => {
@@ -603,19 +608,30 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
               </div>
               <button
                 type="button"
-                onClick={() => setShowPayment(false)}
+                onClick={() => {
+                  setShowPayment(false);
+                  setFormError(null);
+                }}
                 className="w-full text-[#666] text-[14px] font-sans underline hover:text-[#ff5e00]"
               >
-                ← Back to edit booking
+                ← Change payment option or edit your details
               </button>
             </div>
           ) : (
             <button
               type="submit"
-              disabled={exchangeRatePending || exchangeRateUnavailable}
-              className="w-full bg-[#ff5e00] text-white py-3 rounded-lg font-bold text-[16px] hover:bg-[#e55500] transition-colors font-sans"
+              disabled={exchangeRatePending || exchangeRateUnavailable || isSubmitting}
+              className="w-full bg-[#ff5e00] text-white py-3 rounded-lg font-bold text-[16px] hover:bg-[#e55500] transition-colors font-sans disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {paymentOption === "cash"
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Reserving your spot…
+                </>
+              ) : paymentOption === "cash"
                 ? `Reserve Booking - Pay ${symbol} ${convert(totalPrice, pricingBase).toFixed(2)} in Person`
                 : `Continue to Payment - ${symbol} ${convert(paymentAmount, pricingBase).toFixed(2)}`}
             </button>

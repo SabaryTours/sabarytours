@@ -4,6 +4,7 @@ export const resend = new Resend(process.env.RESEND_API_KEY);
 
 const SENDER_DISPLAY_NAME = "Sabary Tours";
 const DEFAULT_SENDER_ADDRESS = "bookings@sabarytours.com";
+const DEFAULT_BOOKINGS_NOTIFY_ADDRESS = "bookings@sabarytours.com";
 
 /** Always show "Sabary Tours" as the sender name; env may supply only the address. */
 function buildFromAddress(): string {
@@ -27,6 +28,10 @@ function buildFromAddress(): string {
 // Must match a verified domain in your Resend dashboard.
 // RESEND_FROM_EMAIL can be `bookings@sabarytours.com` or `onboarding@resend.dev` — display name is always Sabary Tours.
 export const FROM_EMAIL = buildFromAddress();
+
+/** Inbox that receives booking alerts, contact messages, and trip enquiries. */
+export const BOOKINGS_NOTIFY_EMAIL =
+  process.env.BOOKINGS_NOTIFY_EMAIL?.trim() || DEFAULT_BOOKINGS_NOTIFY_ADDRESS;
 
 export const PAYMENT_OPTIONS_HTML = `
   <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-top:8px;">

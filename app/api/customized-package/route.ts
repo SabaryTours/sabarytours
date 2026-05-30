@@ -5,6 +5,7 @@ import {
   customizedPackageSchema,
   formatCustomizedPackageMessage,
 } from "../../lib/validations/customizedPackage";
+import { sendInquiryAdminNotification } from "../../lib/sendInquiryAdminNotification";
 
 export async function POST(request: Request) {
   try {
@@ -65,6 +66,15 @@ export async function POST(request: Request) {
         { onConflict: "email" }
       );
     }
+
+    await sendInquiryAdminNotification({
+      source: "customized_package",
+      name: `${data.firstName} ${data.lastName}`.trim(),
+      email: data.email,
+      phone: data.phone,
+      subject: `Customized package — ${data.organisationOrIndividual}`,
+      message,
+    });
 
     return NextResponse.json({
       message:
