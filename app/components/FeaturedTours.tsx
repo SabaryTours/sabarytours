@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { getFeaturedTours } from "../lib/api";
 import type { FeaturedTourCard } from "../lib/featuredTours";
+import FeaturedTourGridPaginated from "./FeaturedTourGridPaginated";
 
 type FeaturedToursProps = {
   showHeader?: boolean;
@@ -45,7 +45,7 @@ export default async function FeaturedTours({
         className={`scroll-mt-28 w-full px-4 sm:px-6 md:px-12 py-12 md:py-16 ${className}`.trim()}
       >
         <div className="container mx-auto px-3 sm:px-4 md:px-6">
-          <FeaturedTourGrid tours={tours} />
+          <FeaturedTourGridPaginated tours={tours} />
         </div>
       </section>
     );
@@ -115,7 +115,7 @@ export default async function FeaturedTours({
               </p>
             </div>
 
-            <FeaturedTourGrid tours={tours} />
+            <FeaturedTourGridPaginated tours={tours} />
 
             <p className="text-center mt-10 text-sm text-[#1a4d7a] font-sans">
               Want something built around your group?{" "}
@@ -130,57 +130,5 @@ export default async function FeaturedTours({
         </div>
       </section>
     </>
-  );
-}
-
-function FeaturedTourGrid({ tours }: { tours: FeaturedTourCard[] }) {
-  return (
-    <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-      {tours.map((tour) => (
-        <article
-          key={tour.href + tour.title}
-          className="flex flex-col rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-md hover:shadow-xl transition-shadow duration-300"
-        >
-          <div className="relative h-48 sm:h-52 bg-gray-100">
-            <Image
-              src={tour.image || "/assets/placeholder-tour.jpg"}
-              alt={tour.title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 33vw"
-            />
-          </div>
-          <div className="flex flex-col flex-1 p-5 sm:p-6 gap-3 font-sans">
-            <h3 className="text-lg font-bold text-[#222] leading-snug">
-              {tour.title}
-            </h3>
-            <dl className="space-y-1.5 text-sm text-gray-600">
-              <div>
-                <dt className="inline font-semibold text-gray-800">
-                  Duration:{" "}
-                </dt>
-                <dd className="inline">{tour.duration}</dd>
-              </div>
-              <div>
-                <dt className="inline font-semibold text-gray-800">
-                  Location:{" "}
-                </dt>
-                <dd className="inline">{tour.location}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-800">Highlights: </dt>
-                <dd>{tour.highlights}</dd>
-              </div>
-            </dl>
-            <Link
-              href={tour.href}
-              className="mt-auto inline-flex justify-center items-center py-3 px-6 rounded-full bg-[#ff5e00] text-white text-sm font-bold hover:bg-[#e55500] transition-colors shadow-sm"
-            >
-              Book Your Tour
-            </Link>
-          </div>
-        </article>
-      ))}
-    </div>
   );
 }
