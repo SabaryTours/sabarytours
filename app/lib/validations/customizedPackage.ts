@@ -14,6 +14,9 @@ import {
 
 const optionalString = z.string().max(500).optional().or(z.literal(""));
 
+const optionalEnum = <T extends readonly [string, ...string[]]>(values: T) =>
+  z.union([z.enum(values), z.literal("")]);
+
 export const customizedPackageSchema = z
   .object({
     firstName: z.string().min(2, "First name is required").max(50),
@@ -36,11 +39,8 @@ export const customizedPackageSchema = z
     }),
     travelerTypeOther: optionalString,
 
-    accommodationPreference: z
-      .enum(ACCOMMODATION_PREFERENCES)
-      .optional()
-      .or(z.literal("")),
-    accommodationArea: z.enum(ACCOMMODATION_AREAS).optional().or(z.literal("")),
+    accommodationPreference: optionalEnum(ACCOMMODATION_PREFERENCES),
+    accommodationArea: optionalEnum(ACCOMMODATION_AREAS),
 
     tourPreferences: z
       .array(z.enum(TOUR_PREFERENCES))
@@ -137,4 +137,10 @@ export function formatCustomizedPackageMessage(
   ].filter(Boolean);
 
   return lines.join("\n");
+}
+
+export function firstCustomizedPackageValidationMessage(
+  error: z.ZodError,
+): string {
+  return error.issues[0]?.message || "Please check the form and try again.";
 }

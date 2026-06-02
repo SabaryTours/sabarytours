@@ -1,11 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { EyeIcon } from "hugeicons-react";
 import { type BlogPost } from "../lib/api";
 import Footer from "../components/Footer";
 import SafeHTML from "../components/SafeHTML";
 import SocialMediaLinks from "../components/SocialMediaLinks";
 import NewsletterSubscribe from "../components/NewsletterSubscribe";
+import BlogPostViewCounter from "../components/BlogPostViewCounter";
 
 interface BlogDetailPageProps {
   post: BlogPost;
@@ -70,15 +70,7 @@ export default function BlogDetailPage({ post, relatedPosts = [] }: BlogDetailPa
             <span>By {post.author}</span>
             <span>•</span>
             <span>{post.date}</span>
-            {post.views > 0 && (
-              <>
-                <span>•</span>
-                <span className="inline-flex items-center gap-1">
-                  <EyeIcon className="w-4 h-4" />
-                  {post.views} view{post.views !== 1 ? "s" : ""}
-                </span>
-              </>
-            )}
+            <BlogPostViewCounter slug={post.slug} initialViews={post.views} />
             {post.comments > 0 && (
               <>
                 <span>•</span>

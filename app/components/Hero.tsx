@@ -81,7 +81,7 @@ export default function Hero({ initialImages = [] }: { initialImages?: string[] 
             href="/customized-package"
             className="inline-flex justify-center items-center px-8 py-4 rounded-full bg-white/95 text-[#222] font-bold text-sm sm:text-base hover:bg-white border border-white/50 transition-colors shadow-lg"
           >
-            Plan Your Ghana Trip
+            Plan Your Trip
           </Link>
         </div>
       </div>

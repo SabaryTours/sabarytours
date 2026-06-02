@@ -31,8 +31,14 @@ export default function BlogViewTracker({ slug, title }: BlogViewTrackerProps) {
         const res = await fetch(`/api/blog/${encodeURIComponent(slug)}/view`, {
           method: "POST",
         });
+        const data = res.ok ? ((await res.json()) as { views?: number }) : null;
         if (res.ok && typeof window !== "undefined") {
           sessionStorage.setItem(key, "1");
+          if (typeof data?.views === "number") {
+            window.dispatchEvent(
+              new CustomEvent("blog-view-recorded", { detail: { slug, views: data.views } }),
+            );
+          }
         }
       } catch {
         tracked.current = false;

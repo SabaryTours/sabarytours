@@ -36,7 +36,7 @@ const initialForm: CustomizedPackageFormData = {
   travelerTypeOther: "",
   accommodationPreference: "",
   accommodationArea: "",
-  tourPreferences: [],
+  tourPreferences: ["Not sure — Recommend for me"],
   tourPreferencesOther: "",
   travelPriority: "Cultural Immersion",
   planningStage: "Just exploring",
@@ -152,37 +152,48 @@ export default function CustomizedPackageForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      customizedPackageSchema.parse(formData);
-      setErrors({});
-    } catch (err) {
-      if (err instanceof Error && "issues" in err) {
-        const zodError = err as ZodError;
-        const fieldErrors: Partial<
-          Record<keyof CustomizedPackageFormData, string>
-        > = {};
-        zodError.issues.forEach((issue) => {
-          const field = issue.path[0] as keyof CustomizedPackageFormData;
-          if (field) fieldErrors[field] = issue.message;
-        });
-        setErrors(fieldErrors);
+    setStatus("idle");
+    setMessage("");
+
+    const parsed = customizedPackageSchema.safeParse(formData);
+    if (!parsed.success) {
+      const zodError = parsed.error;
+      const fieldErrors: Partial<
+        Record<keyof CustomizedPackageFormData, string>
+      > = {};
+      zodError.issues.forEach((issue) => {
+        const field = issue.path[0] as keyof CustomizedPackageFormData;
+        if (field && !fieldErrors[field]) fieldErrors[field] = issue.message;
+      });
+      setErrors(fieldErrors);
+      const firstField = zodError.issues[0]?.path[0];
+      const summary =
+        zodError.issues[0]?.message ||
+        "Please complete the required fields below.";
+      setStatus("error");
+      setMessage(summary);
+      if (typeof firstField === "string") {
+        document
+          .getElementById(`field-${firstField}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
       }
       return;
     }
 
+    setErrors({});
     setSubmitting(true);
-    setStatus("idle");
     try {
       const res = await fetch("/api/customized-package", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(parsed.data),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed");
       setStatus("success");
       setMessage(data.message || "Request sent!");
       setFormData(initialForm);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       setStatus("error");
       setMessage(err instanceof Error ? err.message : "Something went wrong");
@@ -191,8 +202,29 @@ export default function CustomizedPackageForm() {
     }
   };
 
+  const toggleTourPreference = (pref: (typeof TOUR_PREFERENCES)[number]) => {
+    setFormData((prev) => {
+      const selected = prev.tourPreferences.includes(pref)
+        ? prev.tourPreferences.filter((item) => item !== pref)
+        : [...prev.tourPreferences, pref];
+      return { ...prev, tourPreferences: selected };
+    });
+    clearError("tourPreferences");
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-10 font-sans">
+      {status === "success" && (
+        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-800 text-sm font-medium">
+          {message}
+        </div>
+      )}
+      {status === "error" && message && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm font-medium">
+          {message}
+        </div>
+      )}
+
       <SectionTitle
         title="Your details"
         subtitle="We'll use this to prepare your personalized itinerary."
