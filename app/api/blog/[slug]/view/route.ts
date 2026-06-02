@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { createClient } from "../../../../utils/supabase/server";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
 
 interface RouteContext {
   params: Promise<{ slug: string }> | { slug: string };
@@ -15,9 +20,7 @@ export async function POST(_request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Missing slug" }, { status: 400 });
     }
 
-    const supabase = await createClient();
-
-    const { data: post, error: fetchError } = await supabase
+    const { data: post, error: fetchError } = await supabaseAdmin
       .from("posts")
       .select("id, view_count")
       .eq("slug", slug)
@@ -30,7 +33,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
     const nextCount = (post.view_count ?? 0) + 1;
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from("posts")
       .update({ view_count: nextCount })
       .eq("id", post.id);

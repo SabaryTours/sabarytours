@@ -29,9 +29,13 @@ function buildFromAddress(): string {
 // RESEND_FROM_EMAIL can be `bookings@sabarytours.com` or `onboarding@resend.dev` — display name is always Sabary Tours.
 export const FROM_EMAIL = buildFromAddress();
 
-/** Inbox that receives booking alerts, contact messages, and trip enquiries. */
+/** Inbox that receives booking alerts and trip enquiries. */
 export const BOOKINGS_NOTIFY_EMAIL =
   process.env.BOOKINGS_NOTIFY_EMAIL?.trim() || DEFAULT_BOOKINGS_NOTIFY_ADDRESS;
+
+/** Contact form and general info enquiries. */
+export const INFO_NOTIFY_EMAIL =
+  process.env.INFO_NOTIFY_EMAIL?.trim() || "info@sabarytours.com";
 
 export const PAYMENT_OPTIONS_HTML = `
   <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-top:8px;">

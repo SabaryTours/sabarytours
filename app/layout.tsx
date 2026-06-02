@@ -10,6 +10,7 @@ import { Toaster } from "react-hot-toast";
 import GoogleTranslate from "./components/GoogleTranslate";
 import SplashScreen from "./components/SplashScreen";
 import GoogleAnalytics from "./components/GoogleAnalytics";
+import GoogleAnalyticsRouteTracker from "./components/GoogleAnalyticsRouteTracker";
 
 const quicksand = Quicksand({
   variable: "--font-quicksand",
@@ -73,6 +74,9 @@ export default function RootLayout({
     <html lang="en" className={quicksand.variable}>
       <body className={`${quicksand.className} font-sans antialiased`}>
         <GoogleAnalytics />
+        <Suspense fallback={null}>
+          <GoogleAnalyticsRouteTracker />
+        </Suspense>
         <GoogleTranslate />
         <Suspense fallback={null}>
           <AuthHashHandler />

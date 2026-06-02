@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { contactFormSchema, type ContactFormData } from "../lib/validations/contact";
+import { CONTACT_SUBJECTS, DEFAULT_CONTACT_SUBJECT } from "../lib/contactSubjects";
 import type { ZodError } from "zod";
 import Footer from "../components/Footer";
 import SocialMediaLinks from "../components/SocialMediaLinks";
@@ -17,7 +18,7 @@ export default function ContactPage() {
     lastName: "",
     phone: "",
     email: "",
-    subject: "",
+    subject: DEFAULT_CONTACT_SUBJECT,
     message: "",
   });
 
@@ -36,7 +37,7 @@ export default function ContactPage() {
       if (from === "year-plan") {
         return {
           ...prev,
-          subject: "Year plan / custom trip",
+          subject: "Corporate & Group Travel",
           message:
             "I'm interested in learning more about your seasonal trips or arranging a private experience.\n\n",
         };
@@ -44,14 +45,14 @@ export default function ContactPage() {
       if (from === "packages" && q) {
         return {
           ...prev,
-          subject: `Tour enquiry: ${q}`,
+          subject: "Tour Booking",
           message: `I searched for "${q}" on your packages page and didn't find a match. I'd like to discuss a private trip or future availability.\n\n`,
         };
       }
       if (q) {
         return {
           ...prev,
-          subject: prev.subject || `Enquiry: ${q}`,
+          subject: "Other",
           message: prev.message || `I'm looking for: ${q}\n\n`,
         };
       }
@@ -83,7 +84,9 @@ export default function ContactPage() {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -132,7 +135,7 @@ export default function ContactPage() {
         lastName: "",
         phone: "",
         email: "",
-        subject: "",
+        subject: DEFAULT_CONTACT_SUBJECT,
         message: "",
       });
     } catch (error) {
@@ -218,9 +221,15 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">Email Support</h4>
-                      <a href="mailto:bookings@sabarytours.com" className="text-gray-600 font-medium hover:text-[#ff5e00] transition-colors block">
-                        bookings@sabarytours.com
+                      <a href="mailto:info@sabarytours.com" className="text-gray-600 font-medium hover:text-[#ff5e00] transition-colors block">
+                        info@sabarytours.com
                       </a>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Bookings:{" "}
+                        <a href="mailto:bookings@sabarytours.com" className="hover:text-[#ff5e00]">
+                          bookings@sabarytours.com
+                        </a>
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -345,19 +354,26 @@ export default function ContactPage() {
                     htmlFor="subject"
                     className="block text-sm font-bold text-gray-900 mb-2"
                   >
-                    Subject
+                    Subject *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     id="subject"
                     name="subject"
                     value={formData.subject}
                     onChange={handleChange}
-                    placeholder="How can we help?"
                     className={`w-full px-5 py-3.5 bg-gray-50/50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff5e00]/20 focus:border-[#ff5e00] transition-all text-sm font-medium text-gray-900 ${
                       errors.subject ? "border-red-400 focus:border-red-400 focus:ring-red-400/20" : "border-gray-200"
                     }`}
-                  />
+                  >
+                    <option value="" disabled>
+                      Select a subject
+                    </option>
+                    {CONTACT_SUBJECTS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                   {errors.subject && (
                     <p className="text-red-500 text-[12px] mt-1">{errors.subject}</p>
                   )}

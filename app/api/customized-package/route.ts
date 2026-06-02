@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
-import { createClient } from "../../utils/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import { rateLimit } from "../../lib/rateLimit";
 import {
   customizedPackageSchema,
+  firstCustomizedPackageValidationMessage,
   formatCustomizedPackageMessage,
 } from "../../lib/validations/customizedPackage";
 import { sendInquiryAdminNotification } from "../../lib/sendInquiryAdminNotification";
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
 
 export async function POST(request: Request) {
   try {
@@ -25,16 +31,18 @@ export async function POST(request: Request) {
     const parsed = customizedPackageSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid form data", details: parsed.error.flatten() },
+        {
+          error: firstCustomizedPackageValidationMessage(parsed.error),
+          details: parsed.error.flatten(),
+        },
         { status: 400 }
       );
     }
 
     const data = parsed.data;
-    const supabase = await createClient();
     const message = formatCustomizedPackageMessage(data);
 
-    const { error } = await supabase.from("inquiries").insert([
+    const { error } = await supabaseAdmin.from("inquiries").insert([
       {
         name: `${data.firstName} ${data.lastName}`.trim(),
         email: data.email,
@@ -55,7 +63,7 @@ export async function POST(request: Request) {
     }
 
     if (data.subscribeNewsletter) {
-      await supabase.from("newsletter_subscribers").upsert(
+      await supabaseAdmin.from("newsletter_subscribers").upsert(
         {
           email: data.email.toLowerCase(),
           first_name: data.firstName,
