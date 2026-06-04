@@ -20,25 +20,25 @@ export default function Footer() {
     setMessage("");
 
     try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // Only passing the minimum required (plus fallback names) since Mailchimp requires FNAME/LNAME in some configs
+      const response = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
+          email: email.trim(),
           firstName: "Newsletter",
-          lastName: "Subscriber", 
+          lastName: "Subscriber",
+          source: "footer",
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to subscribe');
+        throw new Error(data.error || "Failed to subscribe");
       }
 
       setStatus("success");
-      setMessage("Subscribed successfully!");
+      setMessage(data.message || "You're subscribed!");
       setEmail("");
     } catch (err: unknown) {
       setStatus("error");
