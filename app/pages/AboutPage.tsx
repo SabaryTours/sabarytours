@@ -507,27 +507,20 @@ export default function AboutPage() {
         <div className="relative rounded-2xl overflow-hidden bg-white">
           <div className="container mx-auto px-3 sm:px-4 md:px-6 py-12 sm:py-14 md:py-16">
             <div className="max-w-4xl mx-auto">
-              <div className="flex flex-col sm:flex-row gap-[12px] items-center justify-center leading-none mb-12">
+              <div className="text-center w-full mb-12">
                 <h2
-                  className="text-[28px] sm:text-[32px] font-normal uppercase"
-                  style={{
-                    fontFamily: "var(--font-unlimited-pie)",
-                    color: "#222",
-                    lineHeight: 1,
-                  }}
+                  className="text-[28px] sm:text-[32px] font-normal uppercase leading-none"
+                  style={{ fontFamily: "var(--font-unlimited-pie)" }}
                 >
-                  the people
-                </h2>
-                <h2
-                  className="text-[28px] sm:text-[32px] font-normal uppercase"
-                  style={{
-                    fontFamily: "var(--font-unlimited-pie)",
-                    color: "#ff5e00",
-                    textShadow: "1px 1px 0px #551f00",
-                    lineHeight: 1,
-                  }}
-                >
-                  who make it happen
+                  <span style={{ color: "#222" }}>the people </span>
+                  <span
+                    style={{
+                      color: "#ff5e00",
+                      textShadow: "1px 1px 0px #551f00",
+                    }}
+                  >
+                    who make it happen
+                  </span>
                 </h2>
               </div>
               {/* Mobile: Horizontal Scroll */}
