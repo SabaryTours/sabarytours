@@ -23,25 +23,24 @@ export default function NewsletterSubscribe({
     setMessage("");
 
     try {
-      const res = await fetch("/api/contact", {
+      const res = await fetch("/api/newsletter/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: email.trim(),
           firstName: "Newsletter",
           lastName: "Subscriber",
+          source: "newsletter_component",
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Subscription failed");
       setStatus("success");
-      setMessage("You're subscribed — welcome aboard!");
+      setMessage(data.message || "You're subscribed!");
       setEmail("");
     } catch (err) {
       setStatus("error");
       setMessage(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setStatus("idle");
     }
   };
 
@@ -80,7 +79,7 @@ export default function NewsletterSubscribe({
       </form>
       {message && (
         <p
-          className={`mt-2 text-xs font-sans ${message.includes("subscribed") || message.includes("Welcome") ? "text-green-700" : "text-red-600"}`}
+          className={`mt-2 text-xs font-sans ${status === "success" ? "text-green-700" : "text-red-600"}`}
         >
           {message}
         </p>

@@ -7,6 +7,12 @@ import {
   formatCustomizedPackageMessage,
 } from "../../lib/validations/customizedPackage";
 import { sendInquiryAdminNotification } from "../../lib/sendInquiryAdminNotification";
+import { resend, FROM_EMAIL } from "../../lib/resend";
+import { upsertNewsletterSubscriber } from "../../lib/newsletterSubscribe";
+import {
+  buildCustomizedTripAutoReplyHtml,
+  CUSTOMIZED_TRIP_SUCCESS_MESSAGE,
+} from "../../lib/inquiryEmailHtml";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +29,7 @@ export async function POST(request: Request) {
     if (!ok) {
       return NextResponse.json(
         { error: "Too many submissions. Please try again later." },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
@@ -35,16 +41,17 @@ export async function POST(request: Request) {
           error: firstCustomizedPackageValidationMessage(parsed.error),
           details: parsed.error.flatten(),
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const data = parsed.data;
+    const fullName = `${data.firstName} ${data.lastName}`.trim();
     const message = formatCustomizedPackageMessage(data);
 
     const { error } = await supabaseAdmin.from("inquiries").insert([
       {
-        name: `${data.firstName} ${data.lastName}`.trim(),
+        name: fullName,
         email: data.email,
         phone: data.phone,
         subject: `Customized package — ${data.organisationOrIndividual}`,
@@ -58,35 +65,48 @@ export async function POST(request: Request) {
       console.error("Customized package inquiry error:", error);
       return NextResponse.json(
         { error: "Failed to submit request. Please try again." },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
+    let newsletterNote: string | undefined;
     if (data.subscribeNewsletter) {
-      await supabaseAdmin.from("newsletter_subscribers").upsert(
-        {
-          email: data.email.toLowerCase(),
-          first_name: data.firstName,
-          last_name: data.lastName,
-          source: "customized_package_form",
-          status: "subscribed",
-        },
-        { onConflict: "email" }
-      );
+      const sub = await upsertNewsletterSubscriber(supabaseAdmin, {
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        source: "customized_package_form",
+      });
+      if (!sub.ok) {
+        newsletterNote =
+          " Your trip request was saved, but we could not add you to the newsletter — you can subscribe from the footer anytime.";
+        console.error("[customized-package] newsletter:", sub.error);
+      }
     }
 
     await sendInquiryAdminNotification({
       source: "customized_package",
-      name: `${data.firstName} ${data.lastName}`.trim(),
+      name: fullName,
       email: data.email,
       phone: data.phone,
       subject: `Customized package — ${data.organisationOrIndividual}`,
       message,
     });
 
+    if (process.env.RESEND_API_KEY?.trim()) {
+      const { error: emailError } = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: [data.email],
+        subject: "We've received your customized tour request — Sabary Tours",
+        html: buildCustomizedTripAutoReplyHtml(data.firstName),
+      });
+      if (emailError) {
+        console.error("[Resend] Customized trip auto-reply failed:", emailError);
+      }
+    }
+
     return NextResponse.json({
-      message:
-        "Thank you! We received your customized tour request and will be in touch shortly.",
+      message: CUSTOMIZED_TRIP_SUCCESS_MESSAGE + (newsletterNote ?? ""),
     });
   } catch (err) {
     console.error("Customized package API error:", err);
