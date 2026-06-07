@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { GA_MEASUREMENT_ID } from "../lib/googleAnalytics";
 
 declare global {
   interface Window {
@@ -47,8 +48,7 @@ export default function BlogViewTracker({ slug, title }: BlogViewTrackerProps) {
 
     void recordView();
 
-    const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
-    if (gaId && typeof window.gtag === "function") {
+    if (GA_MEASUREMENT_ID && typeof window.gtag === "function") {
       window.gtag("event", "blog_view", {
         blog_slug: slug,
         blog_title: title,

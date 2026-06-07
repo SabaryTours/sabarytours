@@ -3,12 +3,14 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { rateLimit } from "../../../lib/rateLimit";
 import { upsertNewsletterSubscriber } from "../../../lib/newsletterSubscribe";
-import { NEWSLETTER_SUCCESS_MESSAGE } from "../../../lib/inquiryEmailHtml";
+import {
+  buildNewsletterWelcomeHtml,
+  NEWSLETTER_SUCCESS_MESSAGE,
+} from "../../../lib/inquiryEmailHtml";
+import { resend, FROM_EMAIL } from "../../../lib/resend";
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const subscribeSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address"),
@@ -19,6 +21,16 @@ const subscribeSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    if (!supabaseUrl || !serviceRoleKey?.trim()) {
+      console.error("[newsletter] Missing Supabase service role configuration");
+      return NextResponse.json(
+        { error: "Subscription service is not configured. Please try again later." },
+        { status: 500 },
+      );
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       request.headers.get("x-real-ip") ||
@@ -48,6 +60,20 @@ export async function POST(request: Request) {
 
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+
+    if (process.env.RESEND_API_KEY?.trim()) {
+      const { error: emailError } = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: [email],
+        subject: "Welcome to Sabary Tours — you're subscribed!",
+        html: buildNewsletterWelcomeHtml(),
+      });
+      if (emailError) {
+        console.error("[newsletter] welcome email failed:", emailError);
+      }
+    } else {
+      console.error("[newsletter] RESEND_API_KEY missing — subscriber saved but no welcome email sent");
     }
 
     return NextResponse.json({ message: NEWSLETTER_SUCCESS_MESSAGE }, { status: 200 });

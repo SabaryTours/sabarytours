@@ -1,4 +1,5 @@
 import Hero from "../components/Hero";
+import HomePopularExperiences from "../components/HomePopularExperiences";
 import WhyTravel from "../components/WhyTravel";
 import Packages from "../components/Packages";
 import WhatsHappening from "../components/WhatsHappening";
@@ -32,7 +33,7 @@ export default async function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
       <Hero initialImages={imageUrls} />
-      
+      <HomePopularExperiences />
       <Packages />
       {happenings.length > 0 && <WhatsHappening events={happenings} />}
       <WhyTravel />

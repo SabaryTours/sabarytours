@@ -875,7 +875,7 @@ export default function TourForm({ initialData }: TourFormProps) {
           className="w-5 h-5 accent-[#ff5e00] text-[#ff5e00] rounded focus:ring-[#ff5e00]" 
         />
         <label htmlFor="is_featured" className="text-sm font-medium text-gray-700 font-sans cursor-pointer">
-          Feature this tour on the landing page Hero section
+          Feature on homepage (max 4 tours — &quot;Popular experiences&quot; section)
         </label>
       </div>
 

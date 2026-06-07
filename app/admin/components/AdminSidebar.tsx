@@ -15,6 +15,7 @@ import {
   Ticket01Icon,
   Image01Icon,
   Calendar04Icon,
+  Mail02Icon,
 } from "hugeicons-react";
 import { logout } from "../../lib/authService";
 import Image from "next/image";
@@ -26,6 +27,7 @@ const navItems = [
   { name: "Gallery", href: "/admin/gallery", icon: Image01Icon },
   { name: "Upcoming tours plan", href: "/admin/trip-outline", icon: Calendar04Icon },
   { name: "Inquiries", href: "/admin/inquiries", icon: Message01Icon },
+  { name: "Newsletter", href: "/admin/newsletter", icon: Mail02Icon },
   { name: "Invoices", href: "/admin/invoices", icon: Invoice01Icon }, // NEW
   { name: "Vouchers", href: "/admin/vouchers", icon: Ticket01Icon },
   { name: "Users", href: "/admin/users", icon: UserCircleIcon },

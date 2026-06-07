@@ -169,7 +169,9 @@ export default function Footer() {
               </button>
             </form>
             {message && (
-              <p className={`mt-2 text-[13px] ${status === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+              <p
+                className={`mt-2 text-[13px] whitespace-pre-line leading-relaxed ${status === "success" ? "text-green-400" : "text-red-400"}`}
+              >
                 {message}
               </p>
             )}

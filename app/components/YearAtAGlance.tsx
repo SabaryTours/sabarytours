@@ -66,9 +66,6 @@ export default function YearAtAGlance({ year, items }: { year: number; items: Tr
             >
               Upcoming tours
             </h2>
-            <p className="mt-2 text-gray-600 font-sans text-sm max-w-xl">
-              Explore the year month-by-month to see what trips are coming up and when to book.
-            </p>
           </div>
           <Link
             href="/upcoming-tours"

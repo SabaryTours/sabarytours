@@ -1,3 +1,6 @@
+/** Max tours marked featured in admin and shown on the homepage. */
+export const MAX_FEATURED_TOURS = 4;
+
 export type FeaturedTourCard = {
   title: string;
   duration: string;
@@ -41,6 +44,14 @@ export const FEATURED_TOUR_MATCHERS: FeaturedTourMatcher[] = [
     location: "Greater Accra",
     highlights: "Independence Square, Jamestown, Arts Centre, local food stops",
     titlePatterns: ["accra explorer", "accra city tour"],
+  },
+  {
+    key: "batik",
+    displayTitle: "Batik Making Experience",
+    duration: "Half Day",
+    location: "Greater Accra",
+    highlights: "Hands-on wax-resist workshop — create and take home your own fabric",
+    titlePatterns: ["batik making", "batik experience"],
   },
 ];
 

@@ -32,6 +32,31 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { tourInput, imagesInput, tourId, priceInput } = body;
 
+    const MAX_FEATURED = 4;
+    if (tourInput?.is_featured) {
+      let countQuery = supabaseAdmin
+        .from("tours")
+        .select("id", { count: "exact", head: true })
+        .eq("is_featured", true)
+        .eq("status", "published");
+
+      if (tourId) {
+        countQuery = countQuery.neq("id", tourId);
+      }
+
+      const { count, error: countError } = await countQuery;
+      if (countError) throw countError;
+      if ((count ?? 0) >= MAX_FEATURED) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `You can feature at most ${MAX_FEATURED} tours. Unfeature another tour first.`,
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     let finalTourId = tourId;
 
     // 1. Upsert Tour

@@ -10,7 +10,7 @@ export type NewsletterSubscribeInput = {
 export async function upsertNewsletterSubscriber(
   supabase: SupabaseClient,
   input: NewsletterSubscribeInput,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true; table: string } | { ok: false; error: string }> {
   const email = input.email.trim().toLowerCase();
   if (!email || !email.includes("@")) {
     return { ok: false, error: "A valid email address is required." };
@@ -22,6 +22,7 @@ export async function upsertNewsletterSubscriber(
     last_name: input.lastName?.trim() || null,
     source: input.source,
     status: "subscribed",
+    updated_at: new Date().toISOString(),
   };
 
   const { error: richError } = await supabase
@@ -29,7 +30,13 @@ export async function upsertNewsletterSubscriber(
     .upsert(richRow, { onConflict: "email" });
 
   if (!richError) {
-    return { ok: true };
+    const verified = await verifySubscriber(supabase, "newsletter_subscribers", email);
+    if (verified) return { ok: true, table: "newsletter_subscribers" };
+    console.error("[newsletter] upsert reported success but row not found:", email);
+    return {
+      ok: false,
+      error: "We could not save your subscription. Please try again later.",
+    };
   }
 
   const useLegacyTable =
@@ -44,9 +51,10 @@ export async function upsertNewsletterSubscriber(
       { onConflict: "email", ignoreDuplicates: false },
     );
     if (!legacyError) {
-      return { ok: true };
+      const verified = await verifySubscriber(supabase, "subscribers", email);
+      if (verified) return { ok: true, table: "subscribers" };
     }
-    console.error("[newsletter] subscribers upsert failed:", legacyError.message);
+    console.error("[newsletter] subscribers upsert failed:", legacyError?.message);
   } else {
     console.error("[newsletter] upsert failed:", richError.message, richError.details);
   }
@@ -55,4 +63,17 @@ export async function upsertNewsletterSubscriber(
     ok: false,
     error: "We could not save your subscription. Please try again later.",
   };
+}
+
+async function verifySubscriber(
+  supabase: SupabaseClient,
+  table: "newsletter_subscribers" | "subscribers",
+  email: string,
+): Promise<boolean> {
+  const { data, error } = await supabase.from(table).select("email").eq("email", email).maybeSingle();
+  if (error) {
+    console.error(`[newsletter] verify ${table}:`, error.message);
+    return false;
+  }
+  return Boolean(data?.email);
 }
