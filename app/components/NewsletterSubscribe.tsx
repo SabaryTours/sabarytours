@@ -79,7 +79,7 @@ export default function NewsletterSubscribe({
       </form>
       {message && (
         <p
-          className={`mt-2 text-xs font-sans ${status === "success" ? "text-green-700" : "text-red-600"}`}
+          className={`mt-2 text-xs font-sans whitespace-pre-line leading-relaxed ${status === "success" ? "text-green-700" : "text-red-600"}`}
         >
           {message}
         </p>

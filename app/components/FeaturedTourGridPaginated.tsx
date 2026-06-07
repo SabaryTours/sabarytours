@@ -6,7 +6,9 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft01Icon, ArrowRight01Icon } from "hugeicons-react";
 import type { FeaturedTourCard } from "../lib/featuredTours";
 
-const PAGE_SIZE = 6;
+import { MAX_FEATURED_TOURS } from "../lib/featuredTours";
+
+const PAGE_SIZE = MAX_FEATURED_TOURS;
 
 type FeaturedTourGridPaginatedProps = {
   tours: FeaturedTourCard[];

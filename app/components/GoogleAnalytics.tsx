@@ -1,9 +1,8 @@
 import Script from "next/script";
-
-const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+import { GA_MEASUREMENT_ID } from "../lib/googleAnalytics";
 
 export default function GoogleAnalytics() {
-  if (!GA_ID) return null;
+  const GA_ID = GA_MEASUREMENT_ID;
 
   return (
     <>

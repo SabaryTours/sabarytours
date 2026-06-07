@@ -5,6 +5,7 @@ import { getTourBookingCounts } from './packagePopularity';
 import { getLowestTierPrice, sortTourPriceTiers } from './tourPricing';
 import {
   FEATURED_TOUR_MATCHERS,
+  MAX_FEATURED_TOURS,
   matcherToFallbackCard,
   matchTourByPatterns,
   tourToFeaturedCard,
@@ -76,7 +77,9 @@ const FEATURED_TOUR_SELECT = `
 `;
 
 /** Featured tours marked in admin (`is_featured`), with legacy title-matcher fallback. */
-export async function getFeaturedTours(): Promise<FeaturedTourCard[]> {
+export async function getFeaturedTours(
+  limit = MAX_FEATURED_TOURS,
+): Promise<FeaturedTourCard[]> {
   const supabase = await createClient();
 
   const { data: adminFeatured, error: featuredError } = await supabase
@@ -87,7 +90,9 @@ export async function getFeaturedTours(): Promise<FeaturedTourCard[]> {
     .order("updated_at", { ascending: false });
 
   if (!featuredError && adminFeatured && adminFeatured.length > 0) {
-    return (adminFeatured as TourForFeaturedCard[]).map((tour) => tourToFeaturedCard(tour));
+    return (adminFeatured as TourForFeaturedCard[])
+      .slice(0, limit)
+      .map((tour) => tourToFeaturedCard(tour));
   }
 
   if (featuredError && !/is_featured/i.test(featuredError.message)) {
@@ -101,12 +106,12 @@ export async function getFeaturedTours(): Promise<FeaturedTourCard[]> {
 
   if (error) {
     console.error("getFeaturedTours:", error);
-    return FEATURED_TOUR_MATCHERS.map(matcherToFallbackCard);
+    return FEATURED_TOUR_MATCHERS.slice(0, limit).map(matcherToFallbackCard);
   }
 
   const published = (tours || []) as TourForFeaturedCard[];
 
-  return FEATURED_TOUR_MATCHERS.map((matcher) => {
+  return FEATURED_TOUR_MATCHERS.slice(0, limit).map((matcher) => {
     const tour = matchTourByPatterns(published, matcher.titlePatterns);
     if (!tour) return matcherToFallbackCard(matcher);
 

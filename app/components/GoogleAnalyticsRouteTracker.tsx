@@ -9,7 +9,9 @@ declare global {
   }
 }
 
-const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+import { GA_MEASUREMENT_ID } from "../lib/googleAnalytics";
+
+const GA_ID = GA_MEASUREMENT_ID;
 
 /** Sends page_view on client navigations (App Router). Initial load is handled by gtag config. */
 export default function GoogleAnalyticsRouteTracker() {

@@ -61,4 +61,24 @@ export const CONTACT_SUCCESS_MESSAGE =
   "Thank you! Your message has been sent. Check your email for a confirmation — we'll reply within 1–3 business days.";
 
 export const NEWSLETTER_SUCCESS_MESSAGE =
-  "You're subscribed! Look out for travel tips, Ghana stories, and tour updates in your inbox.";
+  "Thanks for subscribing! 🎉🎊\n\nGet ready for exciting travel stories, insider tips, upcoming tours, hidden gems in Ghana, and exclusive Sabary Tours offers delivered straight to your inbox.📥";
+
+export function buildNewsletterWelcomeHtml(): string {
+  const body = `
+    <p style="margin:0 0 18px;font-size:16px;color:#374151;line-height:1.65;">
+      Thanks for subscribing! 🎉
+    </p>
+    <p style="margin:0 0 18px;font-size:15px;color:#374151;line-height:1.65;">
+      Get ready for exciting travel stories, insider tips, upcoming tours, hidden gems in Ghana, and exclusive Sabary Tours offers delivered straight to your inbox.
+    </p>
+    <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.65;">
+      We&rsquo;re glad you&rsquo;re here. Your next Ghana adventure starts with what lands in your inbox.
+    </p>
+  `;
+
+  return buildEmailHtml({
+    documentType: "Welcome to Sabary Tours",
+    metaRows: [{ label: "Newsletter", value: "You&rsquo;re subscribed" }],
+    body,
+  });
+}
