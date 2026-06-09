@@ -56,6 +56,9 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
   },
+  verification: {
+    google: "WWSgsu6wWzWwkVE3SYNKkVTMEqfDkUfI0g0msAbYQrY",
+  },
 };
 
 export const viewport: Viewport = {
