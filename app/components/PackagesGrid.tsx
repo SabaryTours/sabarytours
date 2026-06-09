@@ -114,7 +114,22 @@ function PackageCard({ pkg, isMobile = false }: { pkg: PackageCategory; isMobile
   );
 }
 
-export default function PackagesGrid({ packages = [] }: { packages: PackageCategory[] }) {
+const HOMEPAGE_PACKAGE_LIMIT = 6;
+
+export default function PackagesGrid({
+  packages = [],
+  limit,
+  showViewAllLink = false,
+  viewAllHref = "/packages",
+}: {
+  packages: PackageCategory[];
+  limit?: number;
+  showViewAllLink?: boolean;
+  viewAllHref?: string;
+}) {
+  const visible = limit ? packages.slice(0, limit) : packages;
+  const hasMore = limit ? packages.length > limit : false;
+
   return (
     <>
       {/* Mobile: Horizontal Scroll Container */}
@@ -125,17 +140,30 @@ export default function PackagesGrid({ packages = [] }: { packages: PackageCateg
           msOverflowStyle: "none",
         }}
       >
-        {packages.map((pkg) => (
+        {visible.map((pkg) => (
           <PackageCard key={pkg.id} pkg={pkg} isMobile={true} />
         ))}
       </div>
 
       {/* Desktop: Grid Layout */}
       <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {packages.map((pkg) => (
+        {visible.map((pkg) => (
           <PackageCard key={pkg.id} pkg={pkg} isMobile={false} />
-      ))}
-    </div>
+        ))}
+      </div>
+
+      {showViewAllLink && hasMore && (
+        <p className="text-center mt-6 sm:mt-8">
+          <Link
+            href={viewAllHref}
+            className="inline-flex items-center gap-1 text-sm font-bold text-[#0060cc] hover:text-[#ff5e00] transition-colors font-sans"
+          >
+            Click to view all {packages.length} packages →
+          </Link>
+        </p>
+      )}
     </>
   );
 }
+
+export { HOMEPAGE_PACKAGE_LIMIT };

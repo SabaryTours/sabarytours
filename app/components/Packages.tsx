@@ -1,4 +1,4 @@
-import PackagesGrid from "./PackagesGrid";
+import PackagesGrid, { HOMEPAGE_PACKAGE_LIMIT } from "./PackagesGrid";
 import { createClient } from "../utils/supabase/server";
 import {
   getPackageBookingCounts,
@@ -121,7 +121,11 @@ export default async function Packages() {
               </div>
             </div>
 
-          <PackagesGrid packages={sortedPackages} />
+          <PackagesGrid
+            packages={sortedPackages}
+            limit={HOMEPAGE_PACKAGE_LIMIT}
+            showViewAllLink
+          />
         </div>
       </div>
     </section>
