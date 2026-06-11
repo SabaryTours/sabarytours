@@ -26,7 +26,7 @@ const navItems = [
   { name: "Bookings", href: "/admin/bookings", icon: MapsIcon },
   { name: "Gallery", href: "/admin/gallery", icon: Image01Icon },
   { name: "Upcoming tours plan", href: "/admin/trip-outline", icon: Calendar04Icon },
-  { name: "Inquiries", href: "/admin/inquiries", icon: Message01Icon },
+  { name: "Messages", href: "/admin/inquiries", icon: Message01Icon },
   { name: "Newsletter", href: "/admin/newsletter", icon: Mail02Icon },
   { name: "Invoices", href: "/admin/invoices", icon: Invoice01Icon }, // NEW
   { name: "Vouchers", href: "/admin/vouchers", icon: Ticket01Icon },

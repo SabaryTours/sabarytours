@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Menu01Icon, UserCircleIcon, Notification03Icon } from "hugeicons-react";
-import { createClient } from "../../utils/supabase/client";
 import Link from "next/link";
 
 interface AdminHeaderProps {
@@ -15,28 +14,18 @@ export default function AdminHeader({ onMenuClick, title = "Dashboard" }: AdminH
 
   useEffect(() => {
     const fetchUnread = async () => {
-      const supabase = createClient();
-      const { count } = await supabase
-        .from('inquiries')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'unread');
-      
-      setUnreadCount(count || 0);
+      try {
+        const res = await fetch("/api/admin/inquiries/stats");
+        const data = await res.json();
+        if (res.ok) setUnreadCount(data.unread ?? 0);
+      } catch {
+        setUnreadCount(0);
+      }
     };
 
     fetchUnread();
-    
-    // Optional: Set up real-time subscription here
-    const supabase = createClient();
-    const channel = supabase.channel('inquiries_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'inquiries' }, () => {
-        fetchUnread();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    const interval = setInterval(fetchUnread, 60_000);
+    return () => clearInterval(interval);
   }, []);
 
   return (

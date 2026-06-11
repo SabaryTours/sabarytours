@@ -22,6 +22,13 @@ import {
   type CustomizedPackageFormData,
 } from "../lib/validations/customizedPackage";
 
+function minDateTimeLocalValue(): string {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 16);
+}
+
 const initialForm: CustomizedPackageFormData = {
   firstName: "",
   lastName: "",
@@ -323,13 +330,14 @@ export default function CustomizedPackageForm() {
           )}
         </div>
         <div>
-          <label className="block text-sm font-bold mb-1">Preferred date *</label>
+          <label className="block text-sm font-bold mb-1">Preferred date &amp; time *</label>
           <input
+            type="datetime-local"
             name="preferredDate"
             value={formData.preferredDate}
             onChange={handleChange}
+            min={minDateTimeLocalValue()}
             className={fieldClass("preferredDate")}
-            placeholder="e.g. March 2026 or flexible"
           />
           {errors.preferredDate && (
             <p className="text-red-500 text-xs mt-1">{errors.preferredDate}</p>
