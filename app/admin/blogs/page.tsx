@@ -19,7 +19,7 @@ export default function AdminBlogsPage() {
     const supabase = createClient();
     const { data } = await supabase
       .from('posts')
-      .select('id, title, status, created_at, image_url')
+      .select('id, title, status, created_at, image_url, view_count, comment_count')
       .order('created_at', { ascending: false });
     
     if (data) setBlogs(data);
@@ -66,8 +66,11 @@ export default function AdminBlogsPage() {
                   </div>
                   <p className="text-sm font-bold text-gray-800 font-sans line-clamp-2 flex-1 min-w-0">{blog.title}</p>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <span className="text-sm text-gray-600 font-sans">{new Date(blog.created_at).toLocaleDateString()}</span>
+                  <span className="text-xs text-gray-500 font-sans">
+                    {(blog.view_count ?? 0).toLocaleString()} views
+                  </span>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-sans border ${blog.status === "published" ? "bg-green-50 text-green-700 border-green-200" : "bg-yellow-50 text-yellow-700 border-yellow-200"}`}>
                     {blog.status === "published" ? "Published" : "Draft"}
                   </span>
@@ -90,15 +93,16 @@ export default function AdminBlogsPage() {
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider font-sans">Article</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider font-sans">Date</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider font-sans">Views</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider font-sans">Status</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider font-sans text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500 font-sans">Loading articles...</td></tr>
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500 font-sans">Loading articles...</td></tr>
               ) : blogs.length === 0 ? (
-                <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500 font-sans">No articles found.</td></tr>
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500 font-sans">No articles found.</td></tr>
               ) : blogs.map((blog) => {
                 const primaryImage = blog.image_url || "/assets/placeholder-tour.jpg";
                 return (
@@ -112,6 +116,7 @@ export default function AdminBlogsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4"><span className="text-sm text-gray-600 font-sans">{new Date(blog.created_at).toLocaleDateString()}</span></td>
+                    <td className="px-6 py-4"><span className="text-sm text-gray-600 font-sans">{(blog.view_count ?? 0).toLocaleString()}</span></td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-sans border ${blog.status === "published" ? "bg-green-50 text-green-700 border-green-200" : "bg-yellow-50 text-yellow-700 border-yellow-200"}`}>
                         {blog.status === "published" ? "Published" : "Draft"}

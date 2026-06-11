@@ -22,8 +22,6 @@ export default function BlogPostViewCounter({ slug, initialViews }: BlogPostView
     return () => window.removeEventListener("blog-view-recorded", onRecorded);
   }, [slug]);
 
-  if (views <= 0) return null;
-
   return (
     <>
       <span>•</span>

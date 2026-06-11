@@ -28,7 +28,13 @@ export const customizedPackageSchema = z
       .min(2, "Please enter your name or organisation")
       .max(120),
     numberOfPeople: z.string().min(1, "Number of people is required").max(20),
-    preferredDate: z.string().min(1, "Preferred date is required").max(100),
+    preferredDate: z
+      .string()
+      .min(1, "Please select a preferred date and time")
+      .refine(
+        (val) => !Number.isNaN(new Date(val).getTime()),
+        "Please select a valid date and time",
+      ),
     budgetRange: z.string().min(1, "Budget range is required").max(100),
 
     pickupLocation: z.enum(PICKUP_LOCATIONS, {
@@ -90,6 +96,20 @@ export const customizedPackageSchema = z
 
 export type CustomizedPackageFormData = z.infer<typeof customizedPackageSchema>;
 
+function formatPreferredDateTime(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 export function formatCustomizedPackageMessage(
   data: CustomizedPackageFormData
 ): string {
@@ -107,7 +127,7 @@ export function formatCustomizedPackageMessage(
     "=== CUSTOMIZED TRIP PLANNING REQUEST ===",
     `Organisation / individual: ${data.organisationOrIndividual}`,
     `Number of people: ${data.numberOfPeople}`,
-    `Preferred date: ${data.preferredDate}`,
+    `Preferred date & time: ${formatPreferredDateTime(data.preferredDate)}`,
     `Budget range: ${data.budgetRange}`,
     "",
     "--- Traveler & pickup ---",

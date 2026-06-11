@@ -40,7 +40,15 @@ export async function POST(_request: Request, context: RouteContext) {
 
     if (updateError) {
       console.error("Failed to increment blog view:", updateError);
-      return NextResponse.json({ error: "Failed to record view" }, { status: 500 });
+      const missingColumn = /view_count/i.test(updateError.message);
+      return NextResponse.json(
+        {
+          error: missingColumn
+            ? "Blog view tracking is not enabled — run supabase/migrations/20250611_post_view_counts.sql in Supabase SQL Editor."
+            : "Failed to record view",
+        },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({ views: nextCount }, { status: 200 });
