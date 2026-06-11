@@ -114,7 +114,7 @@ export default function BlogGrid({ limit, loadMoreHref }: BlogGridProps) {
                 />
               </div>
 
-              {(post.views > 0 || post.comments > 0) && (
+              {post.comments > 0 && (
                 <div
                   className="absolute top-3 left-3 flex items-center gap-[10px] px-[10px] py-[5px] rounded-[20px]"
                   style={{
@@ -123,25 +123,12 @@ export default function BlogGrid({ limit, loadMoreHref }: BlogGridProps) {
                     border: "0.5px solid white",
                   }}
                 >
-                  {post.views > 0 && (
-                    <div className="flex items-center gap-1">
-                      <EyeIcon className="w-4 h-4 text-[#222]" />
-                      <span className="text-[#222] text-[12px] font-bold leading-none">
-                        {post.views} views
-                      </span>
-                    </div>
-                  )}
-                  {post.views > 0 && post.comments > 0 && (
-                    <div className="w-1 h-1 rounded-full bg-[#222]" />
-                  )}
-                  {post.comments > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Message01Icon className="w-4 h-4 text-[#222]" />
-                      <span className="text-[#222] text-[12px] font-bold leading-none">
-                        {post.comments} comment{post.comments !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1">
+                    <Message01Icon className="w-4 h-4 text-[#222]" />
+                    <span className="text-[#222] text-[12px] font-bold leading-none">
+                      {post.comments} comment{post.comments !== 1 ? "s" : ""}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -152,6 +139,12 @@ export default function BlogGrid({ limit, loadMoreHref }: BlogGridProps) {
             >
               {post.title}
             </h3>
+            {post.views > 0 && (
+              <p className="text-xs text-gray-500 font-sans -mt-1 flex items-center gap-1">
+                <EyeIcon className="w-3.5 h-3.5" />
+                {post.views} view{post.views !== 1 ? "s" : ""}
+              </p>
+            )}
           </Link>
         ))}
       </div>
