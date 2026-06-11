@@ -11,6 +11,9 @@ import GoogleTranslate from "./components/GoogleTranslate";
 import SplashScreen from "./components/SplashScreen";
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import GoogleAnalyticsRouteTracker from "./components/GoogleAnalyticsRouteTracker";
+import JsonLd from "./components/seo/JsonLd";
+import { buildOrganizationSchema, buildWebSiteSchema } from "./lib/seo/schema";
+import { getSiteUrl } from "./lib/seo/site";
 
 const quicksand = Quicksand({
   variable: "--font-quicksand",
@@ -19,7 +22,7 @@ const quicksand = Quicksand({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sabarytours.com";
+const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -76,6 +79,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={quicksand.variable}>
       <body className={`${quicksand.className} font-sans antialiased`}>
+        <JsonLd data={[buildOrganizationSchema(), buildWebSiteSchema()]} />
         <GoogleAnalytics />
         <Suspense fallback={null}>
           <GoogleAnalyticsRouteTracker />
