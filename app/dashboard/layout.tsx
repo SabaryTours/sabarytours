@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
-import RegisterPage from "../pages/RegisterPage";
 import { NO_INDEX_ROBOTS } from "../lib/seo/site";
 
 export const metadata: Metadata = {
-  title: "Register | Sabary Tours",
+  title: "My Dashboard | Sabary Tours",
   robots: NO_INDEX_ROBOTS,
 };
 
-export default function Register() {
-  return <RegisterPage />;
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return children;
 }
-

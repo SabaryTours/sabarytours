@@ -322,6 +322,8 @@ export interface BlogPost {
   comments: number;
   author: string;
   date: string;
+  publishedAtIso: string;
+  modifiedAtIso?: string;
   content: string;
   excerpt?: string;
 }
@@ -340,6 +342,13 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
 
   const resolvedSlug = post.slug || generateSlug(post.title);
 
+  const publishedAtIso = post.created_at
+    ? new Date(post.created_at).toISOString()
+    : new Date().toISOString();
+  const modifiedAtIso = post.updated_at
+    ? new Date(post.updated_at).toISOString()
+    : publishedAtIso;
+
   return {
     id: post.id.toString(),
     title: post.title,
@@ -349,6 +358,8 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
     comments: post.comment_count ?? 0,
     author: 'Sabary Tours',
     date: new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+    publishedAtIso,
+    modifiedAtIso,
     content: post.content || '',
     excerpt: post.summary || '',
   } as BlogPost;
@@ -372,6 +383,12 @@ export async function getRelatedBlogPosts(
 
   return data.map((post) => {
     const resolvedSlug = post.slug || generateSlug(post.title);
+    const publishedAtIso = post.created_at
+      ? new Date(post.created_at).toISOString()
+      : new Date().toISOString();
+    const modifiedAtIso = post.updated_at
+      ? new Date(post.updated_at).toISOString()
+      : publishedAtIso;
     return {
       id: post.id.toString(),
       title: post.title,
@@ -381,6 +398,8 @@ export async function getRelatedBlogPosts(
       comments: post.comment_count ?? 0,
       author: 'Sabary Tours',
       date: new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      publishedAtIso,
+      modifiedAtIso,
       content: post.content || '',
       excerpt: post.summary || '',
     } as BlogPost;
