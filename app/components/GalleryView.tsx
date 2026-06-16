@@ -16,7 +16,11 @@ export default function GalleryView({ initialItems = [] as GalleryImageRow[] }: 
   const [lightbox, setLightbox] = useState<GalleryImageRow | null>(null);
 
   useEffect(() => {
-    if (initialItems.length) return;
+    setItems(initialItems);
+  }, [initialItems]);
+
+  useEffect(() => {
+    if (initialItems.length > 0) return;
     void (async () => {
       try {
         const res = await fetch("/api/gallery");
@@ -43,22 +47,27 @@ export default function GalleryView({ initialItems = [] as GalleryImageRow[] }: 
   return (
     <>
       {items.length === 0 ? (
-        <p className="text-center text-gray-500 font-sans py-16">Gallery photos will appear here soon.</p>
+        <p className="text-center text-white/90 font-sans py-16">Gallery photos will appear here soon.</p>
       ) : (
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-5 space-y-5">
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
           {items.map((row) => (
             <button
               key={row.id}
               type="button"
               onClick={() => open(row)}
-              className="group relative block w-full break-inside-avoid overflow-hidden rounded-2xl border border-[#e7edf6] bg-white shadow-[0_12px_35px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(15,23,42,0.14)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5e00]"
+              className="relative block w-full break-inside-avoid overflow-hidden rounded-2xl border border-white/30 bg-white shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
-              <div className="relative aspect-4/3 w-full">
-                <Image src={row.image_url} alt={row.caption || "Gallery"} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
-                <div className="absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-black/35 via-black/10 to-transparent" />
+              <div className="relative aspect-[4/3] w-full">
+                <Image
+                  src={row.image_url}
+                  alt={row.caption || "Gallery"}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
               </div>
               {row.caption ? (
-                <p className="p-3.5 text-left text-sm font-sans font-medium text-gray-800">{row.caption}</p>
+                <p className="p-3 text-left text-sm font-sans font-medium text-gray-800">{row.caption}</p>
               ) : null}
             </button>
           ))}
@@ -67,7 +76,7 @@ export default function GalleryView({ initialItems = [] as GalleryImageRow[] }: 
 
       {lightbox && (
         <div
-          className="fixed inset-0 z-300 flex items-center justify-center bg-[#0b1320]/90 p-4"
+          className="fixed inset-0 z-[300] flex items-center justify-center bg-black/85 p-4"
           role="dialog"
           aria-modal="true"
           aria-label="Image preview"
@@ -82,7 +91,7 @@ export default function GalleryView({ initialItems = [] as GalleryImageRow[] }: 
             <Cancel01Icon size={28} />
           </button>
           <div className="relative max-h-[90vh] max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="relative aspect-video w-full min-h-50 overflow-hidden rounded-2xl border border-white/15 bg-black/30">
+            <div className="relative aspect-video w-full min-h-[200px]">
               <Image
                 src={lightbox.image_url}
                 alt={lightbox.caption || "Gallery"}

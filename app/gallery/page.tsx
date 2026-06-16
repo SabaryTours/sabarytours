@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import Footer from "../components/Footer";
 import GalleryView, { type GalleryImageRow } from "../components/GalleryView";
 import { createClient } from "../utils/supabase/server";
+import { buildPageMetadata } from "../lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "Gallery | Sabary Tours",
   description: "Moments and scenes from tours across Ghana with Sabary Travel and Tours.",
-};
+  path: "/gallery",
+});
 
 export default async function GalleryPage() {
   let initialItems: GalleryImageRow[] = [];
@@ -24,24 +26,43 @@ export default async function GalleryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#eef7ff_0%,#f7fafc_35%,#ffffff_70%)]">
-      <section className="w-full px-4 sm:px-6 md:px-12 pt-8 sm:pt-10 pb-10">
-        <div className="container mx-auto max-w-6xl">
-          <div className="relative overflow-hidden rounded-3xl border border-[#d7e9ff] bg-white/90 shadow-[0_20px_70px_rgba(0,96,204,0.12)]">
-            <div className="pointer-events-none absolute -top-20 -right-16 h-52 w-52 rounded-full bg-[#9cd0ff]/40 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-[#ffd8bf]/60 blur-3xl" />
+    <div className="min-h-screen bg-white">
+      <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7">
+        <div
+          className="relative rounded-2xl overflow-hidden"
+          style={{ backgroundColor: "#ff5e00" }}
+        >
+          <div
+            className="absolute inset-0 pointer-events-none opacity-20"
+            style={{
+              backgroundImage: "url(/assets/pattern.svg)",
+              backgroundRepeat: "repeat",
+              backgroundSize: "auto",
+              mixBlendMode: "overlay",
+            }}
+            aria-hidden
+          />
 
-            <div className="relative px-6 sm:px-10 pt-10 pb-8 sm:pb-10">
-              <p className="text-[#0060cc] text-xs sm:text-sm font-bold uppercase tracking-[0.2em] font-sans mb-3">Sabary Tours</p>
+          <div className="container mx-auto px-3 sm:px-4 md:px-6 py-12 sm:py-14 md:py-16 relative z-10">
+            <div className="max-w-5xl mx-auto">
+              <div className="text-white text-[16px] leading-[24px] mb-6 text-center font-sans max-w-3xl mx-auto">
+                Snapshots of culture, landscapes, and unforgettable moments from journeys across Ghana — the same spirit
+                we bring to every Sabary tour.
+              </div>
+              <div className="text-white text-[16px] leading-[20px] mb-8 text-center font-sans">
+                Every photo is a reminder that travel should feel personal:
+              </div>
               <h1
-                className="text-4xl sm:text-5xl text-[#162033] uppercase mb-4"
-                style={{ fontFamily: "var(--font-unlimited-pie)" }}
+                className="text-[20px] sm:text-[22px] md:text-[24px] text-white font-normal leading-normal mb-10 sm:mb-12 uppercase text-center break-words px-4"
+                style={{
+                  fontFamily: "var(--font-unlimited-pie)",
+                  textShadow: "0px 4px 0px #893300",
+                  WebkitTextStroke: "1px #893300",
+                }}
               >
-                Gallery
+                what if more people could experience this?!
               </h1>
-              <p className="text-[#4b5563] font-sans max-w-2xl mb-8 leading-relaxed">
-                Snapshots of culture, landscapes, and unforgettable moments from journeys across Ghana.
-              </p>
+
               <GalleryView initialItems={initialItems} />
             </div>
           </div>
