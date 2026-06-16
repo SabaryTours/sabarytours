@@ -52,17 +52,6 @@ export default async function GalleryPage() {
               <div className="text-white text-[16px] leading-[20px] mb-8 text-center font-sans">
                 Every photo is a reminder that travel should feel personal:
               </div>
-              <h1
-                className="text-[20px] sm:text-[22px] md:text-[24px] text-white font-normal leading-normal mb-10 sm:mb-12 uppercase text-center break-words px-4"
-                style={{
-                  fontFamily: "var(--font-unlimited-pie)",
-                  textShadow: "0px 4px 0px #893300",
-                  WebkitTextStroke: "1px #893300",
-                }}
-              >
-                what if more people could experience this?!
-              </h1>
-
               <GalleryView initialItems={initialItems} />
             </div>
           </div>
