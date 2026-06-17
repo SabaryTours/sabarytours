@@ -240,6 +240,12 @@ export default function Header() {
               <Link
                 key={link.href}
                 href={link.href}
+                {...(link.href === "/customized-package"
+                  ? {
+                      "data-analytics-cta": "get_quote" as const,
+                      "data-analytics-location": "header_nav",
+                    }
+                  : {})}
                 className={`text-[14px] font-semibold transition-colors ${
                   isActive(link.href)
                     ? "text-[#ff5e00] font-bold bg-gray-100 rounded-full px-4 py-2"
@@ -502,6 +508,12 @@ export default function Header() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
+                  {...(link.href === "/customized-package"
+                    ? {
+                        "data-analytics-cta": "get_quote" as const,
+                        "data-analytics-location": "mobile_nav",
+                      }
+                    : {})}
                   className={`block text-[18px] font-bold tracking-wide transition-colors ${
                     isActive(link.href)
                       ? "text-[#ff5e00]"

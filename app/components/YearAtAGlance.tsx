@@ -45,6 +45,8 @@ export default function YearAtAGlance({ year, items }: { year: number; items: Tr
           </p>
           <Link
             href="/contact?from=year-plan"
+            data-analytics-cta="get_quote"
+            data-analytics-location="year_at_a_glance"
             className="inline-flex rounded-full bg-[#ff5e00] px-6 py-3 text-sm font-bold text-white hover:bg-[#e55500] font-sans"
           >
             Contact us

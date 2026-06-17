@@ -11,6 +11,8 @@ import GoogleTranslate from "./components/GoogleTranslate";
 import SplashScreen from "./components/SplashScreen";
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import GoogleAnalyticsRouteTracker from "./components/GoogleAnalyticsRouteTracker";
+import { GoogleTagManagerBody, GoogleTagManagerHead } from "./components/GoogleTagManager";
+import AnalyticsProvider from "./components/AnalyticsProvider";
 import JsonLd from "./components/seo/JsonLd";
 import { buildOrganizationSchema, buildWebSiteSchema } from "./lib/seo/schema";
 import { getSiteUrl } from "./lib/seo/site";
@@ -78,7 +80,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={quicksand.variable}>
+      <head>
+        <GoogleTagManagerHead />
+      </head>
       <body className={`${quicksand.className} font-sans antialiased`}>
+        <GoogleTagManagerBody />
+        <AnalyticsProvider>
         <JsonLd data={[buildOrganizationSchema(), buildWebSiteSchema()]} />
         <GoogleAnalytics />
         <Suspense fallback={null}>
@@ -96,6 +103,7 @@ export default function RootLayout({
         </LayoutWrapper>
         <AnnouncementModal />
         <Toaster position="top-right" containerClassName="print:!hidden" />
+        </AnalyticsProvider>
       </body>
     </html>
   );

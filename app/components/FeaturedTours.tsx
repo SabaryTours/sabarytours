@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getFeaturedTours } from "../lib/api";
 import type { FeaturedTourCard } from "../lib/featuredTours";
 import FeaturedTourGridPaginated from "./FeaturedTourGridPaginated";
+import { StarIcon } from "hugeicons-react";
 
 type FeaturedToursProps = {
   showHeader?: boolean;
@@ -57,8 +58,15 @@ export default async function FeaturedTours({
       <section className="relative pt-28 pb-14 md:pb-16 overflow-hidden bg-gradient-to-br from-[#0060cc] to-[#004a9e] text-white">
         <PatternOverlay opacity={0.35} />
         <div className="container mx-auto px-4 sm:px-6 md:px-12 relative z-10 text-center max-w-3xl">
-          <p className="text-sm font-bold uppercase tracking-widest text-white/90 mb-3 font-sans">
-            Featured tours ⭐️⭐️⭐️⭐️⭐️
+          <p className="text-sm font-bold uppercase tracking-widest text-white/90 mb-3 font-sans flex items-center justify-center gap-2">
+            Featured tours
+            <span className="flex items-center gap-0.5 text-yellow-400" aria-hidden>
+              <StarIcon size={16} fill="currentColor" />
+              <StarIcon size={16} fill="currentColor" />
+              <StarIcon size={16} fill="currentColor" />
+              <StarIcon size={16} fill="currentColor" />
+              <StarIcon size={16} fill="currentColor" />
+            </span>
           </p>
           <h1
             className="text-3xl sm:text-4xl md:text-5xl uppercase font-bold leading-tight mb-4"
@@ -121,6 +129,8 @@ export default async function FeaturedTours({
               Want something built around your group?{" "}
               <Link
                 href="/customized-package"
+                data-analytics-cta="get_quote"
+                data-analytics-location="featured_tours"
                 className="text-[#0060cc] font-bold hover:text-[#ff5e00] transition-colors"
               >
                 Plan your Ghana trip

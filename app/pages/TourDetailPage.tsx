@@ -381,17 +381,11 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
               </div>
             </div>
 
-            {/* Availability */}
-            <div className="flex items-start gap-3 bg-orange-50 text-orange-800 p-3 rounded-lg border border-orange-100 min-w-0">
-              <InformationCircleIcon size={20} className="flex-shrink-0 mt-0.5" />
-              <p className="text-sm font-sans font-medium min-w-0 break-words">
-                Highly likely to sell out. Reserve your spot today!
-              </p>
-            </div>
-
             {/* CTA */}
             <button
               onClick={() => router.push(`/booking?tour=${tour.slug}`)}
+              data-analytics-cta="book_now"
+              data-analytics-location="tour_detail_sidebar"
               className="w-full bg-[#ff5e00] text-white py-4 rounded-xl font-bold text-lg hover:bg-[#e55500] hover:shadow-lg hover:shadow-orange-500/30 transition-all font-sans uppercase tracking-wide"
             >
               Book Now
@@ -467,6 +461,8 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
           </div>
           <button
             onClick={() => router.push(`/booking?tour=${tour.slug}`)}
+            data-analytics-cta="book_now"
+            data-analytics-location="tour_detail_mobile_bar"
             className="flex-1 bg-[#ff5e00] text-white py-3 px-6 rounded-xl font-bold text-sm hover:bg-[#e55500] transition-colors font-sans uppercase tracking-wide text-center"
           >
             Book Now

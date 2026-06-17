@@ -21,6 +21,7 @@ import {
   customizedPackageSchema,
   type CustomizedPackageFormData,
 } from "../lib/validations/customizedPackage";
+import { useFormAnalytics } from "../hooks/useFormAnalytics";
 
 function minDateTimeLocalValue(): string {
   const now = new Date();
@@ -56,19 +57,21 @@ const initialForm: CustomizedPackageFormData = {
   subscribeNewsletter: true,
 };
 
+import { UserGroupIcon, Car01Icon, Building04Icon, SmartPhone01Icon } from "hugeicons-react";
+
 function SectionTitle({
-  emoji,
+  icon,
   title,
   subtitle,
 }: {
-  emoji?: string;
+  icon?: React.ReactNode;
   title: string;
   subtitle?: string;
 }) {
   return (
     <div className="border-b border-gray-100 pb-3 mb-5">
       <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-        {emoji ? <span aria-hidden>{emoji}</span> : null}
+        {icon ? <span className="text-[#ff5e00] flex items-center justify-center">{icon}</span> : null}
         {title}
       </h2>
       {subtitle ? (
@@ -127,6 +130,10 @@ export default function CustomizedPackageForm() {
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const { onFormInteraction, onFormSubmitSuccess } = useFormAnalytics({
+    formId: "custom_trip",
+    formName: "Customized Trip Request",
+  });
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -139,6 +146,7 @@ export default function CustomizedPackageForm() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    onFormInteraction();
     clearError(name as keyof CustomizedPackageFormData);
   };
 
@@ -199,6 +207,7 @@ export default function CustomizedPackageForm() {
       if (!res.ok) throw new Error(data.error || "Submission failed");
       setStatus("success");
       setMessage(data.message || "Request sent!");
+      onFormSubmitSuccess();
       setFormData(initialForm);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
@@ -210,6 +219,7 @@ export default function CustomizedPackageForm() {
   };
 
   const toggleTourPreference = (pref: (typeof TOUR_PREFERENCES)[number]) => {
+    onFormInteraction();
     setFormData((prev) => {
       const selected = prev.tourPreferences.includes(pref)
         ? prev.tourPreferences.filter((item) => item !== pref)
@@ -220,7 +230,7 @@ export default function CustomizedPackageForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-10 font-sans">
+    <form onSubmit={handleSubmit} className="space-y-10 font-sans" data-analytics-location="custom_trip_form" onFocus={onFormInteraction}>
       {status === "success" && (
         <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-800 text-sm font-medium">
           {message}
@@ -359,7 +369,7 @@ export default function CustomizedPackageForm() {
       </div>
 
       <SectionTitle
-        emoji="👥"
+        icon={<UserGroupIcon size={24} />}
         title="Traveler type"
         subtitle="Tell us who is traveling so we can design the right experience."
       />
@@ -386,7 +396,7 @@ export default function CustomizedPackageForm() {
         <p className="text-red-500 text-xs">{errors.travelerTypeOther}</p>
       )}
 
-      <SectionTitle emoji="🚗" title="Pickup location" />
+      <SectionTitle icon={<Car01Icon size={24} />} title="Pickup location" />
       <SelectField
         name="pickupLocation"
         options={PICKUP_LOCATIONS}
@@ -398,7 +408,7 @@ export default function CustomizedPackageForm() {
         error={errors.pickupLocation}
       />
 
-      <SectionTitle emoji="🚗" title="Transport preference" />
+      <SectionTitle icon={<Car01Icon size={24} />} title="Transport preference" />
       <SelectField
         name="transportPreference"
         options={TRANSPORT_PREFERENCES}
@@ -411,7 +421,7 @@ export default function CustomizedPackageForm() {
       />
 
       <SectionTitle
-        emoji="🏨"
+        icon={<Building04Icon size={24} />}
         title="Accommodation preference"
         subtitle="Optional — we can recommend the best fit for your trip."
       />
@@ -524,7 +534,7 @@ export default function CustomizedPackageForm() {
         error={errors.tripFeel}
       />
 
-      <SectionTitle emoji="📲" title="Preferred contact method" />
+      <SectionTitle icon={<SmartPhone01Icon size={24} />} title="Preferred contact method" />
       <SelectField
         name="contactMethod"
         options={CONTACT_METHODS}
