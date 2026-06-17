@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { InformationCircleIcon } from "hugeicons-react";
 
 interface PickupLocationProps {
   value: string;
@@ -246,9 +247,10 @@ export default function PickupLocation({ value, onChange }: PickupLocationProps)
       {/* Map Selector */}
       {inputMode === "map" && (
         <div className="space-y-3">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-2 items-start">
+            <InformationCircleIcon className="text-[#0060CC] shrink-0 mt-0.5" size={16} />
             <p className="text-[#0060CC] text-[12px] font-normal font-sans">
-              💡 Click on the map or drag the marker to select your pick-up location. You can also search for an address.
+              Click on the map or drag the marker to select your pick-up location. You can also search for an address.
             </p>
           </div>
 

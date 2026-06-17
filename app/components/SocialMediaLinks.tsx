@@ -76,8 +76,11 @@ export default function SocialMediaLinks({
         ? "block w-6 h-6 text-[#0060cc] hover:text-[#ff5e00] transition-colors"
         : "w-10 h-10 rounded-full bg-[#222] text-white flex items-center justify-center p-2 hover:bg-[#ff5e00] transition-colors";
 
+  const locationTag =
+    variant === "footer" ? "footer_social" : variant === "blogInline" ? "blog_social" : "contact_social";
+
   return (
-    <ul className={`${listClass} ${className}`.trim()}>
+    <ul className={`${listClass} ${className}`.trim()} data-analytics-location={locationTag}>
       {links.map((link) => (
         <li key={link.network}>
           <a
@@ -86,6 +89,7 @@ export default function SocialMediaLinks({
             rel="noopener noreferrer"
             className={linkClass}
             aria-label={`Sabary Tours on ${link.name}`}
+            data-analytics-location={locationTag}
           >
             <span className={variant === "circleDark" ? "w-5 h-5 block" : "block w-full h-full"}>
               <SocialIcon network={link.network} />

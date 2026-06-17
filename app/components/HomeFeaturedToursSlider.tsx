@@ -33,39 +33,56 @@ function FeaturedTourCardItem({
   return (
     <article
       ref={cardRef}
-      className={`group flex flex-col rounded-2xl overflow-hidden border border-gray-100 bg-white shadow-md hover:shadow-xl transition-all duration-300 ${
-        isMobile ? "shrink-0 snap-center w-[85vw] max-w-[300px]" : ""
+      className={`overflow-hidden relative rounded-[16px] bg-white shadow-lg shrink-0 snap-center group transition-all duration-300 ${
+        isMobile
+          ? "h-[380px] w-[280px]"
+          : "w-full aspect-[3/4]"
       }`}
       style={
         isMobile
           ? {
-              transform: isInView ? "scale(1)" : "scale(0.95)",
-              opacity: isInView ? 1 : 0.75,
+              transform: isInView ? "scale(1)" : "scale(0.9)",
+              opacity: isInView ? 1 : 0.7,
             }
           : undefined
       }
     >
-      <div className="relative aspect-[4/3] bg-gray-100">
+      {/* Image Container */}
+      <div className="absolute inset-0">
         <Image
           src={tour.image || "/assets/placeholder-tour.jpg"}
           alt={tour.title}
           fill
-          className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
-          sizes={isMobile ? "85vw" : "(max-width: 1024px) 50vw, 25vw"}
+          className="object-cover group-hover:scale-105 transition-transform duration-500"
+          sizes={isMobile ? "280px" : "(max-width: 1024px) 50vw, 25vw"}
         />
-        <span className="absolute top-3 left-3 rounded-full bg-[#ff5e00] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white font-sans shadow-sm">
+        <span className="absolute top-3 left-3 rounded-full bg-black/50 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white border border-white/20 font-sans shadow-sm z-10">
           Featured
         </span>
       </div>
-      <div className="flex flex-col flex-1 p-4 sm:p-5 gap-2 font-sans">
-        <h3 className="text-base font-bold text-[#222] leading-snug line-clamp-2">{tour.title}</h3>
-        <p className="text-xs text-gray-500 line-clamp-2">{tour.highlights}</p>
-        <Link
-          href={tour.href}
-          className="mt-auto inline-flex justify-center items-center py-2.5 px-4 rounded-full bg-[#ff5e00] text-white text-sm font-bold hover:bg-[#e55500] transition-colors"
-        >
-          Book now
-        </Link>
+
+      {/* Progressive Blur Overlay with Gradual Fade */}
+      <div className="absolute bottom-0 left-0 right-0 overflow-hidden h-[160px]">
+        {/* Gradient mask for gradual fade */}
+        <div className="absolute inset-0 team-blur-fade pointer-events-none" />
+        
+        {/* Info Card */}
+        <div className="absolute left-1/2 -translate-x-1/2 bg-[#0060cc]/40 backdrop-blur-md flex flex-col items-start rounded-[6px] bottom-[10px] gap-[6px] p-[10px] w-[calc(100%-20px)] border border-white/20 shadow-lg">
+          <div className="text-white text-[15px] font-bold leading-[20px] w-full font-sans truncate transition-colors">
+            {tour.title}
+          </div>
+          <div className="text-[#d4d3d4] text-[13px] font-normal leading-[18px] w-full font-sans line-clamp-2">
+            {tour.highlights}
+          </div>
+          <Link
+            href={tour.href}
+            data-analytics-cta="book_now"
+            data-analytics-location="home_featured_tours"
+            className="w-full text-center py-2 mt-1 rounded bg-[#ff5e00] text-white text-[13px] font-bold hover:bg-[#e55500] transition-colors shadow-sm"
+          >
+            Book now
+          </Link>
+        </div>
       </div>
     </article>
   );

@@ -5,6 +5,15 @@ import { fileURLToPath } from "url";
 /** Absolute path to this project (folder containing next.config.ts). Fixes Tailwind/PostCSS resolution when a parent folder has package.json or extra lockfiles. */
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
+function safeHostnameFromUrl(raw?: string) {
+  if (!raw) return null;
+  try {
+    return new URL(raw).hostname;
+  } catch {
+    return null;
+  }
+}
+
 const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["hugeicons-react"],
@@ -19,18 +28,21 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
-      // Allow any hostname for external images
       {
-        protocol: "http",
-        hostname: "**",
+        protocol: "https",
+        hostname: "res.cloudinary.com",
       },
       {
         protocol: "https",
-        hostname: "**",
+        hostname:
+          safeHostnameFromUrl(process.env.NEXT_PUBLIC_SUPABASE_URL) ??
+          "placeholder.invalid",
       },
     ],
     qualities: [75, 82],
     unoptimized: false, // Keep optimization enabled
+    // Keep optimized variants around longer in Vercel cache to reduce churn.
+    minimumCacheTTL: 60 * 60 * 24 * 7, // 7 days
   },
 };
 

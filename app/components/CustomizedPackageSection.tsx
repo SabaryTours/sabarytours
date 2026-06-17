@@ -28,6 +28,8 @@ export default function CustomizedPackageSection() {
             </p>
             <Link
               href="/customized-package"
+              data-analytics-cta="get_quote"
+              data-analytics-location="home_custom_trip_banner"
               className="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-[#ff5e00] text-white font-bold font-sans hover:bg-[#e55500] transition-colors shadow-lg"
             >
               Plan your Ghana trip

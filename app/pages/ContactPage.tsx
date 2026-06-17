@@ -10,6 +10,7 @@ import SocialMediaLinks from "../components/SocialMediaLinks";
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import { Location01Icon, CallIcon, Mail01Icon } from "hugeicons-react";
+import { useFormAnalytics } from "../hooks/useFormAnalytics";
 
 export default function ContactPage() {
   const searchParams = useSearchParams();
@@ -26,6 +27,10 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
   const [submitMessage, setSubmitMessage] = useState("");
+  const { onFormInteraction, onFormSubmitSuccess } = useFormAnalytics({
+    formId: "contact",
+    formName: "Contact Form",
+  });
 
   useEffect(() => {
     const q = (searchParams.get("q") || searchParams.get("search") || "").trim();
@@ -90,6 +95,7 @@ export default function ContactPage() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    onFormInteraction();
     // Clear error when user starts typing
     if (errors[name as keyof ContactFormData]) {
       setErrors((prev) => {
@@ -128,6 +134,7 @@ export default function ContactPage() {
       
       setSubmitStatus("success");
       setSubmitMessage(data.message || "Thank you! Your message has been sent successfully.");
+      onFormSubmitSuccess();
       
       // Reset form
       setFormData({
@@ -250,7 +257,7 @@ export default function ContactPage() {
                 Fill out the form below, we will get back to you with more
                 information.
               </p>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" data-analytics-location="contact_form" onFocus={onFormInteraction}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label
@@ -308,6 +315,7 @@ export default function ContactPage() {
                     country="gh"
                     value={formData.phone}
                     onChange={(val: string) => {
+                      onFormInteraction();
                       setFormData((prev) => ({ ...prev, phone: val ? `+${val}` : "" }));
                       if (errors.phone) {
                         setErrors((prev) => {

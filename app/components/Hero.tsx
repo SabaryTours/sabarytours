@@ -73,12 +73,16 @@ export default function Hero({ initialImages = [] }: { initialImages?: string[] 
         >
           <Link
             href="/featured-tours"
+            data-analytics-cta="book_now"
+            data-analytics-location="hero"
             className="inline-flex justify-center items-center px-8 py-4 rounded-full bg-[#ff5e00] text-white font-bold text-sm sm:text-base hover:bg-[#e55500] transition-colors shadow-lg shadow-orange-900/30"
           >
             Book a Tour
           </Link>
           <Link
             href="/customized-package"
+            data-analytics-cta="get_quote"
+            data-analytics-location="hero"
             className="inline-flex justify-center items-center px-8 py-4 rounded-full bg-white/95 text-[#222] font-bold text-sm sm:text-base hover:bg-white border border-white/50 transition-colors shadow-lg"
           >
             Plan Your Trip
