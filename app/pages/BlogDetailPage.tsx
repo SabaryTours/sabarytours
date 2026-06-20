@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { type BlogPost } from "../lib/api";
+import { getBlogCategoryLabel } from "../lib/blogCategories";
 import Footer from "../components/Footer";
 import SafeHTML from "../components/SafeHTML";
 import SocialMediaLinks from "../components/SocialMediaLinks";
@@ -69,6 +70,14 @@ export default function BlogDetailPage({ post, relatedPosts = [] }: BlogDetailPa
 
           {/* Article Metadata */}
           <div className="flex flex-wrap items-center gap-4 mb-6 text-[14px] text-[#8e8e8e]">
+            {getBlogCategoryLabel(post.category) ? (
+              <>
+                <span className="rounded-full bg-[#ff5e00] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
+                  {getBlogCategoryLabel(post.category)}
+                </span>
+                <span>•</span>
+              </>
+            ) : null}
             <span>By {post.author}</span>
             <span>•</span>
             <span>{post.date}</span>

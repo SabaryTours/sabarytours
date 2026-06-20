@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { BLOG_CATEGORIES } from "../../../lib/blogCategories";
 import { createClient as createServerClient } from "../../../utils/supabase/server";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -31,6 +32,28 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const { postInput, blogId } = body;
+
+    if (postInput?.is_featured) {
+      const featuredUntil = new Date();
+      featuredUntil.setDate(featuredUntil.getDate() + 7);
+      postInput.featured_until = featuredUntil.toISOString();
+
+      await supabaseAdmin
+        .from("posts")
+        .update({ is_featured: false, featured_until: null })
+        .eq("is_featured", true)
+        .neq("id", blogId || "00000000-0000-0000-0000-000000000000");
+    } else if (postInput && "is_featured" in postInput && !postInput.is_featured) {
+      postInput.featured_until = null;
+    }
+
+    if (
+      typeof postInput?.category === "string" &&
+      postInput.category &&
+      !BLOG_CATEGORIES.some((item) => item.slug === postInput.category)
+    ) {
+      return NextResponse.json({ success: false, error: "Invalid blog category." }, { status: 400 });
+    }
 
     if (blogId) {
       const { error } = await supabaseAdmin.from("posts").update(postInput).eq("id", blogId);

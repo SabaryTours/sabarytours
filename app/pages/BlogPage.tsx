@@ -1,6 +1,16 @@
-import BlogGrid from "../components/BlogGrid";
+import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import BlogTrendingSidebar from "../components/BlogTrendingSidebar";
 import Footer from "../components/Footer";
+import TourLoader from "../components/TourLoader";
+
+const BlogBrowse = dynamic(() => import("../components/BlogBrowse"), {
+  loading: () => (
+    <div className="flex justify-center items-center py-12">
+      <TourLoader />
+    </div>
+  ),
+});
 
 export default function BlogPage() {
   return (
@@ -57,14 +67,12 @@ export default function BlogPage() {
         <div className="container mx-auto px-3 sm:px-4 md:px-6">
           {/* Header Section */}
           <div className="flex flex-col gap-[20px] items-center mb-12">
-            {/* Top Line - Subtitle */}
             <div className="flex gap-[5px] items-center justify-center">
               <p className="text-[#0060cc] text-[14px] font-bold leading-[24px]">
-                Browse and read our latest blog posts
+                Search, browse by section, and discover featured reads
               </p>
             </div>
 
-            {/* Main Heading */}
             <h2 
               className="text-[24px] sm:text-[28px] md:text-[32px] text-[#222] uppercase font-bold"
               style={{
@@ -78,7 +86,15 @@ export default function BlogPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
             <div className="lg:col-span-2">
-              <BlogGrid />
+              <Suspense
+                fallback={
+                  <div className="flex justify-center items-center py-12">
+                    <TourLoader />
+                  </div>
+                }
+              >
+                <BlogBrowse />
+              </Suspense>
             </div>
             <div className="lg:col-span-1">
               <BlogTrendingSidebar />
@@ -90,5 +106,3 @@ export default function BlogPage() {
     </div>
   );
 }
-
-
