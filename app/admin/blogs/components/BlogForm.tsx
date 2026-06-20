@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import 'react-quill-new/dist/quill.snow.css';
 import toast from "react-hot-toast";
+import { BLOG_CATEGORIES } from "../../../lib/blogCategories";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const SAVE_TIMEOUT_MS = 120_000;
@@ -47,6 +48,8 @@ export default function BlogForm({ initialData }: BlogFormProps) {
     title: initialData?.title || "",
     summary: initialData?.summary || "",
     tags: Array.isArray(initialData?.tags) ? initialData.tags.join(", ") : "",
+    category: initialData?.category || "",
+    is_featured: Boolean(initialData?.is_featured),
     image_url: initialData?.image_url || "",
     status: initialData?.status || "published",
   });
@@ -91,8 +94,11 @@ export default function BlogForm({ initialData }: BlogFormProps) {
   };
 
   const handleChange = (e: any) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -167,6 +173,8 @@ export default function BlogForm({ initialData }: BlogFormProps) {
           .split(",")
           .map((tag: string) => tag.trim())
           .filter(Boolean),
+        category: formData.category || null,
+        is_featured: formData.is_featured,
         content: contentDraftRef.current,
         image_url: formData.image_url,
         status: formData.status,
@@ -229,6 +237,41 @@ export default function BlogForm({ initialData }: BlogFormProps) {
             placeholder="Culture, Food, Ghana, Travel Tips"
           />
           <p className="mt-1 text-xs text-gray-500 font-sans">Separate tags with commas.</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 font-sans mb-1">Section</label>
+          <select
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans bg-white text-gray-900"
+          >
+            <option value="">Uncategorized</option>
+            {BLOG_CATEGORIES.map((category) => (
+              <option key={category.slug} value={category.slug}>
+                {category.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="flex items-start gap-3 rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="is_featured"
+              checked={formData.is_featured}
+              onChange={handleChange}
+              className="mt-1"
+            />
+            <span className="font-sans">
+              <span className="block text-sm font-bold text-[#222]">Feature as article of the week</span>
+              <span className="block text-xs text-gray-600 mt-1">
+                Shows at the top of the blog for 7 days and replaces any other featured article.
+              </span>
+            </span>
+          </label>
         </div>
 
         <div>

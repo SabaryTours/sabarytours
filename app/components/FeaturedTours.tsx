@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getFeaturedTours } from "../lib/api";
+import { getAllPublishedTours } from "../lib/api";
 import type { FeaturedTourCard } from "../lib/featuredTours";
 import FeaturedTourGridPaginated from "./FeaturedTourGridPaginated";
 import { StarIcon } from "hugeicons-react";
@@ -37,7 +37,7 @@ export default async function FeaturedTours({
   className = "",
   tours: toursProp,
 }: FeaturedToursProps) {
-  const tours = toursProp ?? (await getFeaturedTours());
+  const tours = toursProp ?? (await getAllPublishedTours());
 
   if (!showHeader) {
     return (
@@ -81,8 +81,7 @@ export default async function FeaturedTours({
             </span>
           </h1>
           <p className="text-white/90 font-sans text-base sm:text-lg leading-relaxed">
-            Explore our 5-star most popular and unforgettable experiences across
-            Ghana.
+            Browse every published Sabary Tours experience and book your next adventure across Ghana.
           </p>
         </div>
       </section>
@@ -119,7 +118,7 @@ export default async function FeaturedTours({
                 </svg>
               </div>
               <p className="text-[#0060cc] text-sm font-bold font-sans">
-                Hand-picked experiences — ready to book
+                All published tours — ready to book
               </p>
             </div>
 

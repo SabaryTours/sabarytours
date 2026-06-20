@@ -76,6 +76,25 @@ const FEATURED_TOUR_SELECT = `
   tour_images(image_url, display_order)
 `;
 
+/** All published tours for the full catalog page (`/featured-tours`). */
+export async function getAllPublishedTours(): Promise<FeaturedTourCard[]> {
+  const supabase = await createClient();
+
+  const { data: tours, error } = await supabase
+    .from("tours")
+    .select(FEATURED_TOUR_SELECT)
+    .eq("status", "published")
+    .order("is_featured", { ascending: false })
+    .order("updated_at", { ascending: false });
+
+  if (error || !tours) {
+    console.error("getAllPublishedTours:", error);
+    return [];
+  }
+
+  return (tours as TourForFeaturedCard[]).map((tour) => tourToFeaturedCard(tour));
+}
+
 /** Featured tours marked in admin (`is_featured`), with legacy title-matcher fallback. */
 export async function getFeaturedTours(
   limit = MAX_FEATURED_TOURS,
@@ -402,6 +421,7 @@ export interface BlogPost {
   content: string;
   excerpt?: string;
   tags?: string[];
+  category?: string | null;
 }
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
@@ -439,6 +459,7 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
     content: post.content || '',
     excerpt: post.summary || '',
     tags: Array.isArray(post.tags) ? post.tags.filter(Boolean) : [],
+    category: typeof post.category === 'string' ? post.category : null,
   } as BlogPost;
 }
 
@@ -480,6 +501,7 @@ export async function getRelatedBlogPosts(
       content: post.content || '',
       excerpt: post.summary || '',
       tags: Array.isArray(post.tags) ? post.tags.filter(Boolean) : [],
+      category: typeof post.category === 'string' ? post.category : null,
     } as BlogPost;
   });
 }

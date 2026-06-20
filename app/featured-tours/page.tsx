@@ -2,9 +2,9 @@ import { Metadata } from "next";
 import FeaturedToursPage from "../pages/FeaturedToursPage";
 
 export const metadata: Metadata = {
-  title: "Featured Tours | Sabary Tours",
+  title: "All Tours | Sabary Tours",
   description:
-    "Book our most popular 5-star Ghana experiences — quadbike adventures, Cape Coast & Kakum, and Accra city tours.",
+    "Browse every published Sabary Tours experience across Ghana and book your next adventure.",
 };
 
 export default function FeaturedToursRoute() {
