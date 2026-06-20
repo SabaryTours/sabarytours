@@ -40,7 +40,7 @@ export default async function HomePopularExperiences() {
             href="/featured-tours"
             className="text-sm font-bold text-[#0060cc] hover:text-[#ff5e00] transition-colors font-sans"
           >
-            View all featured tours →
+            View all →
           </Link>
         </p>
       </div>

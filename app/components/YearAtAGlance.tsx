@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { TripOutlineMonth } from "../lib/api";
 import { parseTripOutlineBody } from "../lib/tripOutline";
+import { resolveTripOutlineBookUrl } from "../lib/tourUrls";
+import ShareButtons from "./ShareButtons";
 
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -32,7 +34,7 @@ export default function YearAtAGlance({ year, items }: { year: number; items: Tr
   if (!any) {
     return (
       <section id="year-at-a-glance" className="w-full px-4 sm:px-6 md:px-12 py-10 scroll-mt-24">
-        <div className="container mx-auto max-w-6xl rounded-3xl border border-orange-100 bg-gradient-to-br from-[#fff7f0] to-white p-8 sm:p-10 text-center">
+        <div className="container mx-auto max-w-6xl rounded-3xl border border-orange-100 bg-linear-to-br from-[#fff7f0] to-white p-8 sm:p-10 text-center">
           <h2
             className="text-2xl sm:text-3xl text-[#222] uppercase mb-2"
             style={{ fontFamily: "var(--font-unlimited-pie)" }}
@@ -100,11 +102,37 @@ export default function YearAtAGlance({ year, items }: { year: number; items: Tr
                   {description ? (
                     <p className="mt-2 text-sm text-gray-600 font-sans leading-relaxed line-clamp-4">{description}</p>
                   ) : null}
+                  <div className="mt-3 space-y-1 text-xs text-gray-600 font-sans">
+                    {meta.date ? (
+                      <p><span className="font-bold">Date:</span> {meta.date}</p>
+                    ) : null}
+                    {typeof meta.seats_remaining === "number" ? (
+                      <p>
+                        <span className="font-bold">Seats:</span> {meta.seats_remaining} left
+                      </p>
+                    ) : null}
+                    {meta.price ? (
+                      <p><span className="font-bold">Price:</span> {meta.price}</p>
+                    ) : null}
+                  </div>
                   {visibleRows.length > 1 ? (
                     <p className="mt-3 text-[11px] font-bold uppercase tracking-wide text-[#ff5e00] font-sans">
                       +{visibleRows.length - 1} more this month
                     </p>
                   ) : null}
+                  <div className="mt-4 flex flex-col gap-2">
+                    <Link
+                      href={resolveTripOutlineBookUrl(meta)}
+                      className="inline-flex justify-center rounded-full bg-[#ff5e00] px-4 py-2 text-xs font-bold text-white hover:bg-[#e55500] font-sans"
+                    >
+                      Book Now
+                    </Link>
+                    <ShareButtons
+                      title={topCard.title || "Upcoming Sabary Tours experience"}
+                      path={resolveTripOutlineBookUrl(meta)}
+                      compact
+                    />
+                  </div>
                 </div>
               </article>
             );

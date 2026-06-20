@@ -1,3 +1,5 @@
+import { tourDetailHref } from "./tourUrls";
+
 /** Max tours marked featured in admin and shown on the homepage. */
 export const MAX_FEATURED_TOURS = 4;
 
@@ -56,8 +58,7 @@ export const FEATURED_TOUR_MATCHERS: FeaturedTourMatcher[] = [
 ];
 
 export function tourHref(category: string | null | undefined, slug: string): string {
-  const cat = (category || "tours").trim() || "tours";
-  return `/packages/${cat}/${slug}`;
+  return tourDetailHref(category, slug);
 }
 
 export function matchTourByPatterns<T extends { title: string }>(

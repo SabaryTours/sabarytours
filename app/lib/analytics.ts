@@ -114,6 +114,7 @@ export function trackFormAbandon(formId: string, formName: string): void {
 /** Classify page for scroll/time reports. */
 export function getPageType(pathname: string): string {
   if (pathname === "/") return "home";
+  if (pathname.startsWith("/tours/")) return "tour_detail";
   if (pathname.startsWith("/packages/") && pathname.split("/").length > 3) return "tour_detail";
   if (pathname.startsWith("/packages")) return "packages";
   if (pathname.startsWith("/booking")) return "booking";

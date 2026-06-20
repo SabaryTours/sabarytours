@@ -6,6 +6,8 @@ import SafeHTML from "../components/SafeHTML";
 import SocialMediaLinks from "../components/SocialMediaLinks";
 import NewsletterSubscribe from "../components/NewsletterSubscribe";
 import BlogPostViewCounter from "../components/BlogPostViewCounter";
+import ShareButtons from "../components/ShareButtons";
+import BlogComments from "../components/BlogComments";
 
 interface BlogDetailPageProps {
   post: BlogPost;
@@ -56,7 +58,7 @@ export default function BlogDetailPage({ post, relatedPosts = [] }: BlogDetailPa
         <div className="container mx-auto px-4 sm:px-6 max-w-4xl min-w-0">
           {/* Article Title */}
           <h1 
-            className="text-[28px] sm:text-[34px] md:text-[40px] font-normal leading-[1.15] text-[#222] uppercase mb-4 break-words min-w-0 max-w-full"
+            className="text-[28px] sm:text-[34px] md:text-[40px] font-normal leading-[1.15] text-[#222] uppercase mb-4 wrap-break-word min-w-0 max-w-full"
             style={{
               fontFamily: 'var(--font-unlimited-pie)',
               hyphens: "manual",
@@ -79,10 +81,27 @@ export default function BlogDetailPage({ post, relatedPosts = [] }: BlogDetailPa
             )}
           </div>
 
+          {post.tags?.length ? (
+            <div className="mb-6 flex flex-wrap gap-2">
+              {post.tags.map((tag) => (
+                <span key={tag} className="rounded-full bg-orange-50 px-3 py-1.5 text-xs font-bold text-[#ff5e00] font-sans">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : null}
+
           <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl bg-[#f0f7ff] border border-[#0060cc]/15">
             <div>
               <p className="text-sm font-bold text-[#222] mb-2">Share this article</p>
-              <SocialMediaLinks variant="blogInline" />
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <ShareButtons
+                  title={post.title}
+                  path={`/blog/${post.slug}`}
+                  text={`Read this Sabary Tours blog: ${post.title}`}
+                />
+                <SocialMediaLinks variant="blogInline" />
+              </div>
             </div>
             <Link
               href="/packages"
@@ -106,7 +125,7 @@ export default function BlogDetailPage({ post, relatedPosts = [] }: BlogDetailPa
           {/* Article Content */}
           <SafeHTML
             html={articleHtml}
-            className="prose prose-lg max-w-none min-w-0 mb-10 text-[#222] text-[16px] leading-[28px] [&_*]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+            className="prose prose-lg max-w-none min-w-0 mb-10 text-[#222] text-[16px] leading-[28px] **:max-w-full [&_img]:h-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
           />
 
           <div className="grid md:grid-cols-2 gap-6 mb-12">
@@ -130,44 +149,7 @@ export default function BlogDetailPage({ post, relatedPosts = [] }: BlogDetailPa
             </div>
           </div>
 
-          {/* Comment Section */}
-          <div className="mb-12">
-            <h3 className="text-[24px] font-bold text-[#222] mb-2">Leave a comment</h3>
-            <p className="text-[#8e8e8e] text-[14px] mb-6">Your email address will not be published.</p>
-            
-            <form className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Enter your name"
-                  className="px-4 py-3 border border-[#e3e3e3] rounded-lg focus:outline-none focus:border-[#ff5e00] text-[14px] leading-[24px] text-[#222] placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px]"
-                />
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="px-4 py-3 border border-[#e3e3e3] rounded-lg focus:outline-none focus:border-[#ff5e00] text-[14px] leading-[24px] text-[#222] placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px]"
-                />
-              </div>
-              <textarea
-                placeholder="Type your comment..."
-                rows={6}
-                className="w-full px-4 py-3 border border-[#e3e3e3] rounded-lg focus:outline-none focus:border-[#ff5e00] text-[14px] leading-[24px] text-[#222] placeholder:text-[#222] placeholder:text-[14px] placeholder:font-normal placeholder:leading-[24px]"
-              />
-              <button
-                type="submit"
-                className="bg-[#ff5e00] text-white px-6 py-3 rounded-lg font-bold hover:bg-[#e55500] transition-colors"
-              >
-                Post comment
-              </button>
-            </form>
-          </div>
-
-          {/* Comments Section - Show count if available */}
-          {post.comments > 0 && (
-            <div className="mb-12">
-              <h3 className="text-[24px] font-bold text-[#222] mb-6">{post.comments} comment{post.comments !== 1 ? 's' : ''}</h3>
-            </div>
-          )}
+          <BlogComments slug={post.slug} />
 
           {/* Related Posts */}
           {articleRelatedPosts.length > 0 && (
@@ -213,7 +195,7 @@ export default function BlogDetailPage({ post, relatedPosts = [] }: BlogDetailPa
                         </div>
                       )}
                     </div>
-                    <h4 className="text-[#3e3638] text-[14px] font-bold leading-[24px] break-words min-w-0">{relatedPost.title}</h4>
+                    <h4 className="text-[#3e3638] text-[14px] font-bold leading-[24px] wrap-break-word min-w-0">{relatedPost.title}</h4>
                   </Link>
                 ))}
               </div>

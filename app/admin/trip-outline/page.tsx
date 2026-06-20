@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { buildTripOutlineBody, parseTripOutlineBody } from "../../lib/tripOutline";
+import { resolveTripOutlineBookUrl, tourBookingHref } from "../../lib/tourUrls";
 
 const MONTH_LABELS = [
   "January",
@@ -23,25 +24,37 @@ type CardDraft = {
   id?: string;
   title: string;
   description: string;
+  date: string;
+  inclusions: string;
+  price: string;
+  seats_remaining: string;
+  total_seats: string;
+  details: string;
   image_url: string;
+  tour_slug: string;
   card_type: "featured" | "upcoming";
   accent_color: string;
   is_published: boolean;
   sort_order: number;
 };
 
-function toTourSlug(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
+type TourOption = {
+  slug: string;
+  title: string;
+  category: string | null;
+};
 
 const emptyCard = (sortOrder: number): CardDraft => ({
   title: "",
   description: "",
+  date: "",
+  inclusions: "",
+  price: "",
+  seats_remaining: "",
+  total_seats: "",
+  details: "",
   image_url: "",
+  tour_slug: "",
   card_type: "upcoming",
   accent_color: "#ff5e00",
   is_published: true,
@@ -59,6 +72,7 @@ export default function AdminTripOutlinePage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+  const [tourOptions, setTourOptions] = useState<TourOption[]>([]);
 
   const load = useCallback(async (y: number) => {
     setLoading(true);
@@ -66,6 +80,7 @@ export default function AdminTripOutlinePage() {
       const res = await fetch(`/api/admin/trip-outline?year=${y}`);
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "Failed to load");
+      setTourOptions(Array.isArray(j.tourOptions) ? j.tourOptions : []);
       const next: Record<number, CardDraft[]> = {};
       for (let m = 1; m <= 12; m++) next[m] = [];
       (j.rows || []).forEach((r: {
@@ -87,7 +102,15 @@ export default function AdminTripOutlinePage() {
           id: r.id,
           title: r.title || "",
           description: r.description || meta.description || "",
+          date: meta.date || "",
+          inclusions: meta.inclusions || "",
+          price: meta.price || "",
+          seats_remaining:
+            typeof meta.seats_remaining === "number" ? String(meta.seats_remaining) : "",
+          total_seats: typeof meta.total_seats === "number" ? String(meta.total_seats) : "",
+          details: meta.details || "",
           image_url: r.image_url || meta.image_url || "",
+          tour_slug: meta.tour_slug || "",
           card_type: r.card_type || meta.card_type || "upcoming",
           accent_color: r.accent_color || "#ff5e00",
           is_published: r.is_published !== false,
@@ -113,24 +136,37 @@ export default function AdminTripOutlinePage() {
   const rowsPayload = useMemo(
     () =>
       Array.from({ length: 12 }, (_, i) =>
-        (byMonth[i + 1] || []).map((card, idx) => ({
+        (byMonth[i + 1] || []).map((card, idx) => {
+          const bookUrl = card.tour_slug.trim()
+            ? tourBookingHref(card.tour_slug.trim())
+            : "/contact?from=upcoming-tour";
+
+          return {
           id: card.id,
           month: i + 1,
           title: card.title.trim() || `${MONTH_LABELS[i]} highlights`,
           description: card.description.trim() || null,
           image_url: card.image_url.trim() || null,
-          book_url: `/booking?tour=${toTourSlug(card.title.trim() || `${MONTH_LABELS[i]} highlights`)}`,
+          book_url: bookUrl,
           card_type: card.card_type,
           body: buildTripOutlineBody({
             description: card.description,
             image_url: card.image_url,
-            book_url: `/booking?tour=${toTourSlug(card.title.trim() || `${MONTH_LABELS[i]} highlights`)}`,
+            book_url: bookUrl,
+            tour_slug: card.tour_slug.trim() || undefined,
             card_type: card.card_type,
+            date: card.date,
+            inclusions: card.inclusions,
+            price: card.price,
+            seats_remaining: card.seats_remaining.trim() ? Number(card.seats_remaining) : null,
+            total_seats: card.total_seats.trim() ? Number(card.total_seats) : null,
+            details: card.details,
           }),
           accent_color: card.accent_color.trim() || "#ff5e00",
           is_published: card.is_published,
           sort_order: idx,
-        }))
+        };
+        })
       ).flat(),
     [byMonth]
   );
@@ -332,6 +368,55 @@ export default function AdminTripOutlinePage() {
                             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
                           />
 
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input
+                              type="text"
+                              placeholder="Date, e.g. July 12, 2026"
+                              value={card.date}
+                              onChange={(e) => updateCard(month, cardIndex, { date: e.target.value })}
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Price, e.g. GHS 450"
+                              value={card.price}
+                              onChange={(e) => updateCard(month, cardIndex, { price: e.target.value })}
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="Spaces remaining (optional)"
+                              value={card.seats_remaining}
+                              onChange={(e) => updateCard(month, cardIndex, { seats_remaining: e.target.value })}
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="Total seats (optional)"
+                              value={card.total_seats}
+                              onChange={(e) => updateCard(month, cardIndex, { total_seats: e.target.value })}
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                            />
+                          </div>
+
+                          <textarea
+                            placeholder="Inclusions, e.g. Transport, guide, lunch, museum fees"
+                            rows={2}
+                            value={card.inclusions}
+                            onChange={(e) => updateCard(month, cardIndex, { inclusions: e.target.value })}
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                          />
+
+                          <textarea
+                            placeholder="Extra details shown on the public card"
+                            rows={2}
+                            value={card.details}
+                            onChange={(e) => updateCard(month, cardIndex, { details: e.target.value })}
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                          />
+
                           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
                             <input
                               type="url"
@@ -356,10 +441,27 @@ export default function AdminTripOutlinePage() {
                             </label>
                           </div>
 
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <select
+                              value={card.tour_slug}
+                              onChange={(e) => updateCard(month, cardIndex, { tour_slug: e.target.value })}
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans bg-white md:col-span-2"
+                            >
+                              <option value="">No linked tour (Book Now goes to contact)</option>
+                              {tourOptions.map((tour) => (
+                                <option key={tour.slug} value={tour.slug}>
+                                  {tour.title} ({tour.slug})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
                           <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-sans text-gray-600">
-                            Booking URL (auto):{" "}
+                            Booking URL:{" "}
                             <span className="font-semibold text-gray-800">
-                              /booking?tour={toTourSlug(card.title || `${MONTH_LABELS[idx]} highlights`)}
+                              {card.tour_slug.trim()
+                                ? tourBookingHref(card.tour_slug.trim())
+                                : "/contact?from=upcoming-tour"}
                             </span>
                           </div>
 

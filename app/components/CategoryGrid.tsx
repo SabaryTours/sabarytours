@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { PackageCategory } from "./PackagesGrid";
 import { safeImageUrl } from "../lib/safeImageUrl";
+import CardPriceBlob from "./CardPriceBlob";
 
 interface CategoryGridProps {
   packages?: PackageCategory[];
@@ -156,6 +157,13 @@ export default function CategoryGrid({
                 "linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 50%, rgba(0,0,0,0) 100%)",
             }}
           />
+
+          {typeof category.startingPrice === "number" && category.startingPrice > 0 ? (
+            <CardPriceBlob
+              price={`${category.startingCurrency || "GHS"} ${category.startingPrice.toLocaleString()}`}
+              className="absolute top-3 right-3 z-10"
+            />
+          ) : null}
 
           {/* Title */}
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full px-3 py-10">

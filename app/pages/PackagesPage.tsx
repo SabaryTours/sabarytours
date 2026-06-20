@@ -18,8 +18,43 @@ export default async function PackagesPage({
 }: PackagesPageProps) {
   const supabase = await createClient();
   const { data: packages } = await supabase.from("packages").select("*");
+  const { data: tours } = await supabase
+    .from("tours")
+    .select("category, currency, tour_prices(amount, currency)")
+    .eq("status", "published");
+
+  const minPriceByCategory = new Map<string, { amount: number; currency: string }>();
+
+  (tours || []).forEach((tour) => {
+    const category = typeof tour.category === "string" ? tour.category : "";
+    if (!category) return;
+
+    const tiers = Array.isArray(tour.tour_prices) ? tour.tour_prices : [];
+    const amounts = tiers
+      .map((tier) => Number(tier?.amount))
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    if (amounts.length === 0) return;
+
+    const minAmount = Math.min(...amounts);
+    const tierCurrency = tiers.find((tier) => Number(tier?.amount) === minAmount)?.currency;
+    const currency = tierCurrency || tour.currency || "GHS";
+    const current = minPriceByCategory.get(category);
+
+    if (!current || minAmount < current.amount) {
+      minPriceByCategory.set(category, { amount: minAmount, currency });
+    }
+  });
+
   const counts = await getPackageBookingCounts(supabase);
-  const sortedPackages = sortPackagesByPopularity(packages || [], counts);
+  const sortedPackages = sortPackagesByPopularity(packages || [], counts).map((pkg) => {
+    const pricing = minPriceByCategory.get(pkg.slug);
+    return {
+      ...pkg,
+      startingPrice: pricing?.amount,
+      startingCurrency: pricing?.currency,
+    };
+  });
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredPackages = normalizedQuery

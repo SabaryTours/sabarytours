@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import type { ZodError } from "zod";
 import {
   ACCOMMODATION_AREAS,
   ACCOMMODATION_PREFERENCES,
@@ -216,17 +215,6 @@ export default function CustomizedPackageForm() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const toggleTourPreference = (pref: (typeof TOUR_PREFERENCES)[number]) => {
-    onFormInteraction();
-    setFormData((prev) => {
-      const selected = prev.tourPreferences.includes(pref)
-        ? prev.tourPreferences.filter((item) => item !== pref)
-        : [...prev.tourPreferences, pref];
-      return { ...prev, tourPreferences: selected };
-    });
-    clearError("tourPreferences");
   };
 
   return (

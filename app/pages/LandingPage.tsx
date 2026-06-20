@@ -12,6 +12,7 @@ import { getHeroImages, getHappenings, getTripOutlineForYear } from "../lib/api"
 import YearAtAGlance from "../components/YearAtAGlance";
 import CustomizedPackageSection from "../components/CustomizedPackageSection";
 import { parseTripOutlineBody } from "../lib/tripOutline";
+import HomeTrustStrip from "../components/HomeTrustStrip";
 
 function hasTripOutlineContent(item: { title?: string | null; description?: string | null; body?: string | null }) {
   const meta = parseTripOutlineBody(item.body || "");
@@ -33,6 +34,7 @@ export default async function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
       <Hero initialImages={imageUrls} />
+      <HomeTrustStrip />
       <HomePopularExperiences />
       <Packages />
       {happenings.length > 0 && <WhatsHappening events={happenings} />}

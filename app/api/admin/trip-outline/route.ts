@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "../../../utils/supabase/server";
+import { getPublishedTourOptions } from "../../../lib/api";
+import { tourBookingHref } from "../../../lib/tourUrls";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,7 +46,9 @@ export async function GET(request: Request) {
     .order("sort_order", { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ year, rows: data || [] });
+
+  const tourOptions = await getPublishedTourOptions();
+  return NextResponse.json({ year, rows: data || [], tourOptions });
 }
 
 type Row = {
@@ -61,12 +65,14 @@ type Row = {
   sort_order?: number;
 };
 
-function toTourSlug(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+function parseTourSlugFromBody(body: string | null | undefined): string {
+  if (!body) return "";
+  try {
+    const parsed = JSON.parse(body) as { tour_slug?: string };
+    return typeof parsed.tour_slug === "string" ? parsed.tour_slug.trim() : "";
+  } catch {
+    return "";
+  }
 }
 
 export async function POST(request: Request) {
@@ -86,26 +92,28 @@ export async function POST(request: Request) {
 
     const payload = rows
       .filter((r) => r.month >= 1 && r.month <= 12)
-      .map((r, idx) => ({
-        normalizedTitle: (r.title || "").trim() || `Month ${r.month}`,
-        id: r.id,
-        year,
-        month: r.month,
-        title: (r.title || "").trim() || `Month ${r.month}`,
-        body: r.body?.trim() || null,
-        description: r.description?.trim() || null,
-        image_url: r.image_url?.trim() || null,
-        book_url: null as string | null,
-        card_type: r.card_type === "featured" ? "featured" : "upcoming",
-        accent_color: (r.accent_color || "#ff5e00").trim(),
-        is_published: r.is_published !== false,
-        sort_order: Number.isFinite(r.sort_order) ? Number(r.sort_order) : idx,
-        updated_at: new Date().toISOString(),
-      }))
-      .map((row) => ({
-        ...row,
-        book_url: `/booking?tour=${toTourSlug(row.normalizedTitle)}`,
-      }));
+      .map((r, idx) => {
+        const normalizedTitle = (r.title || "").trim() || `Month ${r.month}`;
+        const linkedTourSlug = parseTourSlugFromBody(r.body);
+        const bookUrl = r.book_url?.trim()
+          || (linkedTourSlug ? tourBookingHref(linkedTourSlug) : `/contact?from=upcoming-tour`);
+
+        return {
+          id: r.id,
+          year,
+          month: r.month,
+          title: normalizedTitle,
+          body: r.body?.trim() || null,
+          description: r.description?.trim() || null,
+          image_url: r.image_url?.trim() || null,
+          book_url: bookUrl,
+          card_type: r.card_type === "featured" ? "featured" : "upcoming",
+          accent_color: (r.accent_color || "#ff5e00").trim(),
+          is_published: r.is_published !== false,
+          sort_order: Number.isFinite(r.sort_order) ? Number(r.sort_order) : idx,
+          updated_at: new Date().toISOString(),
+        };
+      });
 
     const { error: clearError } = await supabaseAdmin.from("trip_year_outline").delete().eq("year", year);
     if (clearError) throw clearError;
