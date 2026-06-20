@@ -30,8 +30,8 @@ export default function AuthHashHandler() {
             router.replace(`/forgot-password?error=${encodeURIComponent(error.message)}`);
             return;
           }
-          window.history.replaceState(null, "", window.location.pathname);
-          router.replace("/reset-password");
+          window.history.replaceState(null, "", "/reset-password?recovery=1");
+          router.replace("/reset-password?recovery=1");
         });
       return;
     }
@@ -51,7 +51,7 @@ export default function AuthHashHandler() {
     const code = searchParams.get("code") || hashParams.get("code");
 
     if (code) {
-      const next = searchParams.get("next") || "/reset-password";
+      const next = searchParams.get("next") || "/reset-password?recovery=1";
       router.replace(`/auth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`);
       return;
     }

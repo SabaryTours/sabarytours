@@ -56,7 +56,7 @@ export default function ResetPasswordPage() {
           return;
         }
 
-        window.history.replaceState(null, "", window.location.pathname);
+        window.history.replaceState(null, "", "/reset-password?recovery=1");
       }
 
       const { data: { user }, error: userError } = await supabase.auth.getUser();
