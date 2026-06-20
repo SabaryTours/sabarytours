@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Tour } from "../data/packages";
+import { tourDetailHref } from "../lib/tourUrls";
 import StarRating from "./StarRating";
 import { useCurrency } from "../context/CurrencyContext";
 import { safeImageUrl } from "../lib/safeImageUrl";
@@ -19,7 +20,7 @@ export default function TourGrid({ tours, categorySlug }: TourGridProps) {
       {tours.map((tour) => (
         <Link
           key={tour.id}
-          href={`/packages/${categorySlug}/${tour.slug}`}
+          href={tourDetailHref(tour.categorySlug || categorySlug, tour.slug)}
           
           className="relative group overflow-hidden rounded-xl sm:rounded-2xl border-2 border-white block cursor-pointer isolate"
           style={{

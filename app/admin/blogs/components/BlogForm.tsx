@@ -46,6 +46,7 @@ export default function BlogForm({ initialData }: BlogFormProps) {
   const [formData, setFormData] = useState({
     title: initialData?.title || "",
     summary: initialData?.summary || "",
+    tags: Array.isArray(initialData?.tags) ? initialData.tags.join(", ") : "",
     image_url: initialData?.image_url || "",
     status: initialData?.status || "published",
   });
@@ -162,6 +163,10 @@ export default function BlogForm({ initialData }: BlogFormProps) {
         title: formData.title,
         slug,
         summary: formData.summary,
+        tags: formData.tags
+          .split(",")
+          .map((tag: string) => tag.trim())
+          .filter(Boolean),
         content: contentDraftRef.current,
         image_url: formData.image_url,
         status: formData.status,
@@ -211,6 +216,19 @@ export default function BlogForm({ initialData }: BlogFormProps) {
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 font-sans mb-1">Summary (Short Excerpt)</label>
           <textarea name="summary" rows={3} value={formData.summary} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black placeholder:text-black" />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 font-sans mb-1">Tags</label>
+          <input
+            type="text"
+            name="tags"
+            value={formData.tags}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black placeholder:text-black"
+            placeholder="Culture, Food, Ghana, Travel Tips"
+          />
+          <p className="mt-1 text-xs text-gray-500 font-sans">Separate tags with commas.</p>
         </div>
 
         <div>

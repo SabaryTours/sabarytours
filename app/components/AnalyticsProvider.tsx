@@ -29,7 +29,7 @@ function isWhatsAppHref(href: string): boolean {
 export default function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const scrollFiredRef = useRef<Set<number>>(new Set());
-  const pageStartRef = useRef<number>(Date.now());
+  const pageStartRef = useRef<number>(0);
   const pageTypeRef = useRef<string>("other");
 
   useEffect(() => {

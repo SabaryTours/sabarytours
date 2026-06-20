@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getTourBySlug, getToursByCategory } from "../lib/api";
+import { getTourBySlug, getSimilarTours } from "../lib/api";
 import BookingPage from "../pages/BookingPage";
 
 interface PageProps {
@@ -25,8 +25,7 @@ export default async function BookingRoute({ searchParams }: PageProps) {
   }
 
   // Fetch similar tours to cross-sell
-  const categoryTours = await getToursByCategory(tour.categorySlug || 'tours');
-  const otherTours = categoryTours.filter(t => t.id !== tour.id).slice(0, 3);
+  const otherTours = (await getSimilarTours(tour.slug, tour.categorySlug)).filter((t) => t.id !== tour.id);
 
   return <BookingPage tour={tour} otherTours={otherTours} />;
 }

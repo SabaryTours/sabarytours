@@ -13,6 +13,8 @@ import TourComments from "../components/TourComments";
 import { useCurrency } from "../context/CurrencyContext";
 import { inferTierCurrency } from "../lib/tourPricing";
 import { safeImageUrl } from "../lib/safeImageUrl";
+import ShareButtons from "../components/ShareButtons";
+import { tourDetailHref } from "../lib/tourUrls";
 
 interface TourDetailPageProps {
   tour: Tour;
@@ -390,6 +392,18 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
             >
               Book Now
             </button>
+
+            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+              <p className="text-xs text-gray-500 font-sans uppercase font-semibold tracking-wide mb-3">
+                Share this tour
+              </p>
+              <ShareButtons
+                title={tour.title}
+                path={tourDetailHref(tour.categorySlug, tour.slug)}
+                text={`Check out this Sabary Tours experience: ${tour.title}`}
+                compact
+              />
+            </div>
 
             {/* Trust Markers */}
             <ul className="space-y-3 mt-2">

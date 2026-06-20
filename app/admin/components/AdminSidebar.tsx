@@ -16,37 +16,51 @@ import {
   Image01Icon,
   Calendar04Icon,
   Mail02Icon,
+  Settings02Icon,
 } from "hugeicons-react";
 import { logout } from "../../lib/authService";
 import Image from "next/image";
+import type { AdminPermission } from "../../lib/adminPermissions";
 
-const navItems = [
-  { name: "Dashboard", href: "/admin", icon: Home01Icon },
-  { name: "Hero Images", href: "/admin/hero", icon: MapsIcon }, // NEW
-  { name: "Bookings", href: "/admin/bookings", icon: MapsIcon },
-  { name: "Gallery", href: "/admin/gallery", icon: Image01Icon },
-  { name: "Upcoming tours plan", href: "/admin/trip-outline", icon: Calendar04Icon },
-  { name: "Messages", href: "/admin/inquiries", icon: Message01Icon },
-  { name: "Newsletter", href: "/admin/newsletter", icon: Mail02Icon },
-  { name: "Invoices", href: "/admin/invoices", icon: Invoice01Icon }, // NEW
-  { name: "Vouchers", href: "/admin/vouchers", icon: Ticket01Icon },
-  { name: "Users", href: "/admin/users", icon: UserCircleIcon },
-  { name: "Packages", href: "/admin/packages", icon: MapsIcon },
-  { name: 'Reviews', href: '/admin/reviews', icon: Comment01Icon },
-  { name: "Tours", href: "/admin/tours", icon: MapsIcon },
-  { name: "Blogs", href: "/admin/blogs", icon: Edit02Icon },
-  { name: "What's Happening", href: "/admin/happenings", icon: Message01Icon },
-  { name: "Announcements", href: "/admin/announcements", icon: Message01Icon },
-  { name: "Partners", href: "/admin/partners", icon: Message01Icon },
+const navItems: {
+  name: string;
+  href: string;
+  icon: typeof Home01Icon;
+  permission: AdminPermission;
+}[] = [
+  { name: "Dashboard", href: "/admin", icon: Home01Icon, permission: "dashboard" },
+  { name: "Hero Images", href: "/admin/hero", icon: MapsIcon, permission: "content" },
+  { name: "Bookings", href: "/admin/bookings", icon: MapsIcon, permission: "bookings" },
+  { name: "Gallery", href: "/admin/gallery", icon: Image01Icon, permission: "content" },
+  { name: "Upcoming tours plan", href: "/admin/trip-outline", icon: Calendar04Icon, permission: "content" },
+  { name: "Messages", href: "/admin/inquiries", icon: Message01Icon, permission: "messages" },
+  { name: "Newsletter", href: "/admin/newsletter", icon: Mail02Icon, permission: "marketing" },
+  { name: "Invoices", href: "/admin/invoices", icon: Invoice01Icon, permission: "finance" },
+  { name: "Vouchers", href: "/admin/vouchers", icon: Ticket01Icon, permission: "finance" },
+  { name: "Platform Users", href: "/admin/users", icon: UserCircleIcon, permission: "users" },
+  { name: "Admin Team", href: "/admin/settings", icon: Settings02Icon, permission: "settings" },
+  { name: "Packages", href: "/admin/packages", icon: MapsIcon, permission: "content" },
+  { name: 'Reviews', href: '/admin/reviews', icon: Comment01Icon, permission: "content" },
+  { name: "Tours", href: "/admin/tours", icon: MapsIcon, permission: "content" },
+  { name: "Blogs", href: "/admin/blogs", icon: Edit02Icon, permission: "content" },
+  { name: "What's Happening", href: "/admin/happenings", icon: Message01Icon, permission: "marketing" },
+  { name: "Announcements", href: "/admin/announcements", icon: Message01Icon, permission: "marketing" },
+  { name: "Partners", href: "/admin/partners", icon: Message01Icon, permission: "content" },
 ];
 
 interface AdminSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  role: string;
+  permissions: AdminPermission[];
 }
 
-export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
+export default function AdminSidebar({ isOpen, onClose, role, permissions }: AdminSidebarProps) {
   const pathname = usePathname();
+  const allowed = new Set(permissions);
+  const visibleItems = role === "owner" || role === "admin"
+    ? navItems
+    : navItems.filter((item) => allowed.has(item.permission));
 
   return (
     <>
@@ -82,7 +96,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          {navItems.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             

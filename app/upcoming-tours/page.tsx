@@ -1,8 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import Footer from "../components/Footer";
+import ShareButtons from "../components/ShareButtons";
 import { getTripOutlineForYear } from "../lib/api";
 import { parseTripOutlineBody } from "../lib/tripOutline";
+import { resolveTripOutlineBookUrl } from "../lib/tourUrls";
 
 const MONTH_LABELS = [
   "January",
@@ -37,13 +39,23 @@ export default async function UpcomingToursPage() {
     const monthRows = byMonth.get(month) || [];
     const cards = monthRows.map((row, index) => {
       const meta = parseTripOutlineBody(row.body || "");
+      const bookUrl = resolveTripOutlineBookUrl({
+        tour_slug: meta.tour_slug,
+        book_url: row.book_url || meta.book_url,
+      });
       return {
         key: row.id || `${month}-${index}`,
         title: row.title?.trim() || `${MONTH_LABELS[i]} Featured Tour`,
         description: row.description || meta.description || "",
         image_url: row.image_url || meta.image_url || "",
-        book_url: row.book_url || meta.book_url || "/booking",
+        book_url: bookUrl,
         card_type: row.card_type || meta.card_type || "upcoming",
+        date: meta.date || "",
+        inclusions: meta.inclusions || "",
+        price: meta.price || "",
+        seats_remaining: meta.seats_remaining ?? null,
+        total_seats: meta.total_seats ?? null,
+        details: meta.details || "",
       };
     });
     return {
@@ -72,10 +84,10 @@ export default async function UpcomingToursPage() {
                 <h2 className="text-2xl text-gray-900 uppercase" style={{ fontFamily: "var(--font-unlimited-pie)" }}>
                   {m.label}
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 xl:grid-cols-3 sm:overflow-visible">
                   {m.cards.map((card) => (
-                    <article key={card.key} className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col">
-                      <div className="relative aspect-[16/10] bg-gray-100">
+                    <article key={card.key} className="w-[86vw] max-w-[360px] shrink-0 snap-center sm:w-auto sm:max-w-none rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col">
+                      <div className="relative aspect-16/10 bg-gray-100">
                         {card.image_url ? (
                           <Image src={card.image_url} alt={card.title} fill className="object-cover" />
                         ) : (
@@ -89,15 +101,47 @@ export default async function UpcomingToursPage() {
                       </div>
                       <div className="p-5 flex-1 flex flex-col">
                         <h3 className="text-lg font-bold text-gray-900 font-sans leading-snug">{card.title}</h3>
+                        <div className="mt-3 space-y-2 text-sm text-gray-700 font-sans">
+                          {card.date ? (
+                            <p>
+                              <span className="font-bold">Date:</span> {card.date}
+                            </p>
+                          ) : null}
+                          {typeof card.seats_remaining === "number" ? (
+                            <p>
+                              <span className="font-bold">Seats:</span>{" "}
+                              {card.seats_remaining} space{card.seats_remaining === 1 ? "" : "s"} remaining
+                              {typeof card.total_seats === "number" ? ` of ${card.total_seats}` : ""}
+                            </p>
+                          ) : null}
+                          {card.inclusions ? (
+                            <p>
+                              <span className="font-bold">Inclusions:</span> {card.inclusions}
+                            </p>
+                          ) : null}
+                          {card.price ? (
+                            <p>
+                              <span className="font-bold">Price:</span> {card.price}
+                            </p>
+                          ) : null}
+                        </div>
                         <p className="mt-2 text-sm text-gray-600 font-sans leading-relaxed flex-1">
-                          {card.description || "Details coming soon for this month."}
+                          {card.details || card.description || "Details coming soon for this month."}
                         </p>
-                        <Link
-                          href={card.book_url}
-                          className="mt-4 inline-flex items-center justify-center rounded-lg bg-[#ff5e00] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#e55500] font-sans"
-                        >
-                          Book tour
-                        </Link>
+                        <div className="mt-4 flex flex-col gap-3">
+                          <Link
+                            href={card.book_url}
+                            className="inline-flex items-center justify-center rounded-lg bg-[#ff5e00] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#e55500] font-sans"
+                          >
+                            Book Now
+                          </Link>
+                          <ShareButtons
+                            title={card.title}
+                            path={card.book_url}
+                            text={`Check out this upcoming Sabary Tours experience: ${card.title}`}
+                            compact
+                          />
+                        </div>
                       </div>
                     </article>
                   ))}

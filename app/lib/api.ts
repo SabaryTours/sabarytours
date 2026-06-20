@@ -222,6 +222,81 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
   return mapped.sort((a, b) => (b.bookedCount || 0) - (a.bookedCount || 0));
 }
 
+export async function getSimilarTours(
+  excludeSlug: string,
+  categorySlug?: string | null,
+): Promise<Tour[]> {
+  if (categorySlug) {
+    const tours = await getToursByCategory(categorySlug);
+    return tours.filter((tour) => tour.slug !== excludeSlug).slice(0, 3);
+  }
+
+  const supabase = await createClient();
+  const { data: tours, error } = await supabase
+    .from("tours")
+    .select(`
+      *,
+      tour_images(image_url, display_order),
+      tour_prices(amount, currency)
+    `)
+    .eq("status", "published")
+    .order("created_at", { ascending: false })
+    .limit(12);
+
+  if (error || !tours) return [];
+
+  const typedTours = (tours as TourRow[]).filter((tour) => {
+    const slug = tour.slug || generateSlug(tour.title);
+    return slug !== excludeSlug;
+  });
+
+  return typedTours.slice(0, 3).map((t) => {
+    const sortedImages = [...(t.tour_images || [])].sort((a, b) => a.display_order - b.display_order);
+    const gallery = sortedImages.map((img) => img.image_url);
+    const primaryImage = gallery[0] || "/assets/placeholder-tour.jpg";
+    const sortedTiers = sortTourPriceTiers(t.tour_prices || []);
+    const { amount: basePrice, currency } = getLowestTierPrice(sortedTiers, t.currency);
+    const slug = t.slug || generateSlug(t.title);
+
+    return {
+      id: t.id.toString(),
+      title: t.title,
+      slug,
+      categorySlug: t.category || "",
+      image: primaryImage,
+      gallery,
+      description: t.description || "",
+      price: `${currency} ${basePrice}`,
+      priceValue: basePrice,
+      priceCurrency: currency,
+      duration: t.duration || "Full Day",
+      location: t.location || "Ghana",
+      map_url: t.map_url,
+      price_tiers: sortedTiers,
+      freeCancellation: true,
+    } as Tour;
+  });
+}
+
+export async function getPublishedTourOptions(): Promise<
+  Array<{ slug: string; title: string; category: string | null }>
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tours")
+    .select("title, slug, category")
+    .eq("status", "published")
+    .order("title", { ascending: true });
+
+  if (error || !data) return [];
+
+  return data.map((tour) => ({
+    slug: tour.slug || generateSlug(tour.title),
+    title: tour.title,
+    category: tour.category || null,
+  }));
+}
+
 export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
   const supabase = await createClient();
 
@@ -284,7 +359,7 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
     id: t.id.toString(),
     title: t.title,
     slug: resolvedSlug,
-    categorySlug: t.category || 'tours',
+    categorySlug: t.category || "",
     image: primaryImage,
     gallery: gallery.length > 0 ? gallery : [primaryImage],
     availableDays: Array.isArray(t.available_days) ? t.available_days : [],
@@ -326,6 +401,7 @@ export interface BlogPost {
   modifiedAtIso?: string;
   content: string;
   excerpt?: string;
+  tags?: string[];
 }
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
@@ -362,6 +438,7 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
     modifiedAtIso,
     content: post.content || '',
     excerpt: post.summary || '',
+    tags: Array.isArray(post.tags) ? post.tags.filter(Boolean) : [],
   } as BlogPost;
 }
 
@@ -402,6 +479,7 @@ export async function getRelatedBlogPosts(
       modifiedAtIso,
       content: post.content || '',
       excerpt: post.summary || '',
+      tags: Array.isArray(post.tags) ? post.tags.filter(Boolean) : [],
     } as BlogPost;
   });
 }

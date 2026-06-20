@@ -1,4 +1,5 @@
 import { createClient } from '../utils/supabase/client';
+import { isAdminRole } from './adminPermissions';
 
 export interface LoginCredentials {
   email: string; // Changed from username to email for Supabase default
@@ -135,5 +136,5 @@ export const getUserRole = async (): Promise<'admin' | 'subscriber'> => {
     .eq('id', user.id)
     .single();
 
-  return profile?.role === 'admin' ? 'admin' : 'subscriber';
+  return isAdminRole(profile?.role) ? 'admin' : 'subscriber';
 };

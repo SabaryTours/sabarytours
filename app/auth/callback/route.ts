@@ -4,7 +4,7 @@ import { createClient } from "../../utils/supabase/server";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") || "/reset-password";
+  const next = url.searchParams.get("next") || "/reset-password?recovery=1";
   const origin = url.origin;
 
   if (!code) {
@@ -23,6 +23,6 @@ export async function GET(request: Request) {
     );
   }
 
-  const safeNext = next.startsWith("/") ? next : "/reset-password";
+  const safeNext = next.startsWith("/") ? next : "/reset-password?recovery=1";
   return NextResponse.redirect(`${origin}${safeNext}`);
 }

@@ -8,6 +8,7 @@ import AuthCarousel from "../components/AuthCarousel";
 import WhyRegisterPopup from "../components/WhyRegisterPopup";
 import Logo from "../components/Logo";
 import { createClient } from "../utils/supabase/client";
+import { isAdminRole } from "../lib/adminPermissions";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -63,7 +64,7 @@ export default function LoginPage() {
         .single();
 
       const redirectUri = new URLSearchParams(window.location.search).get("redirect");
-      const defaultRedirect = profile?.role === 'admin' ? '/admin' : '/dashboard';
+      const defaultRedirect = isAdminRole(profile?.role) ? '/admin' : '/dashboard';
       router.push(redirectUri || defaultRedirect);
       router.refresh(); // Important: Refresh server state
     } catch (err) {
