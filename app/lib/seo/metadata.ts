@@ -6,6 +6,7 @@ type PageMetadataInput = {
   description: string;
   path: string;
   images?: string[];
+  keywords?: string[];
   noIndex?: boolean;
 };
 
@@ -14,6 +15,7 @@ export function buildPageMetadata({
   description,
   path,
   images = [],
+  keywords = [],
   noIndex = false,
 }: PageMetadataInput): Metadata {
   const canonical = absoluteUrl(path);
@@ -25,6 +27,7 @@ export function buildPageMetadata({
     title,
     description: description.slice(0, 160),
     alternates: { canonical },
+    ...(keywords.length > 0 ? { keywords } : {}),
     ...(noIndex ? { robots: { index: false, follow: false } } : {}),
     openGraph: {
       title,

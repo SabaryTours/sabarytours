@@ -3,7 +3,7 @@
 import CachedImage from "./CachedImage";
 import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
-import CardPriceBlob from "./CardPriceBlob";
+import CardStartingPrice from "./CardStartingPrice";
 
 export interface PackageCategory {
   id: string;
@@ -93,15 +93,15 @@ function PackageCard({ pkg, isMobile = false }: { pkg: PackageCategory; isMobile
             }}
           />
 
-          {typeof pkg.startingPrice === "number" && pkg.startingPrice > 0 ? (
-            <CardPriceBlob
-              price={`${pkg.startingCurrency || "GHS"} ${pkg.startingPrice.toLocaleString()}`}
-              className="absolute top-3 right-3 z-10"
-            />
-          ) : null}
-
-          {/* Title */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full px-3 py-10">
+          {/* Title + price */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full px-3 py-8 sm:py-10">
+            {typeof pkg.startingPrice === "number" && pkg.startingPrice > 0 ? (
+              <CardStartingPrice
+                amount={pkg.startingPrice}
+                currency={pkg.startingCurrency || "GHS"}
+                className="mb-2"
+              />
+            ) : null}
             <h3
           className={`text-white uppercase text-center drop-shadow-lg ${
             isMobile ? "text-[16px]" : "text-[16px] sm:text-[18px] md:text-[20px]"

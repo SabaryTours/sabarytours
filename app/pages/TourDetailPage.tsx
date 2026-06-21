@@ -14,6 +14,7 @@ import { useCurrency } from "../context/CurrencyContext";
 import { inferTierCurrency } from "../lib/tourPricing";
 import { safeImageUrl } from "../lib/safeImageUrl";
 import ShareButtons from "../components/ShareButtons";
+import TourViewTracker from "../components/TourViewTracker";
 import { tourDetailHref } from "../lib/tourUrls";
 
 interface TourDetailPageProps {
@@ -62,6 +63,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
         </button>
 
         <div className="flex flex-col gap-2 min-w-0 max-w-full">
+          <TourViewTracker slug={tour.slug} />
           {categoryTitle ? (
             <p className="text-xs uppercase tracking-wide text-gray-500 font-sans break-words">{categoryTitle}</p>
           ) : null}
@@ -90,6 +92,18 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
                 Best Seller
               </div>
             )}
+            {typeof tour.seatsRemaining === "number" ? (
+              <span className="font-bold text-[#ff5e00]">
+                Seats remaining: {tour.seatsRemaining}
+                {typeof tour.totalSeats === "number" ? ` of ${tour.totalSeats}` : ""}
+              </span>
+            ) : null}
+            {(tour.viewCount ?? 0) > 0 ? (
+              <span>{tour.viewCount} view{tour.viewCount === 1 ? "" : "s"}</span>
+            ) : null}
+            {tour.showBookingCount && (tour.bookedCount ?? 0) > 0 ? (
+              <span>Booked {tour.bookedCount} times</span>
+            ) : null}
           </div>
         </div>
       </div>

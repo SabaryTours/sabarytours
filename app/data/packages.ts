@@ -57,6 +57,10 @@ export interface Tour {
   availableDays?: string[];
   blockedDates?: string[];
   timeSlots?: string[];
+  totalSeats?: number | null;
+  seatsRemaining?: number | null;
+  showBookingCount?: boolean;
+  viewCount?: number;
 }
 
 // Package (legacy - for backward compatibility)

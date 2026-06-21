@@ -4,6 +4,7 @@ import { bookingSchema } from "../../lib/validations/booking";
 import { resend, FROM_EMAIL } from "../../lib/resend";
 import { buildBookingConfirmationEmailHtml } from "../../lib/bookingReceiptEmailHtml";
 import { sendBookingAdminNotification } from "../../lib/sendBookingAdminNotification";
+import { decrementTourSeats } from "../../lib/tourSeats";
 import {
   computeExpectedBookingPricing,
   normalizeTierSelections,
@@ -299,7 +300,15 @@ export async function POST(request: Request) {
       throw error;
     }
 
-    // 1.5 Give Sabary Miles (1 point per $10 spent)
+    if (booking.booking_status === "confirmed") {
+      await decrementTourSeats(
+        supabaseAdmin,
+        typeof body.tourId === "string" ? body.tourId : null,
+        body.numberOfPeople,
+      );
+    }
+
+    // 1.5 Give Sabary Miles
     if (body.userId) {
       try {
         const pointsEarned = Math.floor(expectedPricing.totalPriceGhs / 10);

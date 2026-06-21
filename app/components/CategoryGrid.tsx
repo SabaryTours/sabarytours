@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { PackageCategory } from "./PackagesGrid";
 import { safeImageUrl } from "../lib/safeImageUrl";
-import CardPriceBlob from "./CardPriceBlob";
+import CardStartingPrice from "./CardStartingPrice";
 
 interface CategoryGridProps {
   packages?: PackageCategory[];
@@ -159,15 +159,14 @@ export default function CategoryGrid({
             }}
           />
 
-          {typeof category.startingPrice === "number" && category.startingPrice > 0 ? (
-            <CardPriceBlob
-              price={`${category.startingCurrency || "GHS"} ${category.startingPrice.toLocaleString()}`}
-              className="absolute top-3 right-3 z-10"
-            />
-          ) : null}
-
-          {/* Title */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full px-3 py-10">
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full px-3 py-8 sm:py-10">
+            {typeof category.startingPrice === "number" && category.startingPrice > 0 ? (
+              <CardStartingPrice
+                amount={category.startingPrice}
+                currency={category.startingCurrency || "GHS"}
+                className="mb-2"
+              />
+            ) : null}
             <h3
               className="text-white text-[16px] sm:text-[18px] md:text-[20px] uppercase text-center drop-shadow-lg"
               style={{

@@ -9,6 +9,7 @@ import NewsletterSubscribe from "../components/NewsletterSubscribe";
 import BlogPostViewCounter from "../components/BlogPostViewCounter";
 import ShareButtons from "../components/ShareButtons";
 import BlogComments from "../components/BlogComments";
+import { BlogHashtagList } from "../components/BlogHashtag";
 
 interface BlogDetailPageProps {
   post: BlogPost;
@@ -91,12 +92,11 @@ export default function BlogDetailPage({ post, relatedPosts = [] }: BlogDetailPa
           </div>
 
           {post.tags?.length ? (
-            <div className="mb-6 flex flex-wrap gap-2">
-              {post.tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-orange-50 px-3 py-1.5 text-xs font-bold text-[#ff5e00] font-sans">
-                  {tag}
-                </span>
-              ))}
+            <div className="mb-6">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-500 font-sans mb-2">
+                Hashtags
+              </p>
+              <BlogHashtagList tags={post.tags} linkable />
             </div>
           ) : null}
 

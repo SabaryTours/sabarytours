@@ -29,12 +29,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const description =
     post.excerpt || post.content.replace(/<[^>]*>/g, " ").trim().slice(0, 160);
+  const keywords = post.tags?.map((tag) => tag.replace(/^#+/, "").trim()).filter(Boolean) ?? [];
 
   return buildPageMetadata({
     title: `${post.title} | Sabary Tours Blog`,
     description,
     path: `/blog/${post.slug}`,
     images: [post.image],
+    keywords,
   });
 }
 
@@ -63,6 +65,7 @@ export default async function BlogPostPage({ params }: PageProps) {
     image: post.image,
     publishedAt: post.publishedAtIso,
     modifiedAt: post.modifiedAtIso,
+    keywords: post.tags,
   });
 
   return (

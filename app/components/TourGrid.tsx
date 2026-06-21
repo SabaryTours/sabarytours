@@ -85,16 +85,22 @@ export default function TourGrid({ tours, categorySlug }: TourGridProps) {
               {tour.title}
             </h3>
 
-            {/* Price and Booked Count */}
-            <div className="flex items-center justify-between mt-auto">
+            {/* Price, seats, and booking info */}
+            <div className="flex flex-col gap-1 mt-auto">
               <span className="text-white text-[14px] sm:text-[16px] font-bold font-sans">
-                {symbol} {convert(tour.priceValue ?? 0, (tour.priceCurrency as "GHS" | "USD") ?? "GHS").toFixed(2)}
+                Starts from {symbol}{" "}
+                {convert(tour.priceValue ?? 0, (tour.priceCurrency as "GHS" | "USD") ?? "GHS").toFixed(2)}
               </span>
-              {tour.bookedCount && (
+              {typeof tour.seatsRemaining === "number" ? (
+                <span className="text-white/90 text-[12px] font-sans font-bold">
+                  Seats remaining: {tour.seatsRemaining}
+                </span>
+              ) : null}
+              {tour.showBookingCount && tour.bookedCount ? (
                 <span className="text-white/80 text-[12px] font-sans">
                   Booked {tour.bookedCount} times
                 </span>
-              )}
+              ) : null}
             </div>
           </div>
         </Link>

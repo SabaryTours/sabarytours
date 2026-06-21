@@ -7,6 +7,8 @@ import { EyeIcon, Message01Icon } from "hugeicons-react";
 import TourLoader from "./TourLoader";
 import { resolveBlogImageUrl } from "../lib/blogImages";
 import ShareButtons from "./ShareButtons";
+import { BlogHashtagLink } from "./BlogHashtag";
+import { formatBlogHashtag } from "../lib/blogTags";
 
 const PAGE_SIZE = 6;
 
@@ -132,7 +134,7 @@ export default function BlogGrid({ limit, loadMoreHref }: BlogGridProps) {
                   : "bg-gray-100 text-gray-700 hover:bg-orange-50 hover:text-[#ff5e00]"
               }`}
             >
-              {tag}
+              {formatBlogHashtag(tag)}
             </button>
           ))}
         </div>
@@ -201,9 +203,7 @@ export default function BlogGrid({ limit, loadMoreHref }: BlogGridProps) {
             {post.tags?.length ? (
               <div className="flex flex-wrap gap-1">
                 {post.tags.slice(0, 3).map((tag: string) => (
-                  <span key={tag} className="rounded-full bg-orange-50 px-2 py-1 text-[11px] font-bold text-[#ff5e00] font-sans">
-                    {tag}
-                  </span>
+                  <BlogHashtagLink key={tag} tag={tag} />
                 ))}
               </div>
             ) : null}

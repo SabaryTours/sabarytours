@@ -84,6 +84,7 @@ export function buildBlogArticleSchema(input: {
   image: string;
   publishedAt: string;
   modifiedAt?: string;
+  keywords?: string[];
 }) {
   const siteUrl = getSiteUrl();
   const url = absoluteUrl(`/blog/${input.slug}`);
@@ -99,6 +100,7 @@ export function buildBlogArticleSchema(input: {
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     datePublished: input.publishedAt,
     dateModified: input.modifiedAt || input.publishedAt,
+    ...(input.keywords?.length ? { keywords: input.keywords.join(", ") } : {}),
     author: {
       "@type": "Organization",
       name: SITE_NAME,

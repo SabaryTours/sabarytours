@@ -46,6 +46,7 @@ const navItems: {
   { name: "What's Happening", href: "/admin/happenings", icon: Message01Icon, permission: "marketing" },
   { name: "Announcements", href: "/admin/announcements", icon: Message01Icon, permission: "marketing" },
   { name: "Partners", href: "/admin/partners", icon: Message01Icon, permission: "content" },
+  { name: "FAQs", href: "/admin/faqs", icon: Comment01Icon, permission: "content" },
 ];
 
 interface AdminSidebarProps {

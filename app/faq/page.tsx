@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import FaqPage from "../pages/FaqPage";
+import { getPublishedFaqs } from "../lib/faqs";
 
 export const metadata: Metadata = {
   title: "FAQs | Sabary Tours",
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Faq() {
-  return <FaqPage />;
+export default async function Faq() {
+  const sections = await getPublishedFaqs();
+  return <FaqPage sections={sections} />;
 }
