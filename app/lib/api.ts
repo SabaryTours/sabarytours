@@ -1,4 +1,5 @@
 import { resolveBlogImageUrl } from './blogImages';
+import { normalizeBlogTags } from './blogTags';
 import { createClient } from '../utils/supabase/server';
 import { Tour } from '../data/packages';
 import { getTourBookingCounts } from './packagePopularity';
@@ -55,6 +56,10 @@ type TourRow = {
   available_days?: string[] | null;
   blocked_dates?: string[] | null;
   time_slots?: string[] | null;
+  total_seats?: number | null;
+  seats_remaining?: number | null;
+  show_booking_count?: boolean | null;
+  view_count?: number | null;
 };
 
 type ReviewRow = {
@@ -64,6 +69,15 @@ type ReviewRow = {
 
 // Helper to generate a slug if missing
 const generateSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+function mapTourMetaFields(t: TourRow) {
+  return {
+    totalSeats: typeof t.total_seats === "number" ? t.total_seats : null,
+    seatsRemaining: typeof t.seats_remaining === "number" ? t.seats_remaining : null,
+    showBookingCount: Boolean(t.show_booking_count),
+    viewCount: typeof t.view_count === "number" ? t.view_count : 0,
+  };
+}
 
 const FEATURED_TOUR_SELECT = `
   title,
@@ -235,6 +249,7 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
       reviewCount: stats?.count || 0,
       bookedCount: bookingCounts[String(t.id)] || 0,
       freeCancellation: true,
+      ...mapTourMetaFields(t),
     } as Tour;
   });
 
@@ -293,6 +308,7 @@ export async function getSimilarTours(
       map_url: t.map_url,
       price_tiers: sortedTiers,
       freeCancellation: true,
+      ...mapTourMetaFields(t),
     } as Tour;
   });
 }
@@ -374,6 +390,8 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
     ? Math.round((((reviewData || []) as Pick<ReviewRow, "rating">[]).reduce((sum, r) => sum + r.rating, 0) / reviewCount) * 10) / 10
     : undefined;
 
+  const bookingCounts = await getTourBookingCounts(supabase, [String(t.id)]);
+
   return {
     id: t.id.toString(),
     title: t.title,
@@ -401,8 +419,9 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
     itinerary: mappedItin,
     rating: avgRating,
     reviewCount: reviewCount,
-    bookedCount: 0,
+    bookedCount: bookingCounts[String(t.id)] || 0,
     freeCancellation: true,
+    ...mapTourMetaFields(t),
   } as Tour;
 }
 
@@ -458,7 +477,7 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
     modifiedAtIso,
     content: post.content || '',
     excerpt: post.summary || '',
-    tags: Array.isArray(post.tags) ? post.tags.filter(Boolean) : [],
+    tags: normalizeBlogTags(Array.isArray(post.tags) ? post.tags.filter(Boolean) : []),
     category: typeof post.category === 'string' ? post.category : null,
   } as BlogPost;
 }
@@ -500,7 +519,7 @@ export async function getRelatedBlogPosts(
       modifiedAtIso,
       content: post.content || '',
       excerpt: post.summary || '',
-      tags: Array.isArray(post.tags) ? post.tags.filter(Boolean) : [],
+      tags: normalizeBlogTags(Array.isArray(post.tags) ? post.tags.filter(Boolean) : []),
       category: typeof post.category === 'string' ? post.category : null,
     } as BlogPost;
   });

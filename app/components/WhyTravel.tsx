@@ -57,10 +57,10 @@ export default function WhyTravel() {
   return (
     <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7">
       {/* Blue Background Container - matching hero section structure */}
-      <div className="bg-blue-50 relative rounded-2xl py-8 sm:py-10 overflow-visible">
+      <div className="bg-blue-50 relative rounded-2xl py-16 overflow-visible">
         <div className="container mx-auto px-4 sm:px-6">
           {/* Header Section */}
-          <div className="flex flex-col gap-3 items-center mb-6">
+          <div className="flex flex-col gap-[20px] items-center mb-12">
             {/* Top Line - Icon + Subtitle */}
             <div className="flex gap-[5px] items-center justify-center">
               {/* Road Trip Icon */}
@@ -112,14 +112,14 @@ export default function WhyTravel() {
 
           {/* Cards: full-width snap-scroll on mobile, grid from md */}
           <div
-            className="flex flex-row gap-3 overflow-x-auto overflow-y-visible pb-3 snap-x snap-mandatory scroll-pl-4 scroll-pr-4 -mx-1 px-1 [-webkit-overflow-scrolling:touch] overscroll-x-contain scrollbar-hide md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:pb-0 md:px-0 md:snap-none lg:grid-cols-3"
+            className="flex flex-row gap-4 overflow-x-auto overflow-y-visible pb-4 snap-x snap-mandatory scroll-pl-4 scroll-pr-4 -mx-1 px-1 [-webkit-overflow-scrolling:touch] overscroll-x-contain scrollbar-hide md:mx-0 md:grid md:grid-cols-2 md:gap-6 md:overflow-visible md:pb-0 md:px-0 md:snap-none lg:grid-cols-3"
             role="list"
             aria-label="Why travel with Sabary"
           >
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="relative shrink-0 snap-center w-[calc(100vw-3rem)] max-w-[340px] rounded-2xl overflow-hidden flex items-center justify-center p-4 min-h-[170px] md:w-auto md:max-w-none md:min-w-0 md:shrink"
+                className="relative shrink-0 snap-center w-[calc(100vw-3rem)] max-w-[400px] rounded-2xl overflow-hidden flex items-center justify-center p-6 min-h-[220px] md:w-auto md:max-w-none md:min-w-0 md:shrink"
                 style={{
                   backgroundColor: feature.bgColor,
                 }}
@@ -138,7 +138,7 @@ export default function WhyTravel() {
 
                 {/* Inner Floating Card */}
                 <div
-                  className="relative z-10 bg-white rounded-xl px-4 py-5 flex flex-col gap-2 w-full max-w-[280px] text-center shadow-lg"
+                  className="relative z-10 bg-white rounded-xl px-6 py-8 flex flex-col gap-4 w-full max-w-[320px] text-center shadow-lg"
                   style={{
                     backgroundColor: feature.innerBgColor,
                     border: `1px solid ${feature.borderColor}`,

@@ -8,8 +8,10 @@ import BlogPostCard, { type BlogCardPost } from "./BlogPostCard";
 import BlogFeaturedArticle from "./BlogFeaturedArticle";
 import { BLOG_CATEGORIES, getBlogCategoryLabel } from "../lib/blogCategories";
 import { resolveBlogImageUrl } from "../lib/blogImages";
+import { formatBlogHashtag, normalizeBlogTags, tagMatchesParam } from "../lib/blogTags";
 
 const PAGE_SIZE = 6;
+const SECTION_PREVIEW_LIMIT = 60;
 
 function mapPostRow(row: Record<string, unknown>): BlogCardPost {
   const slug = typeof row.slug === "string" ? row.slug : "";
@@ -23,7 +25,7 @@ function mapPostRow(row: Record<string, unknown>): BlogCardPost {
     ),
     views: typeof row.view_count === "number" ? row.view_count : 0,
     comments: typeof row.comment_count === "number" ? row.comment_count : 0,
-    tags: Array.isArray(row.tags) ? row.tags.filter(Boolean) : [],
+    tags: normalizeBlogTags(Array.isArray(row.tags) ? row.tags.filter(Boolean) : []),
     category: typeof row.category === "string" ? row.category : null,
     excerpt: typeof row.summary === "string" ? row.summary : "",
   };
@@ -34,8 +36,10 @@ export default function BlogBrowse() {
   const searchParams = useSearchParams();
   const queryFromUrl = searchParams.get("q")?.trim() || "";
   const categoryFromUrl = searchParams.get("category")?.trim() || "all";
+  const tagFromUrl = searchParams.get("tag")?.trim() || "";
 
   const [searchInput, setSearchInput] = useState(queryFromUrl);
+  const [sectionPosts, setSectionPosts] = useState<BlogCardPost[]>([]);
   const [posts, setPosts] = useState<BlogCardPost[]>([]);
   const [featuredPost, setFeaturedPost] = useState<BlogCardPost | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +47,7 @@ export default function BlogBrowse() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
 
-  const isFiltered = Boolean(queryFromUrl) || categoryFromUrl !== "all";
+  const isFiltered = Boolean(queryFromUrl) || categoryFromUrl !== "all" || Boolean(tagFromUrl);
 
   useEffect(() => {
     setSearchInput(queryFromUrl);
@@ -82,6 +86,41 @@ export default function BlogBrowse() {
   }, []);
 
   useEffect(() => {
+    if (isFiltered) {
+      setSectionPosts([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadSectionPosts() {
+      const { createClient } = await import("../utils/supabase/client");
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .eq("status", "published")
+        .order("created_at", { ascending: false })
+        .range(0, SECTION_PREVIEW_LIMIT - 1);
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error("Failed to fetch blog section previews:", error);
+        setSectionPosts([]);
+      } else {
+        setSectionPosts((data || []).map((row) => mapPostRow(row)));
+      }
+    }
+
+    loadSectionPosts();
+    return () => {
+      cancelled = true;
+    };
+  }, [isFiltered]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function loadPosts() {
@@ -90,8 +129,6 @@ export default function BlogBrowse() {
 
       const { createClient } = await import("../utils/supabase/client");
       const supabase = createClient();
-
-      const fetchLimit = queryFromUrl || categoryFromUrl !== "all" ? PAGE_SIZE : 60;
 
       let request = supabase
         .from("posts")
@@ -110,7 +147,11 @@ export default function BlogBrowse() {
         );
       }
 
-      const { data, error } = await request.range(0, fetchLimit - 1);
+      if (tagFromUrl) {
+        request = request.contains("tags", [tagFromUrl.replace(/^#+/, "").trim()]);
+      }
+
+      const { data, error } = await request.range(0, PAGE_SIZE - 1);
 
       if (cancelled) return;
 
@@ -121,7 +162,7 @@ export default function BlogBrowse() {
       } else {
         const mapped = (data || []).map((row) => mapPostRow(row));
         setPosts(mapped);
-        setHasMore(mapped.length === fetchLimit);
+        setHasMore((data || []).length === PAGE_SIZE);
       }
 
       setLoading(false);
@@ -131,21 +172,23 @@ export default function BlogBrowse() {
     return () => {
       cancelled = true;
     };
-  }, [queryFromUrl, categoryFromUrl]);
+  }, [queryFromUrl, categoryFromUrl, tagFromUrl]);
 
-  const latestUncategorized = useMemo(() => {
-    if (isFiltered) return [];
-    return posts.filter((post) => !post.category).slice(0, 6);
-  }, [isFiltered, posts]);
+  const popularTags = useMemo(() => {
+    const source = isFiltered ? posts : sectionPosts.length > 0 ? sectionPosts : posts;
+    return Array.from(new Set(source.flatMap((post) => post.tags || []))).sort((a, b) =>
+      a.localeCompare(b),
+    );
+  }, [isFiltered, posts, sectionPosts]);
 
   const sectionGroups = useMemo(() => {
     if (isFiltered) return [];
 
     return BLOG_CATEGORIES.map((category) => ({
       ...category,
-      posts: posts.filter((post) => post.category === category.slug).slice(0, 3),
+      posts: sectionPosts.filter((post) => post.category === category.slug).slice(0, 3),
     })).filter((section) => section.posts.length > 0);
-  }, [isFiltered, posts]);
+  }, [isFiltered, sectionPosts]);
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -167,15 +210,23 @@ export default function BlogBrowse() {
     router.push(params.toString() ? `/blog?${params.toString()}` : "/blog");
   };
 
+  const handleTagChange = (tag: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (tag) params.set("tag", tag);
+    else params.delete("tag");
+
+    router.push(params.toString() ? `/blog?${params.toString()}` : "/blog");
+  };
+
   const handleLoadMore = async () => {
     const nextPage = page + 1;
-    const pageSize = queryFromUrl || categoryFromUrl !== "all" ? PAGE_SIZE : 60;
     setLoadingMore(true);
 
     const { createClient } = await import("../utils/supabase/client");
     const supabase = createClient();
-    const from = nextPage * pageSize;
-    const to = from + pageSize - 1;
+    const from = nextPage * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
 
     let request = supabase
       .from("posts")
@@ -194,12 +245,16 @@ export default function BlogBrowse() {
       );
     }
 
+    if (tagFromUrl) {
+      request = request.contains("tags", [tagFromUrl.replace(/^#+/, "").trim()]);
+    }
+
     const { data, error } = await request.range(from, to);
 
     if (!error && data) {
       const mapped = data.map((row) => mapPostRow(row));
       setPosts((prev) => [...prev, ...mapped]);
-      setHasMore(mapped.length === pageSize);
+      setHasMore(data.length === PAGE_SIZE);
       setPage(nextPage);
     }
 
@@ -264,6 +319,39 @@ export default function BlogBrowse() {
         </div>
       </div>
 
+      {popularTags.length > 0 ? (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-bold text-[#0060cc] font-sans">Browse by hashtag</p>
+            {tagFromUrl ? (
+              <button
+                type="button"
+                onClick={() => handleTagChange(null)}
+                className="text-xs font-bold text-gray-500 hover:text-[#ff5e00] font-sans"
+              >
+                Clear hashtag
+              </button>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {popularTags.slice(0, 12).map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => handleTagChange(tagMatchesParam(tag, tagFromUrl) ? null : tag)}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold font-sans transition-colors ${
+                  tagMatchesParam(tag, tagFromUrl)
+                    ? "bg-[#ff5e00] text-white"
+                    : "bg-orange-50 text-[#ff5e00] hover:bg-orange-100"
+                }`}
+              >
+                {formatBlogHashtag(tag)}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {loading ? (
         <div className="flex justify-center items-center py-12">
           <TourLoader />
@@ -271,12 +359,17 @@ export default function BlogBrowse() {
       ) : posts.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center font-sans">
           <p className="text-gray-700 font-bold">No posts matched your search.</p>
-          <p className="mt-2 text-sm text-gray-500">Try another keyword or browse a different section.</p>
+          <p className="mt-2 text-sm text-gray-500">Try another keyword, section, or hashtag.</p>
         </div>
       ) : isFiltered ? (
         <>
           <p className="text-sm text-gray-600 font-sans">
-            {queryFromUrl ? (
+            {tagFromUrl ? (
+              <>
+                Showing posts tagged{" "}
+                <span className="font-bold text-[#222]">{formatBlogHashtag(tagFromUrl)}</span>
+              </>
+            ) : queryFromUrl ? (
               <>
                 Showing results for <span className="font-bold text-[#222]">&ldquo;{queryFromUrl}&rdquo;</span>
                 {categoryFromUrl !== "all" ? (
@@ -340,45 +433,36 @@ export default function BlogBrowse() {
                 </div>
               </section>
             ))
-          ) : (
-            <div className="flex flex-wrap justify-center gap-5">
+          ) : null}
+
+          <section className="space-y-5">
+            <div>
+              <h3
+                className="text-xl sm:text-2xl font-bold text-[#222] uppercase"
+                style={{ fontFamily: "var(--font-unlimited-pie)" }}
+              >
+                All posts
+              </h3>
+              <p className="text-sm text-gray-600 font-sans">Browse every published article</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {posts.map((post) => (
-                <BlogPostCard key={post.id} post={post} />
+                <BlogPostCard key={post.id} post={post} compact />
               ))}
             </div>
-          )}
-
-          {latestUncategorized.length > 0 ? (
-            <section className="space-y-5">
-              <div>
-                <h3
-                  className="text-xl sm:text-2xl font-bold text-[#222] uppercase"
-                  style={{ fontFamily: "var(--font-unlimited-pie)" }}
+            {hasMore ? (
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="px-6 py-3 rounded-xl bg-[#ff5e00] text-white font-sans font-semibold hover:bg-[#e55500] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
-                  Latest stories
-                </h3>
-                <p className="text-sm text-gray-600 font-sans">Fresh reads from the Sabary Tours blog</p>
+                  {loadingMore ? "Loading..." : "Load older blogs"}
+                </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                {latestUncategorized.map((post) => (
-                  <BlogPostCard key={post.id} post={post} compact />
-                ))}
-              </div>
-            </section>
-          ) : null}
-
-          {hasMore ? (
-            <div className="flex justify-center">
-              <button
-                type="button"
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="px-6 py-3 rounded-xl bg-[#ff5e00] text-white font-sans font-semibold hover:bg-[#e55500] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-              >
-                {loadingMore ? "Loading..." : "Load older blogs"}
-              </button>
-            </div>
-          ) : null}
+            ) : null}
+          </section>
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { EyeIcon, Message01Icon } from "hugeicons-react";
 import ShareButtons from "./ShareButtons";
 import { getBlogCategoryLabel } from "../lib/blogCategories";
+import { BlogHashtagList } from "./BlogHashtag";
 
 export type BlogCardPost = {
   id: string;
@@ -92,15 +93,7 @@ export default function BlogPostCard({ post, compact = false }: BlogPostCardProp
         </p>
       )}
 
-      {post.tags?.length ? (
-        <div className="flex flex-wrap gap-1">
-          {post.tags.slice(0, 3).map((tag: string) => (
-            <span key={tag} className="rounded-full bg-orange-50 px-2 py-1 text-[11px] font-bold text-[#ff5e00] font-sans">
-              {tag}
-            </span>
-          ))}
-        </div>
-      ) : null}
+      {post.tags?.length ? <BlogHashtagList tags={post.tags} limit={3} /> : null}
 
       <ShareButtons
         title={post.title}

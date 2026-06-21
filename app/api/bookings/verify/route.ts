@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { verifyTopupPricingSignature } from "../../../lib/serverBookingPricing";
 import { markInvoicePaidByReference } from "../../../lib/invoicePayment";
+import { decrementTourSeats } from "../../../lib/tourSeats";
 import { NextResponse } from "next/server";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -188,6 +189,12 @@ export async function GET(request: Request) {
       console.error("[Verify] Booking insert error:", error);
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
+
+    await decrementTourSeats(
+      supabaseAdmin,
+      typeof metadata?.tourId === "string" ? metadata.tourId : null,
+      metadata?.numberOfPeople || 1,
+    );
 
     // 4. Award Sabary Miles if userId exists
     if (metadata?.userId) {

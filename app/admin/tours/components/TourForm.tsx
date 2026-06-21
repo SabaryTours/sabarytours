@@ -35,6 +35,10 @@ interface TourFormProps {
     description?: string;
     map_url?: string;
     is_featured?: boolean;
+    total_seats?: number | null;
+    seats_remaining?: number | null;
+    show_booking_count?: boolean;
+    view_count?: number;
     itinerary?: ItineraryItem[];
     tour_prices?: TourPriceInput[];
     tour_images?: TourImageInput[];
@@ -102,6 +106,11 @@ export default function TourForm({ initialData }: TourFormProps) {
     description: initialData?.description || "",
     map_url: initialData?.map_url || "",
     is_featured: initialData?.is_featured || false,
+    total_seats:
+      typeof initialData?.total_seats === "number" ? String(initialData.total_seats) : "",
+    seats_remaining:
+      typeof initialData?.seats_remaining === "number" ? String(initialData.seats_remaining) : "",
+    show_booking_count: Boolean(initialData?.show_booking_count),
   });
   const [priceTiers, setPriceTiers] = useState<
     Array<{ name: string; amount: number | string; currency: string }>
@@ -366,6 +375,13 @@ export default function TourForm({ initialData }: TourFormProps) {
         );
 
       // 1. Prepare Data
+      const totalSeats = formData.total_seats.trim() ? Number(formData.total_seats) : null;
+      const seatsRemainingInput = formData.seats_remaining.trim()
+        ? Number(formData.seats_remaining)
+        : null;
+      const seatsRemaining =
+        seatsRemainingInput ?? (Number.isFinite(totalSeats) ? totalSeats : null);
+
       const tourInput = {
         title: formData.title,
         slug: formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
@@ -376,6 +392,9 @@ export default function TourForm({ initialData }: TourFormProps) {
         description: formData.description,
         map_url: formData.map_url,
         is_featured: formData.is_featured,
+        total_seats: Number.isFinite(totalSeats) ? totalSeats : null,
+        seats_remaining: Number.isFinite(seatsRemaining) ? seatsRemaining : null,
+        show_booking_count: formData.show_booking_count,
         itinerary: normalizedItinerary,
         whats_included: whatsIncluded.filter((item) => item.trim() !== ""),
         exclusions: exclusions.filter((item) => item.trim() !== ""),
@@ -447,6 +466,47 @@ export default function TourForm({ initialData }: TourFormProps) {
         <div>
           <label className="block text-sm font-medium text-gray-700 font-sans mb-1">Duration</label>
           <input type="text" name="duration" value={formData.duration} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black placeholder:text-gray-800" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 font-sans mb-1">Total seats / capacity</label>
+          <input
+            type="number"
+            min={0}
+            name="total_seats"
+            value={formData.total_seats}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black"
+            placeholder="e.g. 20"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 font-sans mb-1">Seats remaining</label>
+          <input
+            type="number"
+            min={0}
+            name="seats_remaining"
+            value={formData.seats_remaining}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black"
+            placeholder="Leave blank to match total seats"
+          />
+          <p className="mt-1 text-xs text-gray-500 font-sans">
+            Reduced automatically when guests book (by number of people).
+          </p>
+        </div>
+        <div className="md:col-span-2">
+          <label className="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="show_booking_count"
+              checked={formData.show_booking_count}
+              onChange={handleCheckboxChange}
+              className="mt-1"
+            />
+            <span className="font-sans text-sm text-gray-700">
+              Show how many times this tour has been booked on public cards
+            </span>
+          </label>
         </div>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 font-sans mb-1">Google Maps Embed URL / Iframe src</label>

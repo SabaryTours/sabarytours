@@ -6,6 +6,7 @@ import { buildBookingConfirmationEmailHtml } from '../../../lib/bookingReceiptEm
 import { sendBookingAdminNotification } from '../../../lib/sendBookingAdminNotification';
 import { verifyTopupPricingSignature } from '../../../lib/serverBookingPricing';
 import { markInvoicePaidByReference } from '../../../lib/invoicePayment';
+import { decrementTourSeats } from '../../../lib/tourSeats';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
 
@@ -130,10 +131,24 @@ export async function POST(req: Request) {
         }
 
         // Pending walk-in booking — mark it paid now that payment has arrived
+        const { data: pendingBooking } = await supabaseAdmin
+          .from('bookings')
+          .select('tour_id, number_of_people')
+          .eq('id', existingBooking.id)
+          .maybeSingle();
+
         await supabaseAdmin
           .from('bookings')
           .update({ payment_status: 'paid', booking_status: 'confirmed', amount_paid: amount / 100 })
           .eq('id', existingBooking.id);
+
+        if (pendingBooking?.tour_id) {
+          await decrementTourSeats(
+            supabaseAdmin,
+            pendingBooking.tour_id,
+            pendingBooking.number_of_people || 1,
+          );
+        }
 
         console.log(`[Webhook] Updated pending booking ${existingBooking.id} to paid.`);
         return NextResponse.json({ message: 'Pending booking updated to paid' }, { status: 200 });
@@ -177,6 +192,12 @@ export async function POST(req: Request) {
       }
 
       console.log(`[Webhook] Successfully created booking for ${reference}`);
+
+      await decrementTourSeats(
+        supabaseAdmin,
+        typeof metadata.tourId === "string" ? metadata.tourId : null,
+        metadata.numberOfPeople || 1,
+      );
 
       const tourDateRaw = metadata.date || "";
       const tourDateLabel = tourDateRaw
