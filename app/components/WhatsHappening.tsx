@@ -1,4 +1,4 @@
-import Image from "next/image";
+import CachedImage from "./CachedImage";
 import Link from "next/link";
 import type { NowHappening } from "../lib/api";
 
@@ -63,10 +63,11 @@ export default function WhatsHappening({ events }: WhatsHappeningProps) {
             >
               {/* Background Image */}
               <div className="absolute inset-0">
-                <Image
+                <CachedImage
                   src={event.image_url}
                   alt={event.name}
                   fill
+                  maxWidth={480}
                   className="object-cover rounded-[20px]"
                 />
               </div>

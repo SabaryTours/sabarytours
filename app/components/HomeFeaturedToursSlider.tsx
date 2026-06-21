@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import CachedImage from "./CachedImage";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { FeaturedTourCard } from "../lib/featuredTours";
@@ -49,10 +49,11 @@ function FeaturedTourCardItem({
     >
       {/* Image Container */}
       <div className="absolute inset-0">
-        <Image
+        <CachedImage
           src={tour.image || "/assets/placeholder-tour.jpg"}
           alt={tour.title}
           fill
+          maxWidth={640}
           className="object-cover group-hover:scale-105 transition-transform duration-500"
           sizes={isMobile ? "280px" : "(max-width: 1024px) 50vw, 25vw"}
         />

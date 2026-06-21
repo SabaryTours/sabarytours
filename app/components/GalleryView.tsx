@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import CachedImage from "./CachedImage";
 import { useCallback, useEffect, useState } from "react";
 import { Cancel01Icon } from "hugeicons-react";
 
@@ -58,10 +58,11 @@ export default function GalleryView({ initialItems = [] as GalleryImageRow[] }: 
               className="relative block w-full break-inside-avoid overflow-hidden rounded-2xl border border-white/30 bg-white shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               <div className="relative aspect-[4/3] w-full">
-                <Image
+                <CachedImage
                   src={row.image_url}
                   alt={row.caption || "Gallery"}
                   fill
+                  maxWidth={800}
                   className="object-cover"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
@@ -92,10 +93,11 @@ export default function GalleryView({ initialItems = [] as GalleryImageRow[] }: 
           </button>
           <div className="relative max-h-[90vh] max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
             <div className="relative aspect-video w-full min-h-[200px]">
-              <Image
+              <CachedImage
                 src={lightbox.image_url}
                 alt={lightbox.caption || "Gallery"}
                 fill
+                maxWidth={1600}
                 className="object-contain"
                 sizes="100vw"
               />

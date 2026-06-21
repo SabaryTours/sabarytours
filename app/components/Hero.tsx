@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import CachedImage from "./CachedImage";
 import Link from "next/link";
 
 export default function Hero({ initialImages = [] }: { initialImages?: string[] }) {
@@ -32,7 +32,7 @@ export default function Hero({ initialImages = [] }: { initialImages?: string[] 
           }`}
           aria-hidden={index !== currentIndex}
         >
-          <Image
+          <CachedImage
             src={imgUrl}
             alt={
               index === 0
@@ -40,6 +40,7 @@ export default function Hero({ initialImages = [] }: { initialImages?: string[] 
                 : ""
             }
             fill
+            maxWidth={1920}
             priority={index === 0}
             fetchPriority={index === 0 ? "high" : undefined}
             sizes="100vw"

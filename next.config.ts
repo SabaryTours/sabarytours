@@ -41,8 +41,8 @@ const nextConfig: NextConfig = {
     ],
     qualities: [75, 82],
     unoptimized: false, // Keep optimization enabled
-    // Keep optimized variants around longer in Vercel cache to reduce churn.
-    minimumCacheTTL: 60 * 60 * 24 * 7, // 7 days
+    // Keep optimized variants around longer in Vercel cache (local /assets only).
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
   },
 };
 

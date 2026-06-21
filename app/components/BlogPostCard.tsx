@@ -1,4 +1,4 @@
-import Image from "next/image";
+import CachedImage from "./CachedImage";
 import Link from "next/link";
 import { EyeIcon, Message01Icon } from "hugeicons-react";
 import ShareButtons from "./ShareButtons";
@@ -38,10 +38,11 @@ export default function BlogPostCard({ post, compact = false }: BlogPostCardProp
           }}
         >
           <div className="absolute inset-0">
-            <Image
+            <CachedImage
               src={post.image}
               alt={post.title}
               fill
+              maxWidth={700}
               sizes="(max-width: 640px) 90vw, 350px"
               className="object-cover group-hover:scale-110 transition-transform duration-300"
             />

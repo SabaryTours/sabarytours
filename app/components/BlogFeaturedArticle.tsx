@@ -1,4 +1,4 @@
-import Image from "next/image";
+import CachedImage from "./CachedImage";
 import Link from "next/link";
 import { ArrowRight01Icon } from "hugeicons-react";
 import { getBlogCategoryLabel } from "../lib/blogCategories";
@@ -27,10 +27,11 @@ export default function BlogFeaturedArticle({ post }: BlogFeaturedArticleProps) 
         className="group grid grid-cols-1 lg:grid-cols-2 gap-6 rounded-3xl overflow-hidden border border-orange-100 bg-gradient-to-br from-orange-50 to-white p-4 sm:p-6 hover:shadow-lg transition-shadow"
       >
         <div className="relative overflow-hidden rounded-2xl min-h-[240px] lg:min-h-[320px]">
-          <Image
+          <CachedImage
             src={post.image}
             alt={post.title}
             fill
+            maxWidth={1200}
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
