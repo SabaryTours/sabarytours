@@ -1,6 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "../../../utils/supabase/server";
+import {
+  isMissingTourCapacityColumnError,
+  stripTourCapacityFields,
+  TOUR_CAPACITY_MIGRATION_HINT,
+} from "../../../lib/tourSchema";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -58,15 +63,37 @@ export async function POST(request: Request) {
     }
 
     let finalTourId = tourId;
+    let capacityMigrationWarning: string | undefined;
 
     // 1. Upsert Tour
     if (finalTourId) {
       const { error: tourError } = await supabaseAdmin.from("tours").update(tourInput).eq("id", finalTourId);
-      if (tourError) throw tourError;
+      if (tourError && isMissingTourCapacityColumnError(tourError.message)) {
+        const { error: retryError } = await supabaseAdmin
+          .from("tours")
+          .update(stripTourCapacityFields(tourInput))
+          .eq("id", finalTourId);
+        if (retryError) throw retryError;
+        capacityMigrationWarning = TOUR_CAPACITY_MIGRATION_HINT;
+      } else if (tourError) {
+        throw tourError;
+      }
     } else {
       const { data: newTour, error: tourError } = await supabaseAdmin.from("tours").insert(tourInput).select().single();
-      if (tourError) throw tourError;
-      finalTourId = newTour.id;
+      if (tourError && isMissingTourCapacityColumnError(tourError.message)) {
+        const { data: retriedTour, error: retryError } = await supabaseAdmin
+          .from("tours")
+          .insert(stripTourCapacityFields(tourInput))
+          .select()
+          .single();
+        if (retryError) throw retryError;
+        finalTourId = retriedTour.id;
+        capacityMigrationWarning = TOUR_CAPACITY_MIGRATION_HINT;
+      } else if (tourError) {
+        throw tourError;
+      } else {
+        finalTourId = newTour.id;
+      }
     }
 
     // 2. Upsert Tour Prices (supports multiple tiers)
@@ -108,7 +135,11 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, tourId: finalTourId });
+    return NextResponse.json({
+      success: true,
+      tourId: finalTourId,
+      ...(capacityMigrationWarning ? { warning: capacityMigrationWarning } : {}),
+    });
   } catch (error: any) {
     console.error("Error creating/updating tour via Admin API:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

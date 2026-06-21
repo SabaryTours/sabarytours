@@ -4,7 +4,7 @@ import { bookingSchema } from "../../lib/validations/booking";
 import { resend, FROM_EMAIL } from "../../lib/resend";
 import { buildBookingConfirmationEmailHtml } from "../../lib/bookingReceiptEmailHtml";
 import { sendBookingAdminNotification } from "../../lib/sendBookingAdminNotification";
-import { decrementTourSeats } from "../../lib/tourSeats";
+import { applyBookingSeatDeduction, loadBookingForSeatDeduction } from "../../lib/tourSeats";
 import {
   computeExpectedBookingPricing,
   normalizeTierSelections,
@@ -263,6 +263,10 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (existingBooking) {
+      const fullBooking = await loadBookingForSeatDeduction(supabaseAdmin, existingBooking.id);
+      if (fullBooking) {
+        await applyBookingSeatDeduction(supabaseAdmin, fullBooking);
+      }
       return NextResponse.json({ success: true, booking: existingBooking, note: "Already processed by webhook" });
     }
 
@@ -271,7 +275,7 @@ export async function POST(request: Request) {
       .from("bookings")
       .insert({
         // Only assign tour_id if it's a valid UUID string
-        tour_id: typeof body.tourId === 'string' ? body.tourId : null,
+        tour_id: body.tourId != null ? String(body.tourId).trim() || null : null,
         user_id: body.userId || null,
         // Using legacy_id or tour_id depending on database setup. We'll map what we have.
         legacy_id: typeof body.tourId === 'number' ? body.tourId : null,
@@ -300,13 +304,15 @@ export async function POST(request: Request) {
       throw error;
     }
 
-    if (booking.booking_status === "confirmed") {
-      await decrementTourSeats(
-        supabaseAdmin,
-        typeof body.tourId === "string" ? body.tourId : null,
-        body.numberOfPeople,
-      );
-    }
+    await applyBookingSeatDeduction(supabaseAdmin, {
+      id: booking.id,
+      tour_id: booking.tour_id,
+      number_of_people: booking.number_of_people,
+      booking_status: booking.booking_status,
+      payment_reference: booking.payment_reference,
+      payment_status: booking.payment_status,
+      seats_applied: booking.seats_applied,
+    });
 
     // 1.5 Give Sabary Miles
     if (body.userId) {

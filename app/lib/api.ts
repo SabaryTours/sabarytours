@@ -71,11 +71,16 @@ type ReviewRow = {
 const generateSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 function mapTourMetaFields(t: TourRow) {
+  const parseCount = (value: unknown) => {
+    const parsed = typeof value === "number" ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
   return {
-    totalSeats: typeof t.total_seats === "number" ? t.total_seats : null,
-    seatsRemaining: typeof t.seats_remaining === "number" ? t.seats_remaining : null,
+    totalSeats: parseCount(t.total_seats),
+    seatsRemaining: parseCount(t.seats_remaining),
     showBookingCount: Boolean(t.show_booking_count),
-    viewCount: typeof t.view_count === "number" ? t.view_count : 0,
+    viewCount: parseCount(t.view_count) ?? 0,
   };
 }
 
