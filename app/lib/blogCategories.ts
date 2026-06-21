@@ -1,18 +1,8 @@
 export const BLOG_CATEGORIES = [
   {
-    slug: "travel-tips",
-    label: "Travel Tips",
-    description: "Planning, packing, and getting around Ghana",
-  },
-  {
-    slug: "culture-heritage",
-    label: "Culture & Heritage",
-    description: "History, traditions, and local life",
-  },
-  {
-    slug: "food-nightlife",
-    label: "Food & Nightlife",
-    description: "Where to eat, drink, and vibe",
+    slug: "ghana-travel-guides",
+    label: "Ghana Travel Guides",
+    description: "Complete guides to planning and exploring Ghana",
   },
   {
     slug: "destinations",
@@ -20,9 +10,29 @@ export const BLOG_CATEGORIES = [
     description: "Places to explore across Ghana",
   },
   {
-    slug: "adventures",
-    label: "Adventures",
-    description: "Outdoor thrills and day trips",
+    slug: "ghana-culture-history",
+    label: "Ghana Culture & History",
+    description: "Heritage, traditions, and stories from Ghana",
+  },
+  {
+    slug: "food-local-experience",
+    label: "Food & Local Experience",
+    description: "Food, nightlife, local vibes, and authentic experiences",
+  },
+  {
+    slug: "travel-tips-hacks",
+    label: "Travel Tips & Hacks",
+    description: "Planning, packing, and smart ways to travel",
+  },
+  {
+    slug: "sabary-tour-stories",
+    label: "Sabary Tour Stories",
+    description: "Guest stories and behind-the-scenes from our tours",
+  },
+  {
+    slug: "events-festivals",
+    label: "Events & Festivals",
+    description: "Festivals, happenings, and what’s on in Ghana",
   },
 ] as const;
 

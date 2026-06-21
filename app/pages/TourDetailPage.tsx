@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import CachedImage from "../components/CachedImage";
 import { ArrowLeft01Icon, Clock01Icon, UserGroupIcon, Tick02Icon, Cancel01Icon, CheckmarkBadge01Icon, InformationCircleIcon, Location01Icon } from "hugeicons-react";
 import { Tour } from "../data/packages";
 import Footer from "../components/Footer";
@@ -99,10 +99,11 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-[350px] sm:h-[450px] md:h-[500px] rounded-2xl overflow-hidden relative group">
           {/* Main Large Image */}
           <div className="col-span-1 md:col-span-2 lg:col-span-3 h-full relative cursor-pointer" onClick={() => setShowAllGallery(true)}>
-            <Image
+            <CachedImage
               src={heroImages[0]}
               alt={tour.title}
               fill
+              maxWidth={1400}
               className="object-cover hover:scale-105 transition-transform duration-700"
             />
           </div>
@@ -111,20 +112,22 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
           <div className="hidden md:flex flex-col gap-2 col-span-1 lg:col-span-1 h-full">
             {heroImages[1] && (
               <div className="relative h-1/2 w-full cursor-pointer" onClick={() => setShowAllGallery(true)}>
-                <Image
+                <CachedImage
                   src={heroImages[1]}
                   alt={`${tour.title} gallery`}
                   fill
+                  maxWidth={720}
                   className="object-cover hover:scale-105 transition-transform duration-700"
                 />
               </div>
             )}
             {heroImages[2] && (
               <div className="relative h-1/2 w-full cursor-pointer" onClick={() => setShowAllGallery(true)}>
-                <Image
+                <CachedImage
                   src={heroImages[2]}
                   alt={`${tour.title} gallery`}
                   fill
+                  maxWidth={720}
                   className="object-cover hover:scale-105 transition-transform duration-700"
                 />
                 {displayImages.length > 3 && (
@@ -459,7 +462,7 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
           <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
             {displayImages.map((img, i) => (
               <div key={i} className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-900 border border-gray-800">
-                <Image src={img} alt={`Gallery ${i}`} fill className="object-cover" />
+                <CachedImage src={img} alt={`Gallery ${i}`} fill maxWidth={1200} className="object-cover" />
               </div>
             ))}
           </div>

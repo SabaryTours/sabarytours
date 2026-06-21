@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import CachedImage from "./CachedImage";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { PackageCategory } from "./PackagesGrid";
@@ -127,10 +127,11 @@ export default function CategoryGrid({
         >
           {/* Image */}
           <div className="absolute inset-0">
-            <Image
+            <CachedImage
               src={safeImageUrl(category.image)}
               alt={category.title}
               fill
+              maxWidth={640}
               className="object-cover transition-transform duration-300 group-hover:scale-110"
             />
           </div>

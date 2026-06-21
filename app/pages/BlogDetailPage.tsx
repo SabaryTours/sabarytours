@@ -1,4 +1,4 @@
-import Image from "next/image";
+import CachedImage from "../components/CachedImage";
 import Link from "next/link";
 import { type BlogPost } from "../lib/api";
 import { getBlogCategoryLabel } from "../lib/blogCategories";
@@ -122,10 +122,11 @@ export default function BlogDetailPage({ post, relatedPosts = [] }: BlogDetailPa
 
           {/* Main Image */}
           <div className="relative w-full h-[400px] md:h-[500px] rounded-2xl overflow-hidden mb-8">
-            <Image
+            <CachedImage
               src={post.image}
               alt={post.title}
               fill
+              maxWidth={1200}
               className="object-cover"
               priority
             />
@@ -179,10 +180,11 @@ export default function BlogDetailPage({ post, relatedPosts = [] }: BlogDetailPa
                       }}
                     >
                       <div className="absolute inset-0">
-                        <Image
+                        <CachedImage
                           src={relatedPost.image}
                           alt={relatedPost.title}
                           fill
+                          maxWidth={480}
                           className="object-cover"
                         />
                       </div>

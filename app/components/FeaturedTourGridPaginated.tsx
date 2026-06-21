@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import CachedImage from "./CachedImage";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft01Icon, ArrowRight01Icon } from "hugeicons-react";
@@ -57,10 +57,11 @@ export default function FeaturedTourGridPaginated({
             className="flex flex-col rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-md hover:shadow-xl transition-shadow duration-300"
           >
             <div className="relative h-48 sm:h-52 bg-gray-100">
-              <Image
+              <CachedImage
                 src={tour.image || "/assets/placeholder-tour.jpg"}
                 alt={tour.title}
                 fill
+                maxWidth={640}
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 33vw"
               />

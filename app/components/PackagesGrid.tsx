@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import CachedImage from "./CachedImage";
 import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
 import CardPriceBlob from "./CardPriceBlob";
@@ -60,10 +60,11 @@ function PackageCard({ pkg, isMobile = false }: { pkg: PackageCategory; isMobile
         >
           {/* Image */}
           <div className="absolute inset-0 overflow-hidden rounded-2xl">
-            <Image
+            <CachedImage
               src={pkg.image || "/assets/package-img1.png"}
               alt={pkg.title}
               fill
+              maxWidth={640}
               sizes="(max-width: 640px) 85vw, (max-width: 1024px) 45vw, 30vw"
               className="object-cover transition-transform duration-300 group-hover:scale-110"
             />

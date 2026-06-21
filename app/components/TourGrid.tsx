@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import CachedImage from "./CachedImage";
 import Link from "next/link";
 import { Tour } from "../data/packages";
 import { tourDetailHref } from "../lib/tourUrls";
@@ -30,10 +30,11 @@ export default function TourGrid({ tours, categorySlug }: TourGridProps) {
         >
           {/* Image */}
           <div className="absolute inset-0">
-            <Image
+            <CachedImage
               src={safeImageUrl(tour.image)}
               alt={tour.title}
               fill
+              maxWidth={640}
               className="object-cover transition-transform duration-300 group-hover:scale-110"
             />
           </div>

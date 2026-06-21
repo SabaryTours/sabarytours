@@ -1,4 +1,4 @@
-import Image from "next/image";
+import CachedImage from "./CachedImage";
 import { createClient } from "../utils/supabase/server";
 
 export default async function Partners() {
@@ -43,10 +43,11 @@ export default async function Partners() {
               key={partner.id}
               className="relative w-full max-w-[180px] h-[100px] flex items-center justify-center"
             >
-              <Image
+              <CachedImage
                 src={partner.image_url || '/assets/placeholder-tour.jpg'}
                 alt={partner.name}
                 fill
+                maxWidth={360}
                 className="object-contain"
               />
             </div>
