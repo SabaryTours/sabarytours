@@ -1,7 +1,8 @@
 /** Public tour detail URL — works with or without a package category. */
-export function tourDetailHref(category: string | null | undefined, slug: string): string {
+export function tourDetailHref(category: string | null | undefined, slug: string | null | undefined): string {
   const cat = category?.trim();
-  const cleanSlug = slug.trim();
+  const cleanSlug = (slug ?? "").trim();
+  if (!cleanSlug) return "/packages";
   if (cat) return `/packages/${cat}/${cleanSlug}`;
   return `/tours/${cleanSlug}`;
 }

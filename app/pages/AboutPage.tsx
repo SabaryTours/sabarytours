@@ -102,7 +102,7 @@ function TeamMemberCard({ member, isMobile = false }: { member: typeof teamMembe
       className={`overflow-hidden relative rounded-[16px] bg-white shadow-lg shrink-0 snap-center transition-all duration-300 ${
         isMobile
           ? "h-[320px] w-[280px]"
-          : "sm:h-[250px] md:h-[280px] lg:h-[310px] sm:w-[220px] md:w-[240px] lg:w-[260px]"
+          : "h-[300px] w-full max-w-[280px]"
       }`}
       style={{
         transform: isInView ? "scale(1)" : "scale(0.9)",
@@ -119,15 +119,15 @@ function TeamMemberCard({ member, isMobile = false }: { member: typeof teamMembe
         />
       </div>
       {/* Progressive Blur Overlay with Gradual Fade */}
-      <div className={`absolute bottom-0 left-0 right-0 overflow-hidden ${isMobile ? "h-[80px]" : "sm:h-[90px] md:h-[100px] lg:h-[110px]"}`}>
-        {/* Gradient mask for gradual fade */}
+      <div className={`absolute bottom-0 left-0 right-0 overflow-hidden ${isMobile ? "h-[80px]" : "h-[100px]"}`}>
         <div className="absolute inset-0 team-blur-fade pointer-events-none" />
-        {/* Member Info Card */}
-        <div className={`absolute left-1/2 -translate-x-1/2 bg-[#222] flex flex-col items-start rounded-[6px] ${
-          isMobile
-            ? "bottom-[6px] gap-[6px] p-[6px] w-[220px]"
-            : "sm:bottom-[7px] md:bottom-[8px] sm:gap-[7px] md:gap-[8px] sm:p-[7px] md:p-[8px] sm:w-[180px] md:w-[200px] lg:w-[220px]"
-        }`}>
+        <div
+          className={`absolute left-1/2 -translate-x-1/2 bg-[#222] flex flex-col items-start rounded-[6px] ${
+            isMobile
+              ? "bottom-[6px] gap-[6px] p-[6px] w-[220px]"
+              : "bottom-[8px] gap-[8px] p-[8px] w-[220px]"
+          }`}
+        >
           <div className="text-white text-[14px] font-bold leading-[24px] w-full font-sans truncate">
             {member.name}
           </div>
@@ -422,8 +422,8 @@ export default function AboutPage() {
                 We now host travelers from across the world. Sabary Tours wants to become the preferred tourism and hospitality company for travelers worldwide, offering unforgettable Ghanaian experiences with warmth, care, and local insight.
               </div>
               {/* Three Circular Images */}
-              {/* Mobile: Horizontal Scroll */}
-              <div className="md:hidden flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4">
+              {/* Phone: horizontal scroll */}
+              <div className="md:hidden flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4 justify-center">
                 {[
                   { src: "/assets/tour-1.jpg", alt: "Tour photo", hasLogo: true },
                   { src: "/assets/tour-2.jpg", alt: "Tour photo", hasHeart: true },
@@ -432,8 +432,8 @@ export default function AboutPage() {
                   <CircularImageCard key={index} item={item} isMobile={true} />
                 ))}
               </div>
-              {/* Desktop: Grid Layout */}
-              <div className="hidden md:flex flex-wrap justify-center gap-8">
+              {/* Tablet & desktop: centered row */}
+              <div className="hidden md:flex flex-wrap justify-center gap-8 lg:gap-10">
                 <div className="relative">
                   <div className="relative w-48 h-48 rounded-full overflow-hidden border-4 border-white shadow-xl">
                     <Image
@@ -506,10 +506,10 @@ export default function AboutPage() {
       <section className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-6 md:py-7">
         <div className="relative rounded-2xl overflow-hidden bg-white">
           <div className="container mx-auto px-3 sm:px-4 md:px-6 py-12 sm:py-14 md:py-16">
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center w-full mb-12">
+            <div className="max-w-5xl mx-auto">
+              <div className="text-center w-full mb-10 md:mb-12">
                 <h2
-                  className="text-[28px] sm:text-[32px] font-normal uppercase leading-none"
+                  className="text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] font-normal uppercase leading-tight"
                   style={{ fontFamily: "var(--font-unlimited-pie)" }}
                 >
                   <span style={{ color: "#222" }}>the people </span>
@@ -523,14 +523,14 @@ export default function AboutPage() {
                   </span>
                 </h2>
               </div>
-              {/* Mobile: Horizontal Scroll */}
-              <div className="md:hidden flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4">
+              {/* Phone: horizontal scroll */}
+              <div className="md:hidden flex gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4">
                 {teamMembers.map((member) => (
                   <TeamMemberCard key={member.id} member={member} isMobile={true} />
                 ))}
               </div>
-              {/* Desktop: Grid Layout */}
-              <div className="hidden md:flex flex-wrap md:flex-nowrap justify-center gap-3 sm:gap-4 items-center w-full">
+              {/* Tablet & desktop: centered grid */}
+              <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6 justify-items-center">
                 {teamMembers.map((member) => (
                   <TeamMemberCard key={member.id} member={member} isMobile={false} />
                 ))}

@@ -151,9 +151,9 @@ export default async function PackagesPage({
             </div>
 
             {/* Main Heading */}
-            <div className="flex flex-wrap gap-2 sm:gap-[12px] items-center leading-none uppercase w-full justify-center overflow-visible">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-[12px] items-center justify-center leading-tight uppercase w-full max-w-4xl mx-auto text-center px-2">
               <h2 
-                className="text-[24px] sm:text-[28px] md:text-[32px] text-[#222] relative"
+                className="text-[18px] sm:text-[22px] md:text-[26px] lg:text-[32px] text-[#222] relative"
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
                   lineHeight: 1
@@ -162,7 +162,7 @@ export default async function PackagesPage({
                 go through
               </h2>
               <h2 
-                className="text-[24px] sm:text-[28px] md:text-[32px] text-[#ff5e00] relative"
+                className="text-[18px] sm:text-[22px] md:text-[26px] lg:text-[32px] text-[#ff5e00] relative"
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
                   lineHeight: 1,

@@ -71,11 +71,11 @@ export default async function Packages() {
 
         <div className="container mx-auto px-3 sm:px-4 md:px-6 relative z-10 overflow-visible">
           {/* Header Section */}
-          <div className="flex flex-col gap-5 items-center mb-12">
+          <div className="flex flex-col gap-5 items-center mb-12 text-center w-full">
             {/* Top Line - Icon + Subtitle */}
-            <div className="flex gap-1.25 items-center justify-center">
+            <div className="flex gap-1.5 items-center justify-center">
               {/* Road Trip Icon */}
-              <div className="h-5 w-6.25 relative">
+              <div className="h-5 w-6 shrink-0 relative">
                 <svg
                   viewBox="0 0 25 20"
                   fill="none"
@@ -92,27 +92,27 @@ export default async function Packages() {
                   <rect x="7" y="6" width="11" height="2" rx="1" fill="#0060CC" />
                 </svg>
               </div>
-              <p className="text-[#0060cc] text-[14px] font-bold leading-6">
+              <p className="text-[#0060cc] text-[13px] sm:text-[14px] font-bold leading-6">
                 Pick Your Adventure, We&apos;ll Handle the Rest
               </p>
       </div>
 
             {/* Main Heading */}
-            <div className="flex flex-col md:flex-row gap-3 items-center leading-none uppercase w-full justify-center overflow-visible px-2">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-center justify-center leading-tight uppercase w-full max-w-4xl mx-auto px-2">
               <h2 
-                className="text-[32px] text-[#222] relative"
+                className="text-[18px] sm:text-[22px] md:text-[26px] lg:text-[32px] text-[#222] text-center"
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
-                  lineHeight: 1
+                  lineHeight: 1.1
                 }}
               >
                 go through
         </h2>
               <h2 
-                className="text-[32px] text-[#ff5e00] relative"
+                className="text-[18px] sm:text-[22px] md:text-[26px] lg:text-[32px] text-[#ff5e00] text-center"
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
-                  lineHeight: 1,
+                  lineHeight: 1.1,
                   textShadow: '1px 1px 0px #551f00'
                 }}
               >

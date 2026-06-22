@@ -1,11 +1,19 @@
 import { MetadataRoute } from "next";
-import { createClient } from "./utils/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import { getSiteUrl } from "./lib/seo/site";
 import { tourDetailHref } from "./lib/tourUrls";
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
+
+function cleanSlug(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteUrl();
-  const supabase = await createClient();
   const now = new Date();
 
   const staticPages: MetadataRoute.Sitemap = [
@@ -23,41 +31,73 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 
-  const { data: packages } = await supabase
+  const { data: packages, error: packagesError } = await supabase
     .from("packages")
     .select("slug, updated_at")
     .order("created_at");
 
-  const packagePages: MetadataRoute.Sitemap = (packages || []).map((pkg: { slug: string; updated_at?: string }) => ({
-    url: `${baseUrl}/packages/${pkg.slug}`,
-    lastModified: pkg.updated_at ? new Date(pkg.updated_at) : now,
-    changeFrequency: "weekly" as const,
-    priority: 0.8,
-  }));
+  if (packagesError) {
+    console.error("sitemap: failed to load packages", packagesError.message);
+  }
 
-  const { data: tours } = await supabase
+  const packagePages: MetadataRoute.Sitemap = (packages || [])
+    .map((pkg) => {
+      const slug = cleanSlug(pkg.slug);
+      if (!slug) return null;
+      return {
+        url: `${baseUrl}/packages/${slug}`,
+        lastModified: pkg.updated_at ? new Date(pkg.updated_at) : now,
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+      };
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+
+  const { data: tours, error: toursError } = await supabase
     .from("tours")
     .select("slug, category, updated_at")
     .eq("status", "published");
 
-  const tourPages: MetadataRoute.Sitemap = (tours || []).map((tour: { slug: string; category?: string; updated_at?: string }) => ({
-    url: `${baseUrl}${tourDetailHref(tour.category || "", tour.slug)}`,
-    lastModified: tour.updated_at ? new Date(tour.updated_at) : now,
-    changeFrequency: "weekly" as const,
-    priority: 0.7,
-  }));
+  if (toursError) {
+    console.error("sitemap: failed to load tours", toursError.message);
+  }
 
-  const { data: posts } = await supabase
+  const tourPages: MetadataRoute.Sitemap = (tours || [])
+    .map((tour) => {
+      const slug = cleanSlug(tour.slug);
+      if (!slug) return null;
+      const href = tourDetailHref(tour.category, slug);
+      if (href === "/packages") return null;
+      return {
+        url: `${baseUrl}${href}`,
+        lastModified: tour.updated_at ? new Date(tour.updated_at) : now,
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      };
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+
+  const { data: posts, error: postsError } = await supabase
     .from("posts")
     .select("slug, updated_at")
     .eq("status", "published");
 
-  const blogPages: MetadataRoute.Sitemap = (posts || []).map((post: { slug: string; updated_at?: string }) => ({
-    url: `${baseUrl}/blog/${post.slug}`,
-    lastModified: post.updated_at ? new Date(post.updated_at) : now,
-    changeFrequency: "monthly" as const,
-    priority: 0.6,
-  }));
+  if (postsError) {
+    console.error("sitemap: failed to load posts", postsError.message);
+  }
+
+  const blogPages: MetadataRoute.Sitemap = (posts || [])
+    .map((post) => {
+      const slug = cleanSlug(post.slug);
+      if (!slug) return null;
+      return {
+        url: `${baseUrl}/blog/${slug}`,
+        lastModified: post.updated_at ? new Date(post.updated_at) : now,
+        changeFrequency: "monthly" as const,
+        priority: 0.6,
+      };
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
 
   return [...staticPages, ...packagePages, ...tourPages, ...blogPages];
 }
