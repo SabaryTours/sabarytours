@@ -6,7 +6,7 @@ import { buildBookingConfirmationEmailHtml } from '../../../lib/bookingReceiptEm
 import { sendBookingAdminNotification } from '../../../lib/sendBookingAdminNotification';
 import { verifyTopupPricingSignature } from '../../../lib/serverBookingPricing';
 import { markInvoicePaidByReference } from '../../../lib/invoicePayment';
-import { decrementTourSeats } from '../../../lib/tourSeats';
+import { applyBookingSeatDeduction, loadBookingForSeatDeduction } from '../../../lib/tourSeats';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
 
@@ -126,28 +126,22 @@ export async function POST(req: Request) {
 
       if (existingBooking) {
         if (existingBooking.payment_status === 'paid') {
+          const fullBooking = await loadBookingForSeatDeduction(supabaseAdmin, existingBooking.id);
+          if (fullBooking) {
+            await applyBookingSeatDeduction(supabaseAdmin, fullBooking);
+          }
           console.log(`[Webhook] Booking ${reference} already paid.`);
           return NextResponse.json({ message: 'Already processed' }, { status: 200 });
         }
-
-        // Pending walk-in booking — mark it paid now that payment has arrived
-        const { data: pendingBooking } = await supabaseAdmin
-          .from('bookings')
-          .select('tour_id, number_of_people')
-          .eq('id', existingBooking.id)
-          .maybeSingle();
 
         await supabaseAdmin
           .from('bookings')
           .update({ payment_status: 'paid', booking_status: 'confirmed', amount_paid: amount / 100 })
           .eq('id', existingBooking.id);
 
-        if (pendingBooking?.tour_id) {
-          await decrementTourSeats(
-            supabaseAdmin,
-            pendingBooking.tour_id,
-            pendingBooking.number_of_people || 1,
-          );
+        const fullBooking = await loadBookingForSeatDeduction(supabaseAdmin, existingBooking.id);
+        if (fullBooking) {
+          await applyBookingSeatDeduction(supabaseAdmin, fullBooking);
         }
 
         console.log(`[Webhook] Updated pending booking ${existingBooking.id} to paid.`);
@@ -160,11 +154,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: 'Missing metadata' }, { status: 200 });
       }
 
+      const tourId = String(metadata.tourId).trim();
+
       // 1. Create booking in Supabase
       const { data: newBooking, error: insertError } = await supabaseAdmin
         .from('bookings')
         .insert({
-          tour_id: typeof metadata.tourId === 'string' ? metadata.tourId : null,
+          tour_id: tourId || null,
           legacy_id: typeof metadata.tourId === 'number' ? metadata.tourId : null,
           user_id: metadata.userId || null,
           customer_name: metadata.customerName || customer.first_name || 'Guest',
@@ -193,11 +189,15 @@ export async function POST(req: Request) {
 
       console.log(`[Webhook] Successfully created booking for ${reference}`);
 
-      await decrementTourSeats(
-        supabaseAdmin,
-        typeof metadata.tourId === "string" ? metadata.tourId : null,
-        metadata.numberOfPeople || 1,
-      );
+      await applyBookingSeatDeduction(supabaseAdmin, {
+        id: newBooking.id,
+        tour_id: newBooking.tour_id,
+        number_of_people: newBooking.number_of_people,
+        booking_status: newBooking.booking_status,
+        payment_reference: newBooking.payment_reference,
+        payment_status: newBooking.payment_status,
+        seats_applied: newBooking.seats_applied,
+      });
 
       const tourDateRaw = metadata.date || "";
       const tourDateLabel = tourDateRaw

@@ -430,14 +430,23 @@ export default function TourForm({ initialData }: TourFormProps) {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to save tour via API");
+      const payload = await response.json().catch(() => ({}));
 
-      toast.success("Tour saved successfully!");
+      if (!response.ok) {
+        throw new Error(typeof payload?.error === "string" ? payload.error : "Failed to save tour via API");
+      }
+
+      if (typeof payload?.warning === "string") {
+        toast.success("Tour saved (without seat settings).");
+        toast.error(payload.warning, { duration: 8000 });
+      } else {
+        toast.success("Tour saved successfully!");
+      }
       router.push('/admin/tours');
       router.refresh();
     } catch (error) {
       console.error("Error saving tour:", error);
-      toast.error("Failed to save tour.");
+      toast.error(error instanceof Error ? error.message : "Failed to save tour.");
     } finally {
       setLoading(false);
     }

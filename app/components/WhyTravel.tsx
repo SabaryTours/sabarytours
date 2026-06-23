@@ -60,11 +60,11 @@ export default function WhyTravel() {
       <div className="bg-blue-50 relative rounded-2xl py-16 overflow-visible">
         <div className="container mx-auto px-4 sm:px-6">
           {/* Header Section */}
-          <div className="flex flex-col gap-[20px] items-center mb-12">
+          <div className="flex flex-col gap-5 items-center mb-12 text-center w-full">
             {/* Top Line - Icon + Subtitle */}
             <div className="flex gap-[5px] items-center justify-center">
               {/* Road Trip Icon */}
-              <div className="h-5 w-[25px] relative">
+              <div className="h-5 w-[25px] relative shrink-0">
                 <svg
                   viewBox="0 0 25 20"
                   fill="none"
@@ -81,27 +81,27 @@ export default function WhyTravel() {
                   <rect x="7" y="6" width="11" height="2" rx="1" fill="#0060CC" />
                 </svg>
               </div>
-              <p className="text-[#0060cc] text-[14px] font-bold leading-[24px]">
+              <p className="text-[#0060cc] text-[13px] sm:text-[14px] font-bold leading-[24px]">
                 Travel Ghana, the Right Way
               </p>
             </div>
 
             {/* Main Heading */}
-            <div className="flex flex-col md:flex-row gap-[12px] items-center leading-none uppercase w-full justify-center overflow-visible px-2">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-center justify-center leading-tight uppercase w-full max-w-4xl mx-auto px-2">
               <h2 
-                className="text-[26px] sm:text-[30px] text-[#222] relative"
+                className="text-[18px] sm:text-[22px] md:text-[26px] lg:text-[30px] text-[#222] text-center"
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
-                  lineHeight: 1
+                  lineHeight: 1.1
                 }}
               >
                 Why travel
               </h2>
               <h2 
-                className="text-[26px] sm:text-[30px] text-[#ff5e00] relative"
+                className="text-[18px] sm:text-[22px] md:text-[26px] lg:text-[30px] text-[#ff5e00] text-center"
                 style={{
                   fontFamily: 'var(--font-unlimited-pie)',
-                  lineHeight: 1,
+                  lineHeight: 1.1,
                   textShadow: '1px 1px 0px #551f00'
                 }}
               >
