@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import TourLoader from "./TourLoader";
 import { resolveBlogImageUrl } from "../lib/blogImages";
 import BlogPostCard, { type BlogCardPost } from "./BlogPostCard";
-import { formatBlogHashtag } from "../lib/blogTags";
 
 const PAGE_SIZE = 6;
 
@@ -22,7 +21,6 @@ export default function BlogGrid({ limit, loadMoreHref }: BlogGridProps) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [selectedTag, setSelectedTag] = useState("all");
 
   const pageSize = limit ?? PAGE_SIZE;
   const isPreview = Boolean(limit && loadMoreHref);
@@ -95,45 +93,10 @@ export default function BlogGrid({ limit, loadMoreHref }: BlogGridProps) {
     );
   }
 
-  const tags = Array.from(new Set(posts.flatMap((post) => post.tags || []))).sort();
-  const visiblePosts =
-    selectedTag === "all"
-      ? posts
-      : posts.filter((post) => (post.tags || []).includes(selectedTag));
-
   return (
     <div className="space-y-8">
-      {tags.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-2">
-          <button
-            type="button"
-            onClick={() => setSelectedTag("all")}
-            className={`rounded-full px-3 py-1.5 text-xs font-bold font-sans transition-colors ${
-              selectedTag === "all"
-                ? "bg-[#ff5e00] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-orange-50 hover:text-[#ff5e00]"
-            }`}
-          >
-            All
-          </button>
-          {tags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => setSelectedTag(tag)}
-              className={`rounded-full px-3 py-1.5 text-xs font-bold font-sans transition-colors ${
-                selectedTag === tag
-                  ? "bg-[#ff5e00] text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-orange-50 hover:text-[#ff5e00]"
-              }`}
-            >
-              {formatBlogHashtag(tag)}
-            </button>
-          ))}
-        </div>
-      )}
       <div className="flex flex-wrap justify-center" style={{ gap: "20px" }}>
-        {visiblePosts.map((post) => (
+        {posts.map((post) => (
           <BlogPostCard key={post.id} post={post} />
         ))}
       </div>

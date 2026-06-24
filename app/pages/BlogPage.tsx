@@ -49,7 +49,7 @@ export default function BlogPage() {
               >
                 <span className="text-[#222] uppercase">WELCOME TO </span>
                 <span className="text-[#ff5e00] uppercase" style={{ textShadow: "1.5px 1.5px 0px #3f1a0b" }}>
-                  YOUR GO-TO GUIDE FOR GHANA🇬🇭
+                  YOUR GO-TO GUIDE FOR GHANA
                 </span>
               </h1>
               <div className="text-[#222] text-[13px] sm:text-[14px] md:text-[15px] font-bold leading-relaxed max-w-sm space-y-2">
@@ -69,7 +69,7 @@ export default function BlogPage() {
           <div className="flex flex-col gap-[20px] items-center mb-12">
             <div className="flex gap-[5px] items-center justify-center">
               <p className="text-[#0060cc] text-[14px] font-bold leading-[24px]">
-                Search, browse by section, and discover featured reads
+                Discover featured reads and the latest stories
               </p>
             </div>
 

@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import TourLoader from "./TourLoader";
 import BlogPostCard, { type BlogCardPost } from "./BlogPostCard";
 import BlogFeaturedArticle from "./BlogFeaturedArticle";
-import BlogSearchBar from "./BlogSearchBar";
-import { BLOG_CATEGORIES, getBlogCategoryLabel } from "../lib/blogCategories";
+import { BLOG_CATEGORIES } from "../lib/blogCategories";
 import { resolveBlogImageUrl } from "../lib/blogImages";
-import { formatBlogHashtag, normalizeBlogTags, tagMatchesParam } from "../lib/blogTags";
+import { normalizeBlogTags } from "../lib/blogTags";
 
 const PAGE_SIZE = 6;
 const SECTION_PREVIEW_LIMIT = 60;
@@ -32,12 +30,6 @@ function mapPostRow(row: Record<string, unknown>): BlogCardPost {
 }
 
 export default function BlogBrowse() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const queryFromUrl = searchParams.get("q")?.trim() || "";
-  const categoryFromUrl = searchParams.get("category")?.trim() || "all";
-  const tagFromUrl = searchParams.get("tag")?.trim() || "";
-
   const [sectionPosts, setSectionPosts] = useState<BlogCardPost[]>([]);
   const [posts, setPosts] = useState<BlogCardPost[]>([]);
   const [featuredPost, setFeaturedPost] = useState<BlogCardPost | null>(null);
@@ -45,8 +37,6 @@ export default function BlogBrowse() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-
-  const isFiltered = Boolean(queryFromUrl) || categoryFromUrl !== "all" || Boolean(tagFromUrl);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,11 +71,6 @@ export default function BlogBrowse() {
   }, []);
 
   useEffect(() => {
-    if (isFiltered) {
-      setSectionPosts([]);
-      return;
-    }
-
     let cancelled = false;
 
     async function loadSectionPosts() {
@@ -113,7 +98,7 @@ export default function BlogBrowse() {
     return () => {
       cancelled = true;
     };
-  }, [isFiltered]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,28 +110,12 @@ export default function BlogBrowse() {
       const { createClient } = await import("../utils/supabase/client");
       const supabase = createClient();
 
-      let request = supabase
+      const { data, error } = await supabase
         .from("posts")
         .select("*")
         .eq("status", "published")
-        .order("created_at", { ascending: false });
-
-      if (categoryFromUrl !== "all") {
-        request = request.eq("category", categoryFromUrl);
-      }
-
-      if (queryFromUrl) {
-        const escaped = queryFromUrl.replace(/[%_]/g, "\\$&");
-        request = request.or(
-          `title.ilike.%${escaped}%,summary.ilike.%${escaped}%,content.ilike.%${escaped}%`,
-        );
-      }
-
-      if (tagFromUrl) {
-        request = request.contains("tags", [tagFromUrl.replace(/^#+/, "").trim()]);
-      }
-
-      const { data, error } = await request.range(0, PAGE_SIZE - 1);
+        .order("created_at", { ascending: false })
+        .range(0, PAGE_SIZE - 1);
 
       if (cancelled) return;
 
@@ -167,41 +136,14 @@ export default function BlogBrowse() {
     return () => {
       cancelled = true;
     };
-  }, [queryFromUrl, categoryFromUrl, tagFromUrl]);
-
-  const popularTags = useMemo(() => {
-    const source = isFiltered ? posts : sectionPosts.length > 0 ? sectionPosts : posts;
-    return Array.from(new Set(source.flatMap((post) => post.tags || []))).sort((a, b) =>
-      a.localeCompare(b),
-    );
-  }, [isFiltered, posts, sectionPosts]);
+  }, []);
 
   const sectionGroups = useMemo(() => {
-    if (isFiltered) return [];
-
     return BLOG_CATEGORIES.map((category) => ({
       ...category,
       posts: sectionPosts.filter((post) => post.category === category.slug).slice(0, 3),
     })).filter((section) => section.posts.length > 0);
-  }, [isFiltered, sectionPosts]);
-
-  const handleCategoryChange = (category: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (category === "all") params.delete("category");
-    else params.set("category", category);
-
-    router.push(params.toString() ? `/blog?${params.toString()}` : "/blog");
-  };
-
-  const handleTagChange = (tag: string | null) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (tag) params.set("tag", tag);
-    else params.delete("tag");
-
-    router.push(params.toString() ? `/blog?${params.toString()}` : "/blog");
-  };
+  }, [sectionPosts]);
 
   const handleLoadMore = async () => {
     const nextPage = page + 1;
@@ -212,28 +154,12 @@ export default function BlogBrowse() {
     const from = nextPage * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    let request = supabase
+    const { data, error } = await supabase
       .from("posts")
       .select("*")
       .eq("status", "published")
-      .order("created_at", { ascending: false });
-
-    if (categoryFromUrl !== "all") {
-      request = request.eq("category", categoryFromUrl);
-    }
-
-    if (queryFromUrl) {
-      const escaped = queryFromUrl.replace(/[%_]/g, "\\$&");
-      request = request.or(
-        `title.ilike.%${escaped}%,summary.ilike.%${escaped}%,content.ilike.%${escaped}%`,
-      );
-    }
-
-    if (tagFromUrl) {
-      request = request.contains("tags", [tagFromUrl.replace(/^#+/, "").trim()]);
-    }
-
-    const { data, error } = await request.range(from, to);
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (!error && data) {
       const mapped = data.map((row) => mapPostRow(row));
@@ -247,79 +173,7 @@ export default function BlogBrowse() {
 
   return (
     <div className="space-y-8">
-      {!isFiltered && featuredPost ? <BlogFeaturedArticle post={featuredPost} /> : null}
-
-      <BlogSearchBar
-        defaultQuery={queryFromUrl}
-        preserveParams={{
-          ...(categoryFromUrl !== "all" ? { category: categoryFromUrl } : {}),
-          ...(tagFromUrl ? { tag: tagFromUrl } : {}),
-        }}
-      />
-
-      <div className="space-y-3">
-        <p className="text-sm font-bold text-[#0060cc] font-sans">Browse by section</p>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => handleCategoryChange("all")}
-            className={`rounded-full px-3 py-1.5 text-xs font-bold font-sans transition-colors ${
-              categoryFromUrl === "all"
-                ? "bg-[#ff5e00] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-orange-50 hover:text-[#ff5e00]"
-            }`}
-          >
-            All sections
-          </button>
-          {BLOG_CATEGORIES.map((category) => (
-            <button
-              key={category.slug}
-              type="button"
-              onClick={() => handleCategoryChange(category.slug)}
-              className={`rounded-full px-3 py-1.5 text-xs font-bold font-sans transition-colors ${
-                categoryFromUrl === category.slug
-                  ? "bg-[#ff5e00] text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-orange-50 hover:text-[#ff5e00]"
-              }`}
-            >
-              {category.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {popularTags.length > 0 ? (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-bold text-[#0060cc] font-sans">Browse by hashtag</p>
-            {tagFromUrl ? (
-              <button
-                type="button"
-                onClick={() => handleTagChange(null)}
-                className="text-xs font-bold text-gray-500 hover:text-[#ff5e00] font-sans"
-              >
-                Clear hashtag
-              </button>
-            ) : null}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {popularTags.slice(0, 12).map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => handleTagChange(tagMatchesParam(tag, tagFromUrl) ? null : tag)}
-                className={`rounded-full px-3 py-1.5 text-xs font-bold font-sans transition-colors ${
-                  tagMatchesParam(tag, tagFromUrl)
-                    ? "bg-[#ff5e00] text-white"
-                    : "bg-orange-50 text-[#ff5e00] hover:bg-orange-100"
-                }`}
-              >
-                {formatBlogHashtag(tag)}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
+      {featuredPost ? <BlogFeaturedArticle post={featuredPost} /> : null}
 
       {loading ? (
         <div className="flex justify-center items-center py-12">
@@ -327,57 +181,14 @@ export default function BlogBrowse() {
         </div>
       ) : posts.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center font-sans">
-          <p className="text-gray-700 font-bold">No posts matched your search.</p>
-          <p className="mt-2 text-sm text-gray-500">Try another keyword, section, or hashtag.</p>
+          <p className="text-gray-700 font-bold">No posts available yet.</p>
+          <p className="mt-2 text-sm text-gray-500">Check back soon for new stories and travel tips.</p>
         </div>
-      ) : isFiltered ? (
-        <>
-          <p className="text-sm text-gray-600 font-sans">
-            {tagFromUrl ? (
-              <>
-                Showing posts tagged{" "}
-                <span className="font-bold text-[#222]">{formatBlogHashtag(tagFromUrl)}</span>
-              </>
-            ) : queryFromUrl ? (
-              <>
-                Showing results for <span className="font-bold text-[#222]">&ldquo;{queryFromUrl}&rdquo;</span>
-                {categoryFromUrl !== "all" ? (
-                  <>
-                    {" "}
-                    in <span className="font-bold text-[#222]">{getBlogCategoryLabel(categoryFromUrl)}</span>
-                  </>
-                ) : null}
-              </>
-            ) : (
-              <>
-                Showing posts in <span className="font-bold text-[#222]">{getBlogCategoryLabel(categoryFromUrl)}</span>
-              </>
-            )}
-          </p>
-          <div className="flex flex-wrap justify-center gap-5">
-            {posts.map((post) => (
-              <BlogPostCard key={post.id} post={post} />
-            ))}
-          </div>
-          {hasMore ? (
-            <div className="flex justify-center">
-              <button
-                type="button"
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="px-6 py-3 rounded-xl bg-[#ff5e00] text-white font-sans font-semibold hover:bg-[#e55500] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-              >
-                {loadingMore ? "Loading..." : "Load more results"}
-              </button>
-            </div>
-          ) : null}
-        </>
       ) : (
         <div className="space-y-12">
-          {sectionGroups.length > 0 ? (
-            sectionGroups.map((section) => (
-              <section key={section.slug} className="space-y-5">
-                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+          {sectionGroups.length > 0
+            ? sectionGroups.map((section) => (
+                <section key={section.slug} className="space-y-5">
                   <div>
                     <h3
                       className="text-xl sm:text-2xl font-bold text-[#222] uppercase"
@@ -387,22 +198,14 @@ export default function BlogBrowse() {
                     </h3>
                     <p className="text-sm text-gray-600 font-sans">{section.description}</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCategoryChange(section.slug)}
-                    className="text-sm font-bold text-[#0060cc] hover:text-[#ff5e00] font-sans transition-colors"
-                  >
-                    View all in {section.label} →
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {section.posts.map((post) => (
-                    <BlogPostCard key={post.id} post={post} compact />
-                  ))}
-                </div>
-              </section>
-            ))
-          ) : null}
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {section.posts.map((post) => (
+                      <BlogPostCard key={post.id} post={post} compact />
+                    ))}
+                  </div>
+                </section>
+              ))
+            : null}
 
           <section className="space-y-5">
             <div>
