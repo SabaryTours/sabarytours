@@ -1,11 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search01Icon } from "hugeicons-react";
 import TourLoader from "./TourLoader";
 import BlogPostCard, { type BlogCardPost } from "./BlogPostCard";
 import BlogFeaturedArticle from "./BlogFeaturedArticle";
+import BlogSearchBar from "./BlogSearchBar";
 import { BLOG_CATEGORIES, getBlogCategoryLabel } from "../lib/blogCategories";
 import { resolveBlogImageUrl } from "../lib/blogImages";
 import { formatBlogHashtag, normalizeBlogTags, tagMatchesParam } from "../lib/blogTags";
@@ -38,7 +38,6 @@ export default function BlogBrowse() {
   const categoryFromUrl = searchParams.get("category")?.trim() || "all";
   const tagFromUrl = searchParams.get("tag")?.trim() || "";
 
-  const [searchInput, setSearchInput] = useState(queryFromUrl);
   const [sectionPosts, setSectionPosts] = useState<BlogCardPost[]>([]);
   const [posts, setPosts] = useState<BlogCardPost[]>([]);
   const [featuredPost, setFeaturedPost] = useState<BlogCardPost | null>(null);
@@ -48,10 +47,6 @@ export default function BlogBrowse() {
   const [hasMore, setHasMore] = useState(false);
 
   const isFiltered = Boolean(queryFromUrl) || categoryFromUrl !== "all" || Boolean(tagFromUrl);
-
-  useEffect(() => {
-    setSearchInput(queryFromUrl);
-  }, [queryFromUrl]);
 
   useEffect(() => {
     let cancelled = false;
@@ -190,17 +185,6 @@ export default function BlogBrowse() {
     })).filter((section) => section.posts.length > 0);
   }, [isFiltered, sectionPosts]);
 
-  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const params = new URLSearchParams(searchParams.toString());
-    const trimmed = searchInput.trim();
-
-    if (trimmed) params.set("q", trimmed);
-    else params.delete("q");
-
-    router.push(params.toString() ? `/blog?${params.toString()}` : "/blog");
-  };
-
   const handleCategoryChange = (category: string) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -265,28 +249,13 @@ export default function BlogBrowse() {
     <div className="space-y-8">
       {!isFiltered && featuredPost ? <BlogFeaturedArticle post={featuredPost} /> : null}
 
-      <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
-        <label className="sr-only" htmlFor="blog-search">
-          Search blog posts
-        </label>
-        <div className="relative flex-1">
-          <Search01Icon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            id="blog-search"
-            type="search"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search by title, topic, or keyword..."
-            className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-4 text-sm font-sans text-[#222] outline-none focus:border-[#ff5e00] focus:ring-2 focus:ring-[#ff5e00]/20"
-          />
-        </div>
-        <button
-          type="submit"
-          className="rounded-xl bg-[#ff5e00] px-6 py-3 text-sm font-bold text-white font-sans hover:bg-[#e55500] transition-colors"
-        >
-          Search
-        </button>
-      </form>
+      <BlogSearchBar
+        defaultQuery={queryFromUrl}
+        preserveParams={{
+          ...(categoryFromUrl !== "all" ? { category: categoryFromUrl } : {}),
+          ...(tagFromUrl ? { tag: tagFromUrl } : {}),
+        }}
+      />
 
       <div className="space-y-3">
         <p className="text-sm font-bold text-[#0060cc] font-sans">Browse by section</p>

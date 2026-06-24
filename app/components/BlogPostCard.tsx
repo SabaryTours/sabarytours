@@ -53,7 +53,11 @@ export default function BlogPostCard({ post, compact = false }: BlogPostCardProp
             <span className="absolute top-3 left-3 rounded-full bg-[#ff5e00] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white font-sans">
               {categoryLabel}
             </span>
-          ) : null}
+          ) : (
+            <span className="absolute top-3 left-3 rounded-full bg-gray-600/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white font-sans">
+              Uncategorized
+            </span>
+          )}
 
           {post.comments > 0 && (
             <div
@@ -80,6 +84,18 @@ export default function BlogPostCard({ post, compact = false }: BlogPostCardProp
         >
           {post.title}
         </h3>
+
+        <div className="flex flex-wrap items-center gap-2 -mt-1">
+          {categoryLabel ? (
+            <span className="rounded-full bg-[#ff5e00] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white font-sans">
+              {categoryLabel}
+            </span>
+          ) : (
+            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-500 font-sans">
+              Uncategorized
+            </span>
+          )}
+        </div>
       </Link>
 
       {post.excerpt ? (
