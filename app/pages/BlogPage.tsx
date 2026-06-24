@@ -44,18 +44,18 @@ export default function BlogPage() {
           <div className="relative w-full md:absolute md:inset-0 z-10 flex items-center justify-center p-4 sm:p-8 md:p-0 h-[auto] md:h-full pointer-events-none">
             <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 md:p-10 w-full max-w-[90%] md:max-w-[450px] lg:max-w-[500px] pointer-events-auto md:absolute md:left-[40%] md:-translate-x-1/2">
               <h1
-                className="text-[20px] sm:text-[24px] md:text-[28px] lg:text-[34px] xl:text-[38px] leading-[1.2] mb-4"
+                className="text-[18px] sm:text-[22px] md:text-[26px] lg:text-[30px] xl:text-[34px] leading-[1.2] mb-4"
                 style={{ fontFamily: "var(--font-unlimited-pie)" }}
               >
-                <span className="text-[#222] uppercase mr-2">WELCOME TO</span>
+                <span className="text-[#222] uppercase">WELCOME TO </span>
                 <span className="text-[#ff5e00] uppercase" style={{ textShadow: "1.5px 1.5px 0px #3f1a0b" }}>
-                  YOUR GO-TO GUIDE
+                  YOUR GO-TO GUIDE FOR GHANA🇬🇭
                 </span>
               </h1>
-              <p className="text-[#222] text-[13px] sm:text-[14px] md:text-[15px] font-bold leading-relaxed max-w-sm">
-              for exploring Ghana’s beauty, culture, and hidden gems—packed with travel tips, unique experiences, and the best places to stay
-              Clock it 😆
-              </p>
+              <div className="text-[#222] text-[13px] sm:text-[14px] md:text-[15px] font-bold leading-relaxed max-w-sm space-y-2">
+                <p>Destinations, culture, food, festivals, tips + travel news.</p>
+                <p>Everything to explore Ghana, stay updated, and travel smarter.</p>
+              </div>
             </div>
           </div>
 
