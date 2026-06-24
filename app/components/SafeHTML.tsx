@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { normalizeRichTextHtml } from "../lib/normalizeRichText";
+import { sanitizePublicHtml } from "../lib/sanitizeHtml";
 
 interface SafeHTMLProps {
   html: string;
@@ -17,24 +17,7 @@ export default function SafeHTML({
   className = "",
   allowScripts = false,
 }: SafeHTMLProps) {
-  const sanitizedHTML = useMemo(() => {
-    if (!html) return "";
-
-    let sanitized = normalizeRichTextHtml(html);
-
-    if (!allowScripts) {
-      sanitized = sanitized.replace(
-        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-        ""
-      );
-    }
-
-    sanitized = sanitized.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, "");
-    sanitized = sanitized.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, "");
-    sanitized = sanitized.replace(/javascript:/gi, "");
-
-    return sanitized;
-  }, [html, allowScripts]);
+  const sanitizedHTML = useMemo(() => sanitizePublicHtml(html, allowScripts), [html, allowScripts]);
 
   if (!sanitizedHTML) {
     return null;

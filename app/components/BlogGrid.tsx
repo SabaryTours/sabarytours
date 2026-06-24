@@ -1,13 +1,10 @@
 "use client";
 
-import CachedImage from "./CachedImage";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { EyeIcon, Message01Icon } from "hugeicons-react";
 import TourLoader from "./TourLoader";
 import { resolveBlogImageUrl } from "../lib/blogImages";
-import ShareButtons from "./ShareButtons";
-import { BlogHashtagLink } from "./BlogHashtag";
+import BlogPostCard, { type BlogCardPost } from "./BlogPostCard";
 import { formatBlogHashtag } from "../lib/blogTags";
 
 const PAGE_SIZE = 6;
@@ -17,15 +14,7 @@ interface BlogGridProps {
   loadMoreHref?: string;
 }
 
-type BlogGridPost = {
-  id: string;
-  slug: string;
-  title: string;
-  image: string;
-  views: number;
-  comments: number;
-  tags: string[];
-};
+type BlogGridPost = BlogCardPost;
 
 export default function BlogGrid({ limit, loadMoreHref }: BlogGridProps) {
   const [posts, setPosts] = useState<BlogGridPost[]>([]);
@@ -56,13 +45,17 @@ export default function BlogGrid({ limit, loadMoreHref }: BlogGridProps) {
       return;
     }
 
-    const mapped =
+    const mapped: BlogGridPost[] =
       data?.map((p) => ({
-        ...p,
+        id: String(p.id),
+        slug: p.slug,
+        title: p.title,
         image: resolveBlogImageUrl(p.image_url, p.slug),
         views: p.view_count || 0,
         comments: p.comment_count || 0,
         tags: Array.isArray(p.tags) ? p.tags.filter(Boolean) : [],
+        category: typeof p.category === "string" ? p.category : null,
+        excerpt: typeof p.summary === "string" ? p.summary.trim() : "",
       })) || [];
 
     setHasMore(!isPreview && mapped.length === pageSize);
@@ -141,79 +134,7 @@ export default function BlogGrid({ limit, loadMoreHref }: BlogGridProps) {
       )}
       <div className="flex flex-wrap justify-center" style={{ gap: "20px" }}>
         {visiblePosts.map((post) => (
-          <article
-            key={post.id}
-            className="flex flex-col gap-3"
-            style={{ width: "350px" }}
-          >
-            <Link
-              href={`/blog/${post.slug}`}
-              className="flex flex-col gap-3 cursor-pointer hover:scale-[1.02] transition-transform duration-300"
-            >
-              <div
-                className="relative overflow-hidden rounded-2xl group"
-                style={{
-                  height: "297.811px",
-                  background: "linear-gradient(to bottom, #999, #1e1d1d)",
-                }}
-              >
-                <div className="absolute inset-0">
-                  <CachedImage
-                    src={post.image}
-                    alt={post.title}
-                    fill
-                    maxWidth={700}
-                    sizes="(max-width: 640px) 90vw, 350px"
-                    className="object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                </div>
-
-                {post.comments > 0 && (
-                  <div
-                    className="absolute top-3 left-3 flex items-center gap-[10px] px-[10px] py-[5px] rounded-[20px]"
-                    style={{
-                      backdropFilter: "blur(6px)",
-                      backgroundColor: "rgba(255,255,255,0.72)",
-                      border: "0.5px solid white",
-                    }}
-                  >
-                    <div className="flex items-center gap-1">
-                      <Message01Icon className="w-4 h-4 text-[#222]" />
-                      <span className="text-[#222] text-[12px] font-bold leading-none">
-                        {post.comments} comment{post.comments !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <h3
-                className="text-[#222] text-[16px] font-extrabold leading-[28px] break-normal"
-                style={{ hyphens: "manual" }}
-              >
-                {post.title}
-              </h3>
-            </Link>
-            {post.views > 0 && (
-              <p className="text-xs text-gray-500 font-sans -mt-1 flex items-center gap-1">
-                <EyeIcon className="w-3.5 h-3.5" />
-                {post.views} view{post.views !== 1 ? "s" : ""}
-              </p>
-            )}
-            {post.tags?.length ? (
-              <div className="flex flex-wrap gap-1">
-                {post.tags.slice(0, 3).map((tag: string) => (
-                  <BlogHashtagLink key={tag} tag={tag} />
-                ))}
-              </div>
-            ) : null}
-            <ShareButtons
-              title={post.title}
-              path={`/blog/${post.slug}`}
-              text={`Read this Sabary Tours blog: ${post.title}`}
-              compact
-            />
-          </article>
+          <BlogPostCard key={post.id} post={post} />
         ))}
       </div>
 

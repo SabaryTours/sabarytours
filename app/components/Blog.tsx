@@ -1,4 +1,5 @@
 import dynamic from "next/dynamic";
+import BlogSearchBar from "./BlogSearchBar";
 
 const BlogGrid = dynamic(() => import("./BlogGrid"), {
   loading: () => (
@@ -62,6 +63,8 @@ export default function Blog() {
             </h2>
           </div>
         </div>
+
+        <BlogSearchBar className="max-w-2xl mx-auto mb-10" />
 
         <BlogGrid limit={3} loadMoreHref="/blog" />
       </div>

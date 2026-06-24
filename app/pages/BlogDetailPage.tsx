@@ -3,7 +3,7 @@ import Link from "next/link";
 import { type BlogPost } from "../lib/api";
 import { getBlogCategoryLabel } from "../lib/blogCategories";
 import Footer from "../components/Footer";
-import SafeHTML from "../components/SafeHTML";
+import { sanitizePublicHtml } from "../lib/sanitizeHtml";
 import SocialMediaLinks from "../components/SocialMediaLinks";
 import NewsletterSubscribe from "../components/NewsletterSubscribe";
 import BlogPostViewCounter from "../components/BlogPostViewCounter";
@@ -28,6 +28,7 @@ export default function BlogDetailPage({ post, relatedPosts = [] }: BlogDetailPa
   const articleRelatedPosts = relatedPosts;
   const rawContent = post.content || "";
   const articleHtml = /<[^>]+>/.test(rawContent) ? rawContent : plainTextToHtml(rawContent);
+  const sanitizedArticleHtml = sanitizePublicHtml(articleHtml);
 
   return (
     <div className="min-h-screen bg-white">
@@ -132,11 +133,13 @@ export default function BlogDetailPage({ post, relatedPosts = [] }: BlogDetailPa
             />
           </div>
 
-          {/* Article Content */}
-          <SafeHTML
-            html={articleHtml}
-            className="prose prose-lg max-w-none min-w-0 mb-10 text-[#222] text-[16px] leading-[28px] **:max-w-full [&_img]:h-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
-          />
+          {/* Article body — server-rendered HTML for crawlers and readers */}
+          {sanitizedArticleHtml ? (
+            <div
+              className="rich-text-content prose prose-lg max-w-none min-w-0 mb-10 text-[#222] text-[16px] leading-[28px] **:max-w-full [&_img]:h-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+              dangerouslySetInnerHTML={{ __html: sanitizedArticleHtml }}
+            />
+          ) : null}
 
           <div className="grid md:grid-cols-2 gap-6 mb-12">
             <NewsletterSubscribe variant="card" />
