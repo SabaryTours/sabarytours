@@ -4,6 +4,7 @@ import {
   getPackageBookingCounts,
   sortPackagesByPopularity,
 } from "../lib/packagePopularity";
+import { applyPackageCopyOverridesList } from "../lib/packageCopy";
 
 export default async function Packages() {
   const supabase = await createClient();
@@ -37,7 +38,9 @@ export default async function Packages() {
   });
 
   const counts = await getPackageBookingCounts(supabase);
-  const sortedPackages = sortPackagesByPopularity(packages || [], counts).map((pkg) => {
+  const sortedPackages = applyPackageCopyOverridesList(
+    sortPackagesByPopularity(packages || [], counts),
+  ).map((pkg) => {
     const pricing = minPriceByCategory.get(pkg.slug);
     return {
       ...pkg,

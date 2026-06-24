@@ -4,6 +4,7 @@ import { createClient } from '../utils/supabase/server';
 import { Tour } from '../data/packages';
 import { getTourBookingCounts } from './packagePopularity';
 import { getLowestTierPrice, sortTourPriceTiers } from './tourPricing';
+import { applyPackageCopyOverrides } from './packageCopy';
 import {
   FEATURED_TOUR_MATCHERS,
   MAX_FEATURED_TOURS,
@@ -181,7 +182,7 @@ export async function getPackageBySlug(slug: string) {
     .single();
 
   if (error || !pkg) return null;
-  return pkg;
+  return applyPackageCopyOverrides(pkg);
 }
 
 export async function getToursByCategory(categorySlug: string): Promise<Tour[]> {

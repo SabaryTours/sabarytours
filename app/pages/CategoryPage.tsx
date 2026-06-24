@@ -34,7 +34,7 @@ export default function CategoryPage({ category, tours }: CategoryPageProps) {
                 {category.title}
                 </span>
               </h1>
-              <p className="text-[#222] text-[15px] sm:text-[17px] md:text-[19px] font-bold leading-relaxed max-w-3xl mx-auto md:mx-0">
+              <p className="text-[#222] text-[15px] sm:text-[17px] md:text-[19px] font-bold leading-relaxed max-w-3xl mx-auto md:mx-0 whitespace-pre-line">
                 {category.description}
               </p>
             </div>
