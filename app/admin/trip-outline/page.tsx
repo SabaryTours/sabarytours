@@ -29,6 +29,7 @@ type CardDraft = {
   price: string;
   seats_remaining: string;
   total_seats: string;
+  show_seats: boolean;
   details: string;
   image_url: string;
   tour_slug: string;
@@ -52,6 +53,7 @@ const emptyCard = (sortOrder: number): CardDraft => ({
   price: "",
   seats_remaining: "",
   total_seats: "",
+  show_seats: false,
   details: "",
   image_url: "",
   tour_slug: "",
@@ -108,6 +110,7 @@ export default function AdminTripOutlinePage() {
           seats_remaining:
             typeof meta.seats_remaining === "number" ? String(meta.seats_remaining) : "",
           total_seats: typeof meta.total_seats === "number" ? String(meta.total_seats) : "",
+          show_seats: meta.show_seats === true,
           details: meta.details || "",
           image_url: r.image_url || meta.image_url || "",
           tour_slug: meta.tour_slug || "",
@@ -160,6 +163,7 @@ export default function AdminTripOutlinePage() {
             price: card.price,
             seats_remaining: card.seats_remaining.trim() ? Number(card.seats_remaining) : null,
             total_seats: card.total_seats.trim() ? Number(card.total_seats) : null,
+            show_seats: card.show_seats,
             details: card.details,
           }),
           accent_color: card.accent_color.trim() || "#ff5e00",
@@ -400,6 +404,18 @@ export default function AdminTripOutlinePage() {
                               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
                             />
                           </div>
+
+                          <label className="flex items-start gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={card.show_seats}
+                              onChange={(e) => updateCard(month, cardIndex, { show_seats: e.target.checked })}
+                              className="mt-0.5"
+                            />
+                            <span className="text-sm text-gray-700 font-sans">
+                              Show seat numbers on the public upcoming-tours page
+                            </span>
+                          </label>
 
                           <textarea
                             placeholder="Inclusions, e.g. Transport, guide, lunch, museum fees"

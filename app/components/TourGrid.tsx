@@ -91,9 +91,14 @@ export default function TourGrid({ tours, categorySlug }: TourGridProps) {
                 Starts from {symbol}{" "}
                 {convert(tour.priceValue ?? 0, (tour.priceCurrency as "GHS" | "USD") ?? "GHS").toFixed(2)}
               </span>
-              {typeof tour.seatsRemaining === "number" ? (
+              {tour.showSeats && typeof tour.totalSeats === "number" ? (
                 <span className="text-white/90 text-[12px] font-sans font-bold">
-                  Seats remaining: {tour.seatsRemaining}
+                  {tour.totalSeats} seats
+                </span>
+              ) : null}
+              {tour.showSeats && typeof tour.seatsRemaining === "number" ? (
+                <span className="text-white/90 text-[12px] font-sans font-bold">
+                  {tour.seatsRemaining} remaining
                 </span>
               ) : null}
               {tour.showBookingCount && tour.bookedCount ? (

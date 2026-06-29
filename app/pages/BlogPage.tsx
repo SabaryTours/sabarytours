@@ -69,7 +69,7 @@ export default function BlogPage() {
           <div className="flex flex-col gap-[20px] items-center mb-12">
             <div className="flex gap-[5px] items-center justify-center">
               <p className="text-[#0060cc] text-[14px] font-bold leading-[24px]">
-                Discover featured reads and the latest stories
+                Search articles and discover featured reads
               </p>
             </div>
 

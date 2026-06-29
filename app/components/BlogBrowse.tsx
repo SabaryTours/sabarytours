@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import TourLoader from "./TourLoader";
 import BlogPostCard, { type BlogCardPost } from "./BlogPostCard";
 import BlogFeaturedArticle from "./BlogFeaturedArticle";
+import BlogSearchBar from "./BlogSearchBar";
 import { BLOG_CATEGORIES } from "../lib/blogCategories";
 import { resolveBlogImageUrl } from "../lib/blogImages";
 import { normalizeBlogTags } from "../lib/blogTags";
@@ -30,6 +32,10 @@ function mapPostRow(row: Record<string, unknown>): BlogCardPost {
 }
 
 export default function BlogBrowse() {
+  const searchParams = useSearchParams();
+  const queryFromUrl = searchParams.get("q")?.trim() || "";
+  const isSearching = Boolean(queryFromUrl);
+
   const [sectionPosts, setSectionPosts] = useState<BlogCardPost[]>([]);
   const [posts, setPosts] = useState<BlogCardPost[]>([]);
   const [featuredPost, setFeaturedPost] = useState<BlogCardPost | null>(null);
@@ -71,6 +77,11 @@ export default function BlogBrowse() {
   }, []);
 
   useEffect(() => {
+    if (isSearching) {
+      setSectionPosts([]);
+      return;
+    }
+
     let cancelled = false;
 
     async function loadSectionPosts() {
@@ -98,7 +109,7 @@ export default function BlogBrowse() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isSearching]);
 
   useEffect(() => {
     let cancelled = false;
@@ -110,12 +121,20 @@ export default function BlogBrowse() {
       const { createClient } = await import("../utils/supabase/client");
       const supabase = createClient();
 
-      const { data, error } = await supabase
+      let request = supabase
         .from("posts")
         .select("*")
         .eq("status", "published")
-        .order("created_at", { ascending: false })
-        .range(0, PAGE_SIZE - 1);
+        .order("created_at", { ascending: false });
+
+      if (queryFromUrl) {
+        const escaped = queryFromUrl.replace(/[%_]/g, "\\$&");
+        request = request.or(
+          `title.ilike.%${escaped}%,summary.ilike.%${escaped}%,content.ilike.%${escaped}%`,
+        );
+      }
+
+      const { data, error } = await request.range(0, PAGE_SIZE - 1);
 
       if (cancelled) return;
 
@@ -136,14 +155,16 @@ export default function BlogBrowse() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [queryFromUrl]);
 
   const sectionGroups = useMemo(() => {
+    if (isSearching) return [];
+
     return BLOG_CATEGORIES.map((category) => ({
       ...category,
       posts: sectionPosts.filter((post) => post.category === category.slug).slice(0, 3),
     })).filter((section) => section.posts.length > 0);
-  }, [sectionPosts]);
+  }, [isSearching, sectionPosts]);
 
   const handleLoadMore = async () => {
     const nextPage = page + 1;
@@ -154,12 +175,20 @@ export default function BlogBrowse() {
     const from = nextPage * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const { data, error } = await supabase
+    let request = supabase
       .from("posts")
       .select("*")
       .eq("status", "published")
-      .order("created_at", { ascending: false })
-      .range(from, to);
+      .order("created_at", { ascending: false });
+
+    if (queryFromUrl) {
+      const escaped = queryFromUrl.replace(/[%_]/g, "\\$&");
+      request = request.or(
+        `title.ilike.%${escaped}%,summary.ilike.%${escaped}%,content.ilike.%${escaped}%`,
+      );
+    }
+
+    const { data, error } = await request.range(from, to);
 
     if (!error && data) {
       const mapped = data.map((row) => mapPostRow(row));
@@ -173,7 +202,9 @@ export default function BlogBrowse() {
 
   return (
     <div className="space-y-8">
-      {featuredPost ? <BlogFeaturedArticle post={featuredPost} /> : null}
+      {!isSearching && featuredPost ? <BlogFeaturedArticle post={featuredPost} /> : null}
+
+      <BlogSearchBar defaultQuery={queryFromUrl} />
 
       {loading ? (
         <div className="flex justify-center items-center py-12">
@@ -181,9 +212,41 @@ export default function BlogBrowse() {
         </div>
       ) : posts.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center font-sans">
-          <p className="text-gray-700 font-bold">No posts available yet.</p>
-          <p className="mt-2 text-sm text-gray-500">Check back soon for new stories and travel tips.</p>
+          {isSearching ? (
+            <>
+              <p className="text-gray-700 font-bold">No posts matched your search.</p>
+              <p className="mt-2 text-sm text-gray-500">Try another keyword or browse all posts below.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-gray-700 font-bold">No posts available yet.</p>
+              <p className="mt-2 text-sm text-gray-500">Check back soon for new stories and travel tips.</p>
+            </>
+          )}
         </div>
+      ) : isSearching ? (
+        <>
+          <p className="text-sm text-gray-600 font-sans">
+            Showing results for <span className="font-bold text-[#222]">&ldquo;{queryFromUrl}&rdquo;</span>
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {posts.map((post) => (
+              <BlogPostCard key={post.id} post={post} compact />
+            ))}
+          </div>
+          {hasMore ? (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="px-6 py-3 rounded-xl bg-[#ff5e00] text-white font-sans font-semibold hover:bg-[#e55500] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                {loadingMore ? "Loading..." : "Load more results"}
+              </button>
+            </div>
+          ) : null}
+        </>
       ) : (
         <div className="space-y-12">
           {sectionGroups.length > 0

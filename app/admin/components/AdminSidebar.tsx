@@ -43,6 +43,7 @@ const navItems: {
   { name: 'Reviews', href: '/admin/reviews', icon: Comment01Icon, permission: "content" },
   { name: "Tours", href: "/admin/tours", icon: MapsIcon, permission: "content" },
   { name: "Blogs", href: "/admin/blogs", icon: Edit02Icon, permission: "content" },
+  { name: "Blog Comments", href: "/admin/blog-comments", icon: Comment01Icon, permission: "content" },
   { name: "What's Happening", href: "/admin/happenings", icon: Message01Icon, permission: "marketing" },
   { name: "Announcements", href: "/admin/announcements", icon: Message01Icon, permission: "marketing" },
   { name: "Partners", href: "/admin/partners", icon: Message01Icon, permission: "content" },
