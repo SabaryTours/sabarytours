@@ -51,10 +51,7 @@ export default function BlogComments({ slug }: { slug: string }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to post comment");
-      setMessage(data.message || "Thanks for your comment!");
-      if (data.comment) {
-        setComments((prev) => [data.comment, ...prev]);
-      }
+      setMessage(data.message || "Thanks! Your comment has been submitted and will appear once approved.");
       setForm({ name: "", email: "", content: "" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to post comment.");

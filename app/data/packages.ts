@@ -60,6 +60,7 @@ export interface Tour {
   totalSeats?: number | null;
   seatsRemaining?: number | null;
   showBookingCount?: boolean;
+  showSeats?: boolean;
   viewCount?: number;
 }
 

@@ -9,6 +9,7 @@ export type TripOutlineCardMeta = {
   price?: string;
   seats_remaining?: number | null;
   total_seats?: number | null;
+  show_seats?: boolean;
   details?: string;
 };
 
@@ -30,6 +31,7 @@ export function parseTripOutlineBody(raw: string | null | undefined): TripOutlin
         price: typeof parsed.price === "string" ? parsed.price : "",
         seats_remaining: typeof parsed.seats_remaining === "number" ? parsed.seats_remaining : null,
         total_seats: typeof parsed.total_seats === "number" ? parsed.total_seats : null,
+        show_seats: parsed.show_seats === true,
         details: typeof parsed.details === "string" ? parsed.details : "",
       };
     }
@@ -52,6 +54,7 @@ export function buildTripOutlineBody(meta: TripOutlineCardMeta): string | null {
   const details = String(meta.details || "").trim();
   const seats_remaining = typeof meta.seats_remaining === "number" ? meta.seats_remaining : null;
   const total_seats = typeof meta.total_seats === "number" ? meta.total_seats : null;
+  const show_seats = meta.show_seats === true;
 
   if (!description && !image_url && !book_url && !tour_slug && !date && !inclusions && !price && !details) return null;
 
@@ -66,6 +69,7 @@ export function buildTripOutlineBody(meta: TripOutlineCardMeta): string | null {
     price,
     seats_remaining,
     total_seats,
+    show_seats,
     details,
   });
 }

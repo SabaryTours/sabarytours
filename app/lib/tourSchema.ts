@@ -7,13 +7,14 @@ const CAPACITY_FIELDS = [
   "total_seats",
   "seats_remaining",
   "show_booking_count",
+  "show_seats",
   "view_count",
 ] as const;
 
 export function isMissingTourCapacityColumnError(message: string): boolean {
   return /schema cache/i.test(message)
     && /tours/i.test(message)
-    && /(total_seats|seats_remaining|show_booking_count|view_count)/i.test(message);
+    && /(total_seats|seats_remaining|show_booking_count|show_seats|view_count)/i.test(message);
 }
 
 export function stripTourCapacityFields<T extends Record<string, unknown>>(input: T): Omit<T, (typeof CAPACITY_FIELDS)[number]> {

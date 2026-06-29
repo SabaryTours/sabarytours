@@ -60,7 +60,9 @@ type TourRow = {
   total_seats?: number | null;
   seats_remaining?: number | null;
   show_booking_count?: boolean | null;
+  show_seats?: boolean | null;
   view_count?: number | null;
+  faq?: Array<{ question?: string; answer?: string }> | null;
 };
 
 type ReviewRow = {
@@ -70,6 +72,17 @@ type ReviewRow = {
 
 // Helper to generate a slug if missing
 const generateSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+function mapTourFaq(raw: TourRow["faq"]) {
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .map((item) => ({
+      question: typeof item?.question === "string" ? item.question.trim() : "",
+      answer: typeof item?.answer === "string" ? item.answer.trim() : "",
+    }))
+    .filter((item) => item.question && item.answer);
+}
 
 function mapTourMetaFields(t: TourRow) {
   const parseCount = (value: unknown) => {
@@ -81,6 +94,7 @@ function mapTourMetaFields(t: TourRow) {
     totalSeats: parseCount(t.total_seats),
     seatsRemaining: parseCount(t.seats_remaining),
     showBookingCount: Boolean(t.show_booking_count),
+    showSeats: Boolean(t.show_seats),
     viewCount: parseCount(t.view_count) ?? 0,
   };
 }
@@ -382,6 +396,7 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
   const groupSizeOptions = Array.isArray(t.group_size_options) ? t.group_size_options : [];
   const ageCategories = Array.isArray(t.age_categories) ? t.age_categories : [];
   const languages = Array.isArray(t.languages) ? t.languages : [];
+  const faq = mapTourFaq(t.faq);
 
   // Fetch real review stats for this tour
   const resolvedSlug = t.slug || generateSlug(t.title);
@@ -422,6 +437,7 @@ export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
     groupSizeOptions,
     ageCategories,
     languages,
+    faq,
     itinerary: mappedItin,
     rating: avgRating,
     reviewCount: reviewCount,

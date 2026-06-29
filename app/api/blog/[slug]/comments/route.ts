@@ -63,35 +63,22 @@ export async function POST(request: Request, context: Context) {
     .eq("slug", slug)
     .maybeSingle();
 
-  const { data: comment, error } = await supabaseAdmin.from("blog_comments").insert({
+  const { error } = await supabaseAdmin.from("blog_comments").insert({
     post_id: post?.id != null ? String(post.id) : null,
     post_slug: slug,
     name: parsed.data.name.trim(),
     email: parsed.data.email.trim().toLowerCase(),
     content: parsed.data.content.trim(),
-    status: "approved",
-  }).select("id, name, content, created_at").single();
+    status: "pending",
+  });
 
   if (error) {
     console.error("[blog-comments] insert:", error.message);
     return NextResponse.json({ error: "Failed to post comment" }, { status: 500 });
   }
 
-  if (post?.id != null) {
-    const { data: existing } = await supabaseAdmin
-      .from("posts")
-      .select("comment_count")
-      .eq("id", post.id)
-      .maybeSingle();
-    await supabaseAdmin
-      .from("posts")
-      .update({ comment_count: (existing?.comment_count ?? 0) + 1 })
-      .eq("id", post.id);
-  }
-
   return NextResponse.json({
     success: true,
-    message: "Thanks for your comment!",
-    comment,
+    message: "Thanks! Your comment has been submitted and will appear once approved.",
   });
 }

@@ -92,10 +92,14 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
                 Best Seller
               </div>
             )}
-            {typeof tour.seatsRemaining === "number" ? (
+            {tour.showSeats && typeof tour.totalSeats === "number" ? (
+              <span className="font-bold text-[#ff5e00]">
+                Number of people/seats: {tour.totalSeats}
+              </span>
+            ) : null}
+            {tour.showSeats && typeof tour.seatsRemaining === "number" ? (
               <span className="font-bold text-[#ff5e00]">
                 Seats remaining: {tour.seatsRemaining}
-                {typeof tour.totalSeats === "number" ? ` of ${tour.totalSeats}` : ""}
               </span>
             ) : null}
             {(tour.viewCount ?? 0) > 0 ? (

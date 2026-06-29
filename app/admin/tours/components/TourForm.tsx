@@ -38,6 +38,7 @@ interface TourFormProps {
     total_seats?: number | null;
     seats_remaining?: number | null;
     show_booking_count?: boolean;
+    show_seats?: boolean;
     view_count?: number;
     itinerary?: ItineraryItem[];
     tour_prices?: TourPriceInput[];
@@ -51,6 +52,7 @@ interface TourFormProps {
     available_days?: string[];
     blocked_dates?: string[];
     time_slots?: string[];
+    faq?: Array<{ question?: string; answer?: string }>;
   };
 }
 
@@ -111,6 +113,7 @@ export default function TourForm({ initialData }: TourFormProps) {
     seats_remaining:
       typeof initialData?.seats_remaining === "number" ? String(initialData.seats_remaining) : "",
     show_booking_count: Boolean(initialData?.show_booking_count),
+    show_seats: Boolean(initialData?.show_seats),
   });
   const [priceTiers, setPriceTiers] = useState<
     Array<{ name: string; amount: number | string; currency: string }>
@@ -152,6 +155,14 @@ export default function TourForm({ initialData }: TourFormProps) {
   );
   const [languages, setLanguages] = useState<string[]>(
     initialData?.languages || []
+  );
+  const [faqItems, setFaqItems] = useState<Array<{ question: string; answer: string }>>(
+    Array.isArray(initialData?.faq)
+      ? initialData.faq.map((item) => ({
+          question: typeof item?.question === "string" ? item.question : "",
+          answer: typeof item?.answer === "string" ? item.answer : "",
+        }))
+      : [],
   );
 
   const [availableDays, setAvailableDays] = useState<string[]>(
@@ -303,6 +314,13 @@ export default function TourForm({ initialData }: TourFormProps) {
     newItems[index] = value;
     setWhatToBring(newItems);
   };
+  const addFaqItem = () => setFaqItems([...faqItems, { question: "", answer: "" }]);
+  const removeFaqItem = (index: number) => setFaqItems(faqItems.filter((_, i) => i !== index));
+  const updateFaqItem = (index: number, field: "question" | "answer", value: string) => {
+    const next = [...faqItems];
+    next[index] = { ...next[index], [field]: value };
+    setFaqItems(next);
+  };
   const addGroupSizeOption = () => setGroupSizeOptions([...groupSizeOptions, ""]);
   const removeGroupSizeOption = (index: number) => setGroupSizeOptions(groupSizeOptions.filter((_, i) => i !== index));
   const updateGroupSizeOption = (index: number, value: string) => {
@@ -395,6 +413,7 @@ export default function TourForm({ initialData }: TourFormProps) {
         total_seats: Number.isFinite(totalSeats) ? totalSeats : null,
         seats_remaining: Number.isFinite(seatsRemaining) ? seatsRemaining : null,
         show_booking_count: formData.show_booking_count,
+        show_seats: formData.show_seats,
         itinerary: normalizedItinerary,
         whats_included: whatsIncluded.filter((item) => item.trim() !== ""),
         exclusions: exclusions.filter((item) => item.trim() !== ""),
@@ -405,6 +424,12 @@ export default function TourForm({ initialData }: TourFormProps) {
         available_days: availableDays,
         blocked_dates: blockedDates.filter(d => d.trim() !== ""),
         time_slots: timeSlots.filter(t => t.trim() !== ""),
+        faq: faqItems
+          .map((item) => ({
+            question: item.question.trim(),
+            answer: item.answer.trim(),
+          }))
+          .filter((item) => item.question && item.answer),
       };
 
       const imageUrls = imageInputs.map((url) => url.trim()).filter(Boolean);
@@ -502,6 +527,20 @@ export default function TourForm({ initialData }: TourFormProps) {
           <p className="mt-1 text-xs text-gray-500 font-sans">
             Reduced automatically when guests book (by number of people).
           </p>
+        </div>
+        <div className="md:col-span-2">
+          <label className="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="show_seats"
+              checked={formData.show_seats}
+              onChange={handleCheckboxChange}
+              className="mt-1"
+            />
+            <span className="font-sans text-sm text-gray-700">
+              Show number of seats and seats remaining on the public tour page and cards
+            </span>
+          </label>
         </div>
         <div className="md:col-span-2">
           <label className="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 cursor-pointer">
@@ -812,6 +851,52 @@ export default function TourForm({ initialData }: TourFormProps) {
             </div>
           ))}
           {whatToBring.length === 0 && <p className="text-gray-400 text-sm italic">No items added yet.</p>}
+        </div>
+      </div>
+
+      {/* Tour FAQs */}
+      <div className="border-t border-gray-100 pt-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 font-sans">Tour FAQs</label>
+            <p className="text-xs text-gray-500 mt-1 font-sans">
+              Questions and answers shown on this tour&apos;s detail page.
+            </p>
+          </div>
+          <button type="button" onClick={addFaqItem} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold flex items-center gap-1 hover:bg-gray-200">
+            + Add FAQ
+          </button>
+        </div>
+        <div className="space-y-4">
+          {faqItems.map((item, index) => (
+            <div key={index} className="p-4 bg-gray-50 border border-gray-200 rounded-xl relative group">
+              <button
+                type="button"
+                onClick={() => removeFaqItem(index)}
+                className="absolute top-4 right-4 text-red-500 hover:bg-red-100 p-1 rounded font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                X
+              </button>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={item.question}
+                  onChange={(e) => updateFaqItem(index, "question", e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black"
+                  placeholder="Question, e.g. What should I wear?"
+                />
+                <textarea
+                  value={item.answer}
+                  onChange={(e) => updateFaqItem(index, "answer", e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans text-black min-h-[90px]"
+                  placeholder="Answer..."
+                />
+              </div>
+            </div>
+          ))}
+          {faqItems.length === 0 && (
+            <p className="text-gray-400 text-sm italic">No FAQs added yet.</p>
+          )}
         </div>
       </div>
 
