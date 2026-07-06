@@ -34,13 +34,11 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
   const isRecoveryPending = request.cookies.get(PASSWORD_RECOVERY_COOKIE)?.value === '1'
-  const isRecoveryRoute =
-    pathname.startsWith('/reset-password') ||
-    pathname.startsWith('/auth/callback') ||
-    pathname.startsWith('/api/auth/recovery-pending') ||
-    pathname.startsWith('/api/auth/clear-recovery')
+  const isProtectedRoute =
+    pathname.startsWith('/dashboard') || pathname.startsWith('/admin')
 
-  if (isRecoveryPending && !isRecoveryRoute) {
+  // Only block dashboard/admin during recovery — allow home, login, forgot-password, etc.
+  if (isRecoveryPending && isProtectedRoute) {
     const url = request.nextUrl.clone()
     url.pathname = PASSWORD_RESET_PATH.split('?')[0]
     url.search = PASSWORD_RESET_PATH.split('?')[1] ?? ''
@@ -48,9 +46,8 @@ export async function updateSession(request: NextRequest) {
   }
 
   const isLoginLikeRoute =
-    request.nextUrl.pathname.startsWith('/login') ||
-    request.nextUrl.pathname.startsWith('/register')
-  const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname.startsWith('/admin')
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register')
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone()

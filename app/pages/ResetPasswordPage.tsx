@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LockIcon, EyeIcon, ArrowLeft01Icon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
-import { resetPassword } from "../lib/authService";
+import { resetPassword, clearAuthSession } from "../lib/authService";
 import { createClient } from "../utils/supabase/client";
 import { PASSWORD_RESET_PATH } from "../lib/passwordRecovery";
 import Logo from "../components/Logo";
@@ -25,11 +24,23 @@ export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const leaveRecoveryFlow = async (path: string) => {
+    await clearAuthSession();
+    router.push(path);
+  };
+
   useEffect(() => {
     const supabase = createClient();
 
     async function markRecoveryPending() {
       await fetch("/api/auth/recovery-pending", { method: "POST" });
+    }
+
+    async function abandonRecovery(message: string) {
+      await clearAuthSession();
+      setHasRecoverySession(false);
+      setError(message);
+      setCheckingSession(false);
     }
 
     async function verifySession() {
@@ -51,9 +62,7 @@ export default function ResetPasswordPage() {
       const isHashRecovery = Boolean(accessToken && refreshToken && type === "recovery");
 
       if (!isRecoveryRedirect && !isHashRecovery) {
-        setHasRecoverySession(false);
-        setError("Please use the password reset link sent to your email.");
-        setCheckingSession(false);
+        await abandonRecovery("Please use the password reset link sent to your email.");
         return;
       }
 
@@ -65,9 +74,7 @@ export default function ResetPasswordPage() {
         });
 
         if (sessionError) {
-          setHasRecoverySession(false);
-          setError("Your reset link is invalid or has expired. Please request a new one.");
-          setCheckingSession(false);
+          await abandonRecovery("Your reset link is invalid or has expired. Please request a new one.");
           return;
         }
 
@@ -77,8 +84,7 @@ export default function ResetPasswordPage() {
 
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
-        setHasRecoverySession(false);
-        setError("Your reset link is invalid or has expired. Please request a new one.");
+        await abandonRecovery("Your reset link is invalid or has expired. Please request a new one.");
       } else {
         setHasRecoverySession(true);
         setError("");
@@ -180,11 +186,13 @@ export default function ResetPasswordPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                 {error}
-                {!hasRecoverySession && (
-                  <Link href="/forgot-password" className="block mt-2 text-[#ff5e00] font-semibold hover:underline">
-                    Request a new reset link
-                  </Link>
-                )}
+                <button
+                  type="button"
+                  onClick={() => void leaveRecoveryFlow("/forgot-password")}
+                  className="block mt-2 text-[#ff5e00] font-semibold hover:underline text-left"
+                >
+                  Request a new reset link
+                </button>
               </div>
             )}
 
@@ -256,13 +264,14 @@ export default function ResetPasswordPage() {
             )}
 
             <div className="text-center">
-              <Link
-                href="/login"
+              <button
+                type="button"
+                onClick={() => void leaveRecoveryFlow("/login")}
                 className="text-[#ff5e00] text-[14px] hover:underline font-medium inline-flex items-center gap-2"
               >
                 <ArrowLeft01Icon size={16} />
                 Back to login
-              </Link>
+              </button>
             </div>
           </form>
         </div>
