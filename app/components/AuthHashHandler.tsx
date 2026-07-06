@@ -3,10 +3,17 @@
 import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "../utils/supabase/client";
+import { PASSWORD_RESET_PATH } from "../lib/passwordRecovery";
+
+async function markRecoveryPending() {
+  await fetch("/api/auth/recovery-pending", { method: "POST" });
+}
+
+const CODE_HANDLER_PATHS = new Set(["/", "/reset-password", "/auth/callback"]);
 
 /**
- * Supabase auth errors sometimes land on the site root (/) in query or hash.
- * Forward them to the forgot-password page with a readable message.
+ * Supabase recovery links may land with a PKCE code (query) or legacy hash tokens.
+ * Normalize both into our reset-password flow.
  */
 export default function AuthHashHandler() {
   const router = useRouter();
@@ -23,16 +30,28 @@ export default function AuthHashHandler() {
 
     if (accessToken && refreshToken && type === "recovery") {
       const supabase = createClient();
-      supabase.auth
-        .setSession({ access_token: accessToken, refresh_token: refreshToken })
-        .then(({ error }) => {
-          if (error) {
-            router.replace(`/forgot-password?error=${encodeURIComponent(error.message)}`);
-            return;
-          }
-          window.history.replaceState(null, "", "/reset-password?recovery=1");
-          router.replace("/reset-password?recovery=1");
-        });
+      void supabase.auth.signOut().finally(() => {
+        supabase.auth
+          .setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(async ({ error }) => {
+            if (error) {
+              router.replace(`/forgot-password?error=${encodeURIComponent(error.message)}`);
+              return;
+            }
+            await markRecoveryPending();
+            window.history.replaceState(null, "", PASSWORD_RESET_PATH);
+            router.replace(PASSWORD_RESET_PATH);
+          });
+      });
+      return;
+    }
+
+    const code = searchParams.get("code") || hashParams.get("code");
+    if (code && pathname && CODE_HANDLER_PATHS.has(pathname)) {
+      const next = searchParams.get("next") || PASSWORD_RESET_PATH;
+      router.replace(
+        `/auth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`
+      );
       return;
     }
 
@@ -47,14 +66,6 @@ export default function AuthHashHandler() {
     const errorDescription =
       searchParams.get("error_description") ||
       hashParams.get("error_description");
-
-    const code = searchParams.get("code") || hashParams.get("code");
-
-    if (code) {
-      const next = searchParams.get("next") || "/reset-password?recovery=1";
-      router.replace(`/auth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`);
-      return;
-    }
 
     if (errorCode) {
       const params = new URLSearchParams();
