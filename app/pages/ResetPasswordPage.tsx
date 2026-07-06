@@ -7,6 +7,7 @@ import { LockIcon, EyeIcon, ArrowLeft01Icon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
 import { resetPassword } from "../lib/authService";
 import { createClient } from "../utils/supabase/client";
+import { PASSWORD_RESET_PATH } from "../lib/passwordRecovery";
 import Logo from "../components/Logo";
 
 export default function ResetPasswordPage() {
@@ -27,7 +28,20 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const supabase = createClient();
 
+    async function markRecoveryPending() {
+      await fetch("/api/auth/recovery-pending", { method: "POST" });
+    }
+
     async function verifySession() {
+      const code = searchParams.get("code");
+      if (code) {
+        const next = PASSWORD_RESET_PATH;
+        router.replace(
+          `/auth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`
+        );
+        return;
+      }
+
       const isRecoveryRedirect = searchParams.get("recovery") === "1";
       const hash = typeof window !== "undefined" ? window.location.hash.slice(1) : "";
       const hashParams = new URLSearchParams(hash);
@@ -44,6 +58,7 @@ export default function ResetPasswordPage() {
       }
 
       if (isHashRecovery && accessToken && refreshToken) {
+        await supabase.auth.signOut();
         const { error: sessionError } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
@@ -56,7 +71,8 @@ export default function ResetPasswordPage() {
           return;
         }
 
-        window.history.replaceState(null, "", "/reset-password?recovery=1");
+        await markRecoveryPending();
+        window.history.replaceState(null, "", PASSWORD_RESET_PATH);
       }
 
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -80,7 +96,7 @@ export default function ResetPasswordPage() {
     });
 
     return () => subscription.unsubscribe();
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const togglePassword = () => setShowPassword((prev) => !prev);
   const toggleConfirmPassword = () => setShowConfirmPassword((prev) => !prev);

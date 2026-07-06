@@ -162,7 +162,7 @@ async function sendAdminInviteEmail(
   }
 
   const origin = siteOrigin(request);
-  const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent("/reset-password?recovery=1")}`;
+  const redirectTo = `${origin}/reset-password?recovery=1`;
 
   const { data, error } = await supabaseAdmin.auth.admin.generateLink({
     type: "recovery",

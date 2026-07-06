@@ -66,9 +66,14 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
   return { user: authData.user };
 };
 
-export const logout = async () => {
+export const clearAuthSession = async () => {
   const supabase = createClient();
   await supabase.auth.signOut();
+  await fetch("/api/auth/clear-recovery", { method: "POST" }).catch(() => {});
+};
+
+export const logout = async () => {
+  await clearAuthSession();
   if (typeof window !== "undefined") {
     window.location.href = "/login";
   }
@@ -122,6 +127,8 @@ export const resetPassword = async (password: string) => {
   const supabase = createClient();
   const { error } = await supabase.auth.updateUser({ password });
   if (error) throw new Error(error.message);
+  await supabase.auth.signOut();
+  await fetch("/api/auth/clear-recovery", { method: "POST" }).catch(() => {});
   return true;
 };
 

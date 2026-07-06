@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Mail01Icon, ArrowLeft01Icon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
-import { forgotPassword } from "../lib/authService";
+import { forgotPassword, clearAuthSession } from "../lib/authService";
 import Logo from "../components/Logo";
 
 export default function ForgotPasswordPage() {
@@ -14,6 +14,12 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    void clearAuthSession().catch(() => {
+      // Ignore sign-out errors; user may already be logged out.
+    });
+  }, []);
 
   useEffect(() => {
     const err = searchParams.get("error");

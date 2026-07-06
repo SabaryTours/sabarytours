@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { resend, FROM_EMAIL } from "../../../lib/resend";
 import { buildPasswordResetEmailHtml } from "../../../lib/passwordResetEmailHtml";
+import { passwordResetRedirectUrl } from "../../../lib/passwordRecovery";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,9 +53,7 @@ export async function POST(request: Request) {
     }
 
     const origin = siteOrigin(request);
-    // Send recovery links through our callback so we can exchange the code
-    // then mark the reset page as a real recovery flow.
-    const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent("/reset-password?recovery=1")}`;
+    const redirectTo = passwordResetRedirectUrl(origin);
 
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",
