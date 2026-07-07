@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowLeft01Icon } from "hugeicons-react";
 import BlogPostCard, { type BlogCardPost } from "../components/BlogPostCard";
 import TourLoader from "../components/TourLoader";
-import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { resolveBlogImageUrl } from "../lib/blogImages";
 import { normalizeBlogTags } from "../lib/blogTags";
@@ -111,7 +110,6 @@ export default function BlogCategoryPage({ slug, label, description }: BlogCateg
 
   return (
     <>
-      <Header />
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 min-h-screen">
         {/* Back link */}
         <Link

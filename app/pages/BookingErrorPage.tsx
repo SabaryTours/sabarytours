@@ -3,7 +3,6 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { ArrowLeft01Icon } from "hugeicons-react";
-import Header from "../components/Header";
 
 export default function BookingErrorPage() {
   const router = useRouter();
@@ -20,7 +19,6 @@ export default function BookingErrorPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
       <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-8 sm:py-10 md:py-12">
         <div className="container mx-auto max-w-md">
           {/* Header */}
