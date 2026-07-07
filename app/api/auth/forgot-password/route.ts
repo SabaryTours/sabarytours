@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { resend, FROM_EMAIL } from "../../../lib/resend";
 import { buildPasswordResetEmailHtml } from "../../../lib/passwordResetEmailHtml";
-import { passwordResetRedirectUrl } from "../../../lib/passwordRecovery";
+import { passwordResetRedirectUrl, PASSWORD_RESET_PATH } from "../../../lib/passwordRecovery";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     const origin = siteOrigin(request);
-    const redirectTo = passwordResetRedirectUrl(origin);
+    const redirectTo = `${passwordResetRedirectUrl(origin)}?next=${encodeURIComponent(PASSWORD_RESET_PATH)}`;
 
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",

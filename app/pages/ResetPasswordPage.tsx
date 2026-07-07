@@ -44,15 +44,6 @@ export default function ResetPasswordPage() {
     }
 
     async function verifySession() {
-      const code = searchParams.get("code");
-      if (code) {
-        const next = PASSWORD_RESET_PATH;
-        router.replace(
-          `/auth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`
-        );
-        return;
-      }
-
       const isRecoveryRedirect = searchParams.get("recovery") === "1";
       const hash = typeof window !== "undefined" ? window.location.hash.slice(1) : "";
       const hashParams = new URLSearchParams(hash);

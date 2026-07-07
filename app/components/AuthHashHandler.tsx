@@ -9,7 +9,7 @@ async function markRecoveryPending() {
   await fetch("/api/auth/recovery-pending", { method: "POST" });
 }
 
-const CODE_HANDLER_PATHS = new Set(["/", "/reset-password", "/auth/callback"]);
+const CODE_HANDLER_PATHS = new Set(["/", "/auth/callback"]);
 
 /**
  * Supabase recovery links may land with a PKCE code (query) or legacy hash tokens.
