@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { resend, FROM_EMAIL } from "../../../lib/resend";
 import { buildPasswordResetEmailHtml } from "../../../lib/passwordResetEmailHtml";
-import { passwordResetRedirectUrl, PASSWORD_RESET_PATH } from "../../../lib/passwordRecovery";
+import { createResetToken } from "../../../lib/resetToken";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,26 +52,30 @@ export async function POST(request: Request) {
       );
     }
 
-    const origin = siteOrigin(request);
-    const redirectTo = `${passwordResetRedirectUrl(origin)}?next=${encodeURIComponent(PASSWORD_RESET_PATH)}`;
-
-    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+    // Use generateLink to verify the user exists and get their ID + updated_at.
+    // We throw away the generated Supabase link entirely and use our own
+    // HMAC-signed token instead — this bypasses all Supabase OTP / PKCE issues.
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",
       email,
-      options: { redirectTo },
     });
 
-    const actionLink = data?.properties?.action_link;
-
-    // Wrap the action link in our interstitial page to protect against mobile email scanners
-    // that pre-fetch and consume the OTP token before the user actually clicks.
-    const safeLink = `${origin}/reset-password/start?link=${encodeURIComponent(actionLink || "")}`;
-
-    if (error || !actionLink) {
+    if (linkError || !linkData?.user) {
       // Do not reveal whether the account exists
-      console.warn("[forgot-password] generateLink:", error?.message ?? "no action_link");
+      console.warn("[forgot-password] generateLink:", linkError?.message ?? "no user");
       return NextResponse.json({ success: true, message: GENERIC_OK });
     }
+
+    const origin = siteOrigin(request);
+    const token = createResetToken(
+      linkData.user.id,
+      email,
+      linkData.user.updated_at || "",
+    );
+
+    // Link goes directly to /reset-password — no Supabase redirect, no OTP,
+    // no interstitial page, no session required.
+    const resetLink = `${origin}/reset-password?token=${encodeURIComponent(token)}`;
 
     if (!resend) {
       return NextResponse.json(
@@ -87,7 +91,7 @@ export async function POST(request: Request) {
       from: FROM_EMAIL,
       to: [email],
       subject: "Reset your Sabary Tours password",
-      html: buildPasswordResetEmailHtml({ resetLink: safeLink, email }),
+      html: buildPasswordResetEmailHtml({ resetLink, email }),
     });
 
     if (emailError) {
