@@ -160,10 +160,14 @@ export default function BlogBrowse() {
   const sectionGroups = useMemo(() => {
     if (isSearching) return [];
 
-    return BLOG_CATEGORIES.map((category) => ({
-      ...category,
-      posts: sectionPosts.filter((post) => post.category === category.slug).slice(0, 3),
-    })).filter((section) => section.posts.length > 0);
+    return BLOG_CATEGORIES.map((category) => {
+      const all = sectionPosts.filter((post) => post.category === category.slug);
+      return {
+        ...category,
+        posts: all.slice(0, 3),
+        totalCount: all.length,
+      };
+    }).filter((section) => section.posts.length > 0);
   }, [isSearching, sectionPosts]);
 
   const handleLoadMore = async () => {
@@ -266,6 +270,16 @@ export default function BlogBrowse() {
                       <BlogPostCard key={post.id} post={post} compact />
                     ))}
                   </div>
+                  {section.totalCount > 3 ? (
+                    <div className="flex justify-end mt-2">
+                      <a
+                        href={`/blog/category/${section.slug}`}
+                        className="inline-flex items-center gap-1 text-sm font-bold text-[#ff5e00] hover:text-[#e55500] transition-colors"
+                      >
+                        See more {section.label} →
+                      </a>
+                    </div>
+                  ) : null}
                 </section>
               ))
             : null}

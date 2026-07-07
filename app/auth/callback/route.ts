@@ -13,7 +13,7 @@ const HASH_FALLBACK_HTML = `<!DOCTYPE html>
   <title>Verifying reset link</title>
 </head>
 <body>
-  <p>Verifying your reset link...</p>
+  <p>Verifying your reset link…</p>
   <script>
     (function () {
       var hash = window.location.hash.slice(1);
@@ -32,6 +32,7 @@ const HASH_FALLBACK_HTML = `<!DOCTYPE html>
           return;
         }
       }
+      // No code in query, no tokens in hash — link is invalid or already used
       window.location.replace("/forgot-password?error=missing_code");
     })();
   </script>
@@ -46,15 +47,22 @@ export async function GET(request: Request) {
   const next = url.searchParams.get("next") || PASSWORD_RESET_PATH;
   const origin = url.origin;
 
+  // Handle error redirects from Supabase
   if (errorParam || errorDesc) {
     const msg = errorDesc || errorParam || "Invalid or expired link";
+    const isExpired =
+      /expired|otp_expired/i.test(msg) ||
+      errorParam === "otp_expired";
+    const friendlyMsg = isExpired
+      ? "expired"
+      : msg;
     return NextResponse.redirect(
-      `${origin}/forgot-password?error=${encodeURIComponent(msg)}`
+      `${origin}/forgot-password?error=${encodeURIComponent(friendlyMsg)}`
     );
   }
 
+  // No code — serve HTML that checks for hash-fragment tokens (legacy flow)
   if (!code) {
-    // Hash tokens never reach the server; finish recovery in the browser.
     return new NextResponse(HASH_FALLBACK_HTML, {
       headers: { "Content-Type": "text/html; charset=utf-8" },
     });
@@ -69,8 +77,13 @@ export async function GET(request: Request) {
 
   if (error) {
     console.error("[auth/callback] exchangeCodeForSession failed:", error.message);
+    const isExpired =
+      /expired|invalid|already.*used|otp_expired/i.test(error.message);
+    const friendlyMsg = isExpired
+      ? "That reset link has expired or was already used. Please request a new one."
+      : error.message;
     return NextResponse.redirect(
-      `${origin}/forgot-password?error=${encodeURIComponent(error.message)}`,
+      `${origin}/forgot-password?error=${encodeURIComponent(friendlyMsg)}`,
     );
   }
 

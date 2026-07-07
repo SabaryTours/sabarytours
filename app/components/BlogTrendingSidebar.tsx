@@ -190,13 +190,13 @@ export default function BlogTrendingSidebar() {
       <TopicSection
         title="Ghana News"
         posts={ghanaNews}
-        viewAllHref="/blog?category=events-festivals"
+        viewAllHref="/blog/category/events-festivals"
       />
 
       <TopicSection
         title="Travel Hacks & Tips"
         posts={travelHacks}
-        viewAllHref="/blog?category=travel-tips-hacks"
+        viewAllHref="/blog/category/travel-tips-hacks"
       />
     </aside>
   );
