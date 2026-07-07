@@ -4,9 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LockIcon, EyeIcon, ArrowLeft01Icon } from "hugeicons-react";
 import AuthCarousel from "../components/AuthCarousel";
-import { resetPassword, clearAuthSession } from "../lib/authService";
-import { createClient } from "../utils/supabase/client";
-import { PASSWORD_RESET_PATH } from "../lib/passwordRecovery";
 import Logo from "../components/Logo";
 
 export default function ResetPasswordPage() {
@@ -17,83 +14,48 @@ export default function ResetPasswordPage() {
     confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
-  const [hasRecoverySession, setHasRecoverySession] = useState(false);
+  const [verifying, setVerifying] = useState(true);
+  const [tokenValid, setTokenValid] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const leaveRecoveryFlow = async (path: string) => {
-    await clearAuthSession();
-    router.push(path);
-  };
+  const token = searchParams.get("token");
 
+  // Verify token on mount
   useEffect(() => {
-    const supabase = createClient();
-
-    async function markRecoveryPending() {
-      await fetch("/api/auth/recovery-pending", { method: "POST" });
-    }
-
-    async function abandonRecovery(message: string) {
-      await clearAuthSession();
-      setHasRecoverySession(false);
-      setError(message);
-      setCheckingSession(false);
-    }
-
-    async function verifySession() {
-      const isRecoveryRedirect = searchParams.get("recovery") === "1";
-      const hash = typeof window !== "undefined" ? window.location.hash.slice(1) : "";
-      const hashParams = new URLSearchParams(hash);
-      const accessToken = hashParams.get("access_token");
-      const refreshToken = hashParams.get("refresh_token");
-      const type = hashParams.get("type");
-      const isHashRecovery = Boolean(accessToken && refreshToken && type === "recovery");
-
-      if (!isRecoveryRedirect && !isHashRecovery) {
-        await abandonRecovery("Please use the password reset link sent to your email.");
+    async function verify() {
+      if (!token) {
+        setError("Please use the password reset link sent to your email.");
+        setVerifying(false);
         return;
       }
 
-      if (isHashRecovery && accessToken && refreshToken) {
-        await supabase.auth.signOut();
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
+      try {
+        const res = await fetch("/api/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
         });
+        const data = await res.json();
 
-        if (sessionError) {
-          await abandonRecovery("Your reset link is invalid or has expired. Please request a new one.");
-          return;
+        if (data.valid) {
+          setTokenValid(true);
+        } else {
+          setError(
+            data.message ||
+              "Your reset link is invalid or has expired. Please request a new one.",
+          );
         }
-
-        await markRecoveryPending();
-        window.history.replaceState(null, "", PASSWORD_RESET_PATH);
+      } catch {
+        setError("Failed to verify reset link. Please try again.");
       }
-
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        await abandonRecovery("Your reset link is invalid or has expired. Please request a new one.");
-      } else {
-        setHasRecoverySession(true);
-        setError("");
-      }
-      setCheckingSession(false);
+      setVerifying(false);
     }
 
-    verifySession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setHasRecoverySession(true);
-        setError("");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [searchParams, router]);
+    verify();
+  }, [token]);
 
   const togglePassword = () => setShowPassword((prev) => !prev);
   const toggleConfirmPassword = () => setShowConfirmPassword((prev) => !prev);
@@ -111,12 +73,6 @@ export default function ResetPasswordPage() {
     setLoading(true);
     setError("");
 
-    if (!hasRecoverySession) {
-      setError("Your reset link is invalid or has expired. Please request a new one.");
-      setLoading(false);
-      return;
-    }
-
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
@@ -130,13 +86,25 @@ export default function ResetPasswordPage() {
     }
 
     try {
-      await resetPassword(formData.password);
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/login");
-      }, 2000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Password reset failed. Please try again.");
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password: formData.password }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setSuccess(true);
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000);
+      } else {
+        setError(
+          data.message || "Password reset failed. Please try again.",
+        );
+      }
+    } catch {
+      setError("Password reset failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -170,7 +138,7 @@ export default function ResetPasswordPage() {
               </p>
             </div>
 
-            {checkingSession && (
+            {verifying && (
               <p className="text-sm text-gray-500 text-center">Verifying your reset link...</p>
             )}
 
@@ -179,7 +147,7 @@ export default function ResetPasswordPage() {
                 {error}
                 <button
                   type="button"
-                  onClick={() => void leaveRecoveryFlow("/forgot-password")}
+                  onClick={() => router.push("/forgot-password")}
                   className="block mt-2 text-[#ff5e00] font-semibold hover:underline text-left"
                 >
                   Request a new reset link
@@ -194,7 +162,7 @@ export default function ResetPasswordPage() {
               </div>
             )}
 
-            {!success && !checkingSession && hasRecoverySession && (
+            {!success && !verifying && tokenValid && (
               <>
                 <div className="space-y-3">
                   <div className="relative">
@@ -257,7 +225,7 @@ export default function ResetPasswordPage() {
             <div className="text-center">
               <button
                 type="button"
-                onClick={() => void leaveRecoveryFlow("/login")}
+                onClick={() => router.push("/login")}
                 className="text-[#ff5e00] text-[14px] hover:underline font-medium inline-flex items-center gap-2"
               >
                 <ArrowLeft01Icon size={16} />
