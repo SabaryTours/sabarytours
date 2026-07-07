@@ -63,6 +63,10 @@ export async function POST(request: Request) {
 
     const actionLink = data?.properties?.action_link;
 
+    // Wrap the action link in our interstitial page to protect against mobile email scanners
+    // that pre-fetch and consume the OTP token before the user actually clicks.
+    const safeLink = `${origin}/reset-password/start?link=${encodeURIComponent(actionLink || "")}`;
+
     if (error || !actionLink) {
       // Do not reveal whether the account exists
       console.warn("[forgot-password] generateLink:", error?.message ?? "no action_link");
@@ -83,7 +87,7 @@ export async function POST(request: Request) {
       from: FROM_EMAIL,
       to: [email],
       subject: "Reset your Sabary Tours password",
-      html: buildPasswordResetEmailHtml({ resetLink: actionLink, email }),
+      html: buildPasswordResetEmailHtml({ resetLink: safeLink, email }),
     });
 
     if (emailError) {
