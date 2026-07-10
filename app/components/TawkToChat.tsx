@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import { createClient } from "../utils/supabase/client";
+import { trackEvent } from "../lib/analytics";
 
 // Tawk.to API types
 declare global {
@@ -12,6 +14,13 @@ declare global {
       maximize?: () => void;
       minimize?: () => void;
       onLoad?: () => void;
+      onChatStarted?: () => void;
+      onChatEnded?: () => void;
+      onOfflineSubmit?: () => void;
+      setAttributes?: (
+        attributes: Record<string, string>,
+        callback?: (error?: unknown) => void
+      ) => void;
       [key: string]: unknown;
     };
     Tawk_LoadStart?: Date;
@@ -43,6 +52,25 @@ export default function TawkToChat() {
     }
 
     const src = `https://embed.tawk.to/${tawkPropertyId}/${tawkWidgetId}`;
+    const supabase = createClient();
+
+    function identifyVisitor() {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user || typeof window.Tawk_API?.setAttributes !== "function") return;
+        const metaName = [user.user_metadata?.first_name, user.user_metadata?.last_name]
+          .filter(Boolean)
+          .join(" ");
+        window.Tawk_API.setAttributes(
+          {
+            name: metaName || user.email || "",
+            email: user.email || "",
+          },
+          () => {
+            /* ignore errors — non-critical */
+          }
+        );
+      });
+    }
 
     window.Tawk_API = window.Tawk_API || {};
     const api = window.Tawk_API;
@@ -51,17 +79,38 @@ export default function TawkToChat() {
     api.onLoad = function () {
       previousOnLoad?.();
       scheduleMinimize();
+      identifyVisitor();
     };
+
+    api.onChatStarted = function () {
+      trackEvent("chat_started", { chat_provider: "tawkto" });
+    };
+    api.onChatEnded = function () {
+      trackEvent("chat_ended", { chat_provider: "tawkto" });
+    };
+    api.onOfflineSubmit = function () {
+      trackEvent("chat_offline_form_submit", { chat_provider: "tawkto" });
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+        identifyVisitor();
+      }
+    });
 
     const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
     if (existingScript) {
       // Widget already injected (SPA / remount) — onLoad may have fired; nudge closed
       scheduleMinimize();
+      identifyVisitor();
       const t1 = window.setTimeout(scheduleMinimize, 400);
       const t2 = window.setTimeout(scheduleMinimize, 1500);
       return () => {
         window.clearTimeout(t1);
         window.clearTimeout(t2);
+        subscription.unsubscribe();
       };
     }
 
@@ -82,6 +131,7 @@ export default function TawkToChat() {
 
     return () => {
       // Tawk persists; no script removal
+      subscription.unsubscribe();
     };
   }, []);
 

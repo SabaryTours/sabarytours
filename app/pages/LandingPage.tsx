@@ -37,12 +37,12 @@ export default async function LandingPage() {
       <HomeTrustStrip />
       <HomePopularExperiences />
       <Packages />
-      {happenings.length > 0 && <WhatsHappening events={happenings} />}
       <WhyTravel />
       <CustomizedPackageSection />
       {hasUpcomingContent ? (
         <YearAtAGlance year={new Date().getFullYear()} items={tripOutlineYear} />
       ) : null}
+       {happenings.length > 0 && <WhatsHappening events={happenings} />}
       <Blog />
       {/* <Testimonial /> */}
       <section className="py-16 md:py-20 bg-[#fafafa]">
