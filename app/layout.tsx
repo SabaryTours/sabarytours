@@ -16,7 +16,7 @@ import AnalyticsProvider from "./components/AnalyticsProvider";
 import JsonLd from "./components/seo/JsonLd";
 import { buildOrganizationSchema, buildWebSiteSchema } from "./lib/seo/schema";
 import { getSiteUrl } from "./lib/seo/site";
-// import TawkToChat from "./components/TawkToChat";
+import TawkToChat from "./components/TawkToChat";
 
 const quicksand = Quicksand({
   variable: "--font-quicksand",
@@ -103,7 +103,7 @@ export default function RootLayout({
           </SplashScreen>
         </LayoutWrapper>
         <AnnouncementModal />
-        {/* <TawkToChat /> */}
+        <TawkToChat />
         <Toaster position="top-right" containerClassName="print:!hidden" />
         </AnalyticsProvider>
       </body>
