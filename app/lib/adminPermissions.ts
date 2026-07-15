@@ -47,6 +47,7 @@ export const ADMIN_ROUTE_PERMISSIONS: { prefix: string; permission: AdminPermiss
   { prefix: "/admin/packages", permission: "content" },
   { prefix: "/admin/reviews", permission: "content" },
   { prefix: "/admin/tours", permission: "content" },
+  { prefix: "/admin/featured-tours", permission: "content" },
   { prefix: "/admin/blogs", permission: "content" },
   { prefix: "/admin/blog-comments", permission: "content" },
   { prefix: "/admin/partners", permission: "content" },

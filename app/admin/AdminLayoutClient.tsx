@@ -30,6 +30,7 @@ export default function AdminLayoutClient({
   let pageTitle = "Dashboard";
   if (pathname.includes("/admin/settings")) pageTitle = "Admin Team";
   if (pathname.includes("/admin/users")) pageTitle = "Platform Users";
+  if (pathname.includes("/admin/featured-tours")) pageTitle = "Featured Tours";
   if (pathname.includes("/admin/tours")) pageTitle = "Manage Tours";
   if (pathname.includes("/admin/blogs")) pageTitle = "Manage Blogs";
   if (pathname.includes("/admin/reviews")) pageTitle = "Manage Reviews";
