@@ -34,7 +34,6 @@ interface TourFormProps {
     status?: string;
     description?: string;
     map_url?: string;
-    is_featured?: boolean;
     total_seats?: number | null;
     seats_remaining?: number | null;
     show_booking_count?: boolean;
@@ -107,7 +106,6 @@ export default function TourForm({ initialData }: TourFormProps) {
     status: initialData?.status || "published",
     description: initialData?.description || "",
     map_url: initialData?.map_url || "",
-    is_featured: initialData?.is_featured || false,
     total_seats:
       typeof initialData?.total_seats === "number" ? String(initialData.total_seats) : "",
     seats_remaining:
@@ -409,7 +407,6 @@ export default function TourForm({ initialData }: TourFormProps) {
         status: formData.status,
         description: formData.description,
         map_url: formData.map_url,
-        is_featured: formData.is_featured,
         total_seats: Number.isFinite(totalSeats) ? totalSeats : null,
         seats_remaining: Number.isFinite(seatsRemaining) ? seatsRemaining : null,
         show_booking_count: formData.show_booking_count,
@@ -1019,19 +1016,7 @@ export default function TourForm({ initialData }: TourFormProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <input 
-          type="checkbox" 
-          id="is_featured" 
-          name="is_featured" 
-          checked={formData.is_featured} 
-          onChange={handleCheckboxChange} 
-          className="w-5 h-5 accent-[#ff5e00] text-[#ff5e00] rounded focus:ring-[#ff5e00]" 
-        />
-        <label htmlFor="is_featured" className="text-sm font-medium text-gray-700 font-sans cursor-pointer">
-          Feature on homepage (max 4 tours — &quot;Popular experiences&quot; section)
-        </label>
-      </div>
+
 
       <div className="flex justify-end gap-4 pt-4 border-t border-gray-100">
         <button type="button" onClick={() => router.push('/admin/tours')} className="px-6 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors font-sans font-semibold">Cancel</button>
