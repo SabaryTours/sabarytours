@@ -27,7 +27,6 @@ const emptyForm = {
 
 export default function AdminSettingsPage() {
   const [members, setMembers] = useState<AdminTeamMember[]>([]);
-  const [viewerRole, setViewerRole] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -44,10 +43,7 @@ export default function AdminSettingsPage() {
     try {
       const res = await fetch("/api/admin/team");
       const json = await res.json();
-      if (json.success) {
-        setMembers(json.members);
-        setViewerRole(json.viewerRole || "");
-      }
+      if (json.success) setMembers(json.members);
     } catch (error) {
       console.error(error);
     } finally {
@@ -131,12 +127,6 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const isOwner = viewerRole === "owner";
-  // Only an owner can grant the owner role or edit another owner, so don't
-  // offer either to anyone else.
-  const roleOptions = ADMIN_ROLE_OPTIONS.filter((role) => role !== "owner" || isOwner);
-  const canEdit = (member: AdminTeamMember) => isOwner || member.role !== "owner";
-
   const togglePermission = (member: AdminTeamMember, permission: AdminPermission, checked: boolean) => {
     const next = checked
       ? Array.from(new Set([...member.permissions, permission]))
@@ -193,7 +183,7 @@ export default function AdminSettingsPage() {
             onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
             className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
           >
-            {roleOptions.map((role) => (
+            {ADMIN_ROLE_OPTIONS.map((role) => (
               <option key={role} value={role}>
                 {role[0].toUpperCase() + role.slice(1)}
               </option>
@@ -236,7 +226,7 @@ export default function AdminSettingsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <select
                       value={member.role}
-                      disabled={savingId === member.id || !canEdit(member)}
+                      disabled={savingId === member.id}
                       onChange={(e) => {
                         const role = e.target.value;
                         void updateMember(member, {
@@ -244,9 +234,9 @@ export default function AdminSettingsPage() {
                           permissions: ADMIN_ROLE_PRESETS[role] || [],
                         });
                       }}
-                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-sans disabled:bg-gray-50 disabled:text-gray-500"
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-sans"
                     >
-                      {(member.role === "owner" ? ADMIN_ROLE_OPTIONS : roleOptions).map((role) => (
+                      {ADMIN_ROLE_OPTIONS.map((role) => (
                         <option key={role} value={role}>
                           {role[0].toUpperCase() + role.slice(1)}
                         </option>
@@ -254,9 +244,9 @@ export default function AdminSettingsPage() {
                     </select>
                     <button
                       type="button"
-                      disabled={savingId === member.id || !canEdit(member)}
+                      disabled={savingId === member.id}
                       onClick={() => void removeAccess(member)}
-                      className="rounded-lg border border-red-200 text-red-600 px-3 py-2 text-sm font-semibold font-sans hover:bg-red-50 disabled:opacity-50 disabled:hover:bg-transparent"
+                      className="rounded-lg border border-red-200 text-red-600 px-3 py-2 text-sm font-semibold font-sans hover:bg-red-50"
                     >
                       Remove access
                     </button>

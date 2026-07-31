@@ -4,7 +4,6 @@ import {
   ADMIN_ROLE_OPTIONS,
   ADMIN_ROLE_PRESETS,
   isAdminRole,
-  normalizeAdminRole,
   normalizePermissions,
   type AdminPermission,
 } from "../../../lib/adminPermissions";
@@ -59,20 +58,6 @@ function buildProfileSeedFromAuthUser(authUser: {
       null,
     username: typeof meta.username === "string" ? meta.username : null,
   };
-}
-
-function isOwner(role: string | null | undefined) {
-  return normalizeAdminRole(role) === "owner";
-}
-
-async function countOwners() {
-  const { count, error } = await supabaseAdmin
-    .from("profiles")
-    .select("id", { count: "exact", head: true })
-    .eq("role", "owner");
-
-  if (error) throw error;
-  return count ?? 0;
 }
 
 async function findAuthUserByEmail(email: string) {
@@ -299,12 +284,7 @@ export async function GET() {
       })
       .sort((a, b) => new Date(String(a.created_at)).getTime() - new Date(String(b.created_at)).getTime());
 
-    return NextResponse.json({
-      success: true,
-      members,
-      viewerId: auth.session.userId,
-      viewerRole: normalizeAdminRole(auth.session.role),
-    });
+    return NextResponse.json({ success: true, members });
   } catch (error: unknown) {
     console.error("Error fetching admin team:", error);
     return NextResponse.json({ success: false, error: errorMessage(error) }, { status: 500 });
@@ -331,7 +311,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Valid email and role are required." }, { status: 400 });
     }
 
-    if (role === "owner" && !isOwner(auth.session.role)) {
+    if (role === "owner" && auth.session.role !== "owner") {
       return NextResponse.json({ success: false, error: "Only an owner can assign owner access." }, { status: 403 });
     }
 
@@ -340,21 +320,6 @@ export async function POST(request: Request) {
       : ADMIN_ROLE_PRESETS[role] || [];
 
     const authUser = await findAuthUserByEmail(email);
-
-    if (authUser && !isOwner(auth.session.role)) {
-      const { data: existing } = await supabaseAdmin
-        .from("profiles")
-        .select("role")
-        .eq("id", authUser.id)
-        .maybeSingle();
-
-      if (isOwner(existing?.role)) {
-        return NextResponse.json(
-          { success: false, error: "Only an owner can change another owner's access." },
-          { status: 403 },
-        );
-      }
-    }
 
     if (!authUser) {
       if (!firstName) {
@@ -439,21 +404,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, error: "You cannot remove your own admin access." }, { status: 400 });
     }
 
-    if (isOwner(target.role) && !isOwner(auth.session.role)) {
-      return NextResponse.json(
-        { success: false, error: "Only an owner can change another owner's access." },
-        { status: 403 },
-      );
-    }
-
     if (removeAccess) {
-      if (isOwner(target.role) && (await countOwners()) <= 1) {
-        return NextResponse.json(
-          { success: false, error: "You cannot remove the last owner. Assign another owner first." },
-          { status: 400 },
-        );
-      }
-
       const { error } = await supabaseAdmin
         .from("profiles")
         .update({ role: "subscriber", admin_permissions: [] })
@@ -468,15 +419,8 @@ export async function PATCH(request: Request) {
     }
 
     const nextRole = role || target.role;
-    if (isOwner(nextRole) && !isOwner(auth.session.role)) {
+    if (nextRole === "owner" && auth.session.role !== "owner") {
       return NextResponse.json({ success: false, error: "Only an owner can assign owner access." }, { status: 403 });
-    }
-
-    if (isOwner(target.role) && !isOwner(nextRole) && (await countOwners()) <= 1) {
-      return NextResponse.json(
-        { success: false, error: "You cannot demote the last owner. Assign another owner first." },
-        { status: 400 },
-      );
     }
 
     const payload: Record<string, unknown> = {};
