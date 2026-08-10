@@ -14,13 +14,32 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
+type TurnstileResponse = { success?: boolean; action?: string };
+
+async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
+  const secret = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY?.trim();
+  if (!secret || !token) return false;
+  const formData = new FormData();
+  formData.set("secret", secret);
+  formData.set("response", token);
+  if (ip !== "unknown") formData.set("remoteip", ip);
+  const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    method: "POST",
+    body: formData,
+    cache: "no-store",
+  });
+  if (!response.ok) return false;
+  const result = (await response.json()) as TurnstileResponse;
+  return result.success === true && result.action === "contact_submit";
+}
+
 export async function POST(request: Request) {
   try {
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       request.headers.get("x-real-ip") ||
       "unknown";
-    const { ok } = rateLimit({ key: `contact:${ip}`, limit: 10, windowMs: 60_000 });
+    const { ok } = rateLimit({ key: `contact:${ip}`, limit: 5, windowMs: 10 * 60_000 });
     if (!ok) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
@@ -37,6 +56,15 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+    const captchaToken = typeof body?.captchaToken === "string" ? body.captchaToken : "";
+    const honeypot = typeof body?.website === "string" ? body.website.trim() : "";
+    const formStartedAt = typeof body?.formStartedAt === "number" ? body.formStartedAt : 0;
+    if (honeypot || !formStartedAt || Date.now() - formStartedAt < 2_000) {
+      return NextResponse.json({ error: "Security check failed. Please try again." }, { status: 400 });
+    }
+    if (!(await verifyTurnstile(captchaToken, ip))) {
+      return NextResponse.json({ error: "Security check failed or expired. Please refresh and try again." }, { status: 400 });
+    }
     const parsed = contactFormSchema.safeParse(body);
     if (!parsed.success) {
       const message = parsed.error.issues[0]?.message || "Invalid form data";

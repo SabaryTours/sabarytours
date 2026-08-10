@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isAdminRole, isCustomerRole } from "../../../lib/adminPermissions";
+import { isCustomerRole } from "../../../lib/adminPermissions";
 import { adminAuthErrorResponse, requireAdminPermission, supabaseAdmin } from "../../../lib/adminAuth";
 
 function errorMessage(error: unknown): string {
@@ -32,6 +32,7 @@ export async function GET() {
             "No name",
           role: profile?.role || "subscriber",
           created_at: user.created_at,
+          last_sign_in_at: user.last_sign_in_at,
           avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url,
         };
       })

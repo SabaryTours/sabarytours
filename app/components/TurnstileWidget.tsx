@@ -25,9 +25,10 @@ declare global {
 
 interface TurnstileWidgetProps {
   onTokenChange: (token: string) => void;
+  action?: string;
 }
 
-export default function TurnstileWidget({ onTokenChange }: TurnstileWidgetProps) {
+export default function TurnstileWidget({ onTokenChange, action = "form_submit" }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [widgetId, setWidgetId] = useState<string | null>(null);
@@ -44,11 +45,11 @@ export default function TurnstileWidget({ onTokenChange }: TurnstileWidgetProps)
       callback: (token: string) => onTokenChange(token),
       "expired-callback": () => onTokenChange(""),
       "error-callback": () => onTokenChange(""),
-      action: "booking_submit",
+      action,
       theme: "light",
     });
     setWidgetId(id);
-  }, [scriptLoaded, siteKey, widgetId, onTokenChange]);
+  }, [action, scriptLoaded, siteKey, widgetId, onTokenChange]);
 
   useEffect(() => {
     return () => {
