@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { contactFormSchema, type ContactFormData } from "../lib/validations/contact";
 import { CONTACT_SUBJECTS, DEFAULT_CONTACT_SUBJECT } from "../lib/contactSubjects";
@@ -11,6 +11,7 @@ import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import { Location01Icon, CallIcon, Mail01Icon } from "hugeicons-react";
 import { useFormAnalytics } from "../hooks/useFormAnalytics";
+import TurnstileWidget from "../components/TurnstileWidget";
 
 export default function ContactPage() {
   const searchParams = useSearchParams();
@@ -27,6 +28,11 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
   const [submitMessage, setSubmitMessage] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaKey, setCaptchaKey] = useState(0);
+  const [website, setWebsite] = useState("");
+  const formStartedAt = useRef(Date.now());
+  const handleCaptchaToken = useCallback((token: string) => setCaptchaToken(token), []);
   const { onFormInteraction, onFormSubmitSuccess } = useFormAnalytics({
     formId: "contact",
     formName: "Contact Form",
@@ -113,6 +119,12 @@ export default function ContactPage() {
       return;
     }
 
+    if (!captchaToken) {
+      setSubmitStatus("error");
+      setSubmitMessage("Please complete the security check before sending your message.");
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitStatus("idle");
     setSubmitMessage("");
@@ -123,7 +135,12 @@ export default function ContactPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          captchaToken,
+          website,
+          formStartedAt: formStartedAt.current,
+        }),
       });
 
       const data = await response.json();
@@ -145,6 +162,9 @@ export default function ContactPage() {
         subject: DEFAULT_CONTACT_SUBJECT,
         message: "",
       });
+      setCaptchaToken("");
+      setCaptchaKey((key) => key + 1);
+      formStartedAt.current = Date.now();
     } catch (error) {
       setSubmitStatus("error");
       setSubmitMessage(error instanceof Error ? error.message : "Failed to send message. Please try again later.");
@@ -258,6 +278,10 @@ export default function ContactPage() {
                 information.
               </p>
               <form onSubmit={handleSubmit} className="space-y-4" data-analytics-location="contact_form" onFocus={onFormInteraction}>
+                <div className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+                  <label htmlFor="website">Website</label>
+                  <input id="website" name="website" type="text" value={website} onChange={(event) => setWebsite(event.target.value)} tabIndex={-1} autoComplete="off" />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label
@@ -421,11 +445,13 @@ export default function ContactPage() {
                   </div>
                 )}
 
+                <TurnstileWidget key={captchaKey} onTokenChange={handleCaptchaToken} action="contact_submit" />
+
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !captchaToken}
                   className={`w-full bg-[#ff5e00] text-white px-6 py-4 rounded-xl font-bold text-[16px] transition-all shadow-md  ${
-                    isSubmitting
+                    isSubmitting || !captchaToken
                       ? "opacity-60 cursor-not-allowed"
                       : "hover:bg-[#e55500] hover:shadow-lg hover:-translate-y-0.5"
                   }`}

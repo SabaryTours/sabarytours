@@ -10,30 +10,41 @@ type PlatformUserRow = {
   full_name?: string | null;
   role?: string | null;
   created_at: string;
+  last_sign_in_at?: string | null;
   avatar_url?: string | null;
 };
+
+function formatTimestamp(value?: string | null): string {
+  if (!value) return "Not available";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not available";
+  return date.toLocaleString("en-GB", {
+    day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit", timeZoneName: "short",
+  });
+}
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<PlatformUserRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    void fetchUsers();
-  }, []);
+    let active = true;
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/admin/users");
-      const json = await res.json();
-      if (json.success) {
-        setUsers(json.users);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(false);
-  };
+    fetch("/api/admin/users")
+      .then((res) => res.json())
+      .then((json) => {
+        if (active && json.success) setUsers(json.users);
+      })
+      .catch((error: unknown) => console.error(error))
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -70,7 +81,10 @@ export default function AdminUsersPage() {
                 <span className="text-xs uppercase tracking-wide text-gray-500 font-sans">
                   {user.role || "subscriber"}
                 </span>
-                <span className="text-sm text-gray-600 font-sans">{new Date(user.created_at).toLocaleDateString()}</span>
+                <div className="text-right">
+                  <p className="text-sm text-gray-600 font-sans">Joined {formatTimestamp(user.created_at)}</p>
+                  <p className="text-xs text-gray-500 font-sans">Last sign-in {formatTimestamp(user.last_sign_in_at)}</p>
+                </div>
               </div>
             </div>
           ))
@@ -85,7 +99,7 @@ export default function AdminUsersPage() {
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider font-sans">User</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider font-sans">Contact</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider font-sans">Account type</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider font-sans text-right">Joined</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider font-sans text-right">Activity timestamps</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -118,7 +132,10 @@ export default function AdminUsersPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <span className="text-sm text-gray-600 font-sans">{new Date(user.created_at).toLocaleDateString()}</span>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600 font-sans">Joined {formatTimestamp(user.created_at)}</p>
+                      <p className="text-xs text-gray-500 font-sans">Last sign-in {formatTimestamp(user.last_sign_in_at)}</p>
+                    </div>
                   </td>
                 </tr>
               ))}
