@@ -6,9 +6,10 @@ import { useEffect, useState } from "react";
 
 interface BookingSuccessProps {
   onClose: () => void;
+  bookingReference?: string;
 }
 
-export default function BookingSuccess({ onClose }: BookingSuccessProps) {
+export default function BookingSuccess({ onClose, bookingReference }: BookingSuccessProps) {
   const [dashboardUrl, setDashboardUrl] = useState("/login");
 
   useEffect(() => {
@@ -116,6 +117,17 @@ export default function BookingSuccess({ onClose }: BookingSuccessProps) {
           >
             +233 576 093 838
           </a>
+
+          {bookingReference && (
+            <a
+              href={`/api/bookings/calendar?reference=${encodeURIComponent(bookingReference)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mb-3 block w-full rounded-lg border-2 border-[#0060cc] py-3 text-[16px] font-bold text-[#0060cc] transition-colors hover:bg-blue-50 font-sans"
+            >
+              Add to Google Calendar
+            </a>
+          )}
 
           <Link
             href={dashboardUrl}

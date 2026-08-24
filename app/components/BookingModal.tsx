@@ -49,6 +49,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
     pickupLocation: "",
   });
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successfulReference, setSuccessfulReference] = useState("");
   const [showError, setShowError] = useState(false);
   const [paymentOption, setPaymentOption] = useState<"full" | "deposit" | "cash">("full");
   const [voucherCode, setVoucherCode] = useState<string>("");
@@ -182,6 +183,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
         setIsSubmitting(true);
         const reference = `CASH-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
         await createBooking(reference);
+        setSuccessfulReference(reference);
         setShowSuccess(true);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Booking failed";
@@ -198,6 +200,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
   const handlePaymentSuccess = async (reference: string) => {
     try {
       await createBooking(reference);
+      setSuccessfulReference(reference);
       setShowSuccess(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Booking failed";
@@ -232,7 +235,7 @@ export default function BookingModal({ isOpen, onClose, tour }: BookingModalProp
   };
 
   if (showSuccess) {
-    return <BookingSuccess onClose={handleClose} />;
+    return <BookingSuccess onClose={handleClose} bookingReference={successfulReference} />;
   }
 
   if (showError) {

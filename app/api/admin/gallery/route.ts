@@ -22,7 +22,7 @@ async function requireAdmin(): Promise<AdminGate> {
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "admin") {
+  if (!['admin', 'owner'].includes(profile?.role || '')) {
     return { ok: false, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
   return { ok: true, userId: user.id };

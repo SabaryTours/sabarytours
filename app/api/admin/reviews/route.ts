@@ -22,7 +22,7 @@ export async function GET() {
       .eq('id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
+    if (!['admin', 'owner'].includes(profile?.role || '')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

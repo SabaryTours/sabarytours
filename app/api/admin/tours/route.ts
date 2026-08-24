@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    if (!['admin', 'owner'].includes(profile?.role || '')) {
       return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
     }
 
@@ -164,7 +164,7 @@ export async function DELETE(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    if (!['admin', 'owner'].includes(profile?.role || '')) {
       return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
     }
 

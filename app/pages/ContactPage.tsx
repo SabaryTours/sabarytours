@@ -11,7 +11,7 @@ import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import { Location01Icon, CallIcon, Mail01Icon } from "hugeicons-react";
 import { useFormAnalytics } from "../hooks/useFormAnalytics";
-import TurnstileWidget from "../components/TurnstileWidget";
+import ReCaptchaWidget from "../components/ReCaptchaWidget";
 
 export default function ContactPage() {
   const searchParams = useSearchParams();
@@ -119,7 +119,7 @@ export default function ContactPage() {
       return;
     }
 
-    if (!captchaToken) {
+    if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken) {
       setSubmitStatus("error");
       setSubmitMessage("Please complete the security check before sending your message.");
       return;
@@ -445,13 +445,13 @@ export default function ContactPage() {
                   </div>
                 )}
 
-                <TurnstileWidget key={captchaKey} onTokenChange={handleCaptchaToken} action="contact_submit" />
+                <ReCaptchaWidget key={captchaKey} onTokenChange={handleCaptchaToken} />
 
                 <button
                   type="submit"
-                  disabled={isSubmitting || !captchaToken}
+                  disabled={isSubmitting}
                   className={`w-full bg-[#ff5e00] text-white px-6 py-4 rounded-xl font-bold text-[16px] transition-all shadow-md  ${
-                    isSubmitting || !captchaToken
+                    isSubmitting
                       ? "opacity-60 cursor-not-allowed"
                       : "hover:bg-[#e55500] hover:shadow-lg hover:-translate-y-0.5"
                   }`}
@@ -473,4 +473,3 @@ export default function ContactPage() {
     </div>
   );
 }
-

@@ -2,6 +2,21 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { PASSWORD_RECOVERY_COOKIE, PASSWORD_RESET_PATH } from '../../lib/passwordRecovery'
 
+function isInvalidRefreshToken(error: unknown) {
+  if (!error || typeof error !== 'object') return false
+  const candidate = error as { code?: string; message?: string }
+  return candidate.code === 'refresh_token_not_found' ||
+    /invalid refresh token|refresh token not found/i.test(candidate.message || '')
+}
+
+function clearSupabaseAuthCookies(request: NextRequest, response: NextResponse) {
+  request.cookies.getAll().forEach(({ name }) => {
+    if (!name.startsWith('sb-') || !name.includes('auth-token')) return
+    request.cookies.delete(name)
+    response.cookies.set(name, '', { path: '/', maxAge: 0 })
+  })
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -16,7 +31,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({
             request,
           })
@@ -28,9 +43,12 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user = null
+  const { data, error } = await supabase.auth.getUser()
+  user = data.user
+  const invalidRefreshToken = isInvalidRefreshToken(error)
+
+  if (invalidRefreshToken) user = null
 
   const pathname = request.nextUrl.pathname
   const isRecoveryPending = request.cookies.get(PASSWORD_RECOVERY_COOKIE)?.value === '1'
@@ -42,7 +60,9 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = PASSWORD_RESET_PATH.split('?')[0]
     url.search = PASSWORD_RESET_PATH.split('?')[1] ?? ''
-    return NextResponse.redirect(url)
+    const redirectResponse = NextResponse.redirect(url)
+    if (invalidRefreshToken) clearSupabaseAuthCookies(request, redirectResponse)
+    return redirectResponse
   }
 
   const isLoginLikeRoute =
@@ -52,7 +72,9 @@ export async function updateSession(request: NextRequest) {
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    return NextResponse.redirect(url)
+    const redirectResponse = NextResponse.redirect(url)
+    if (invalidRefreshToken) clearSupabaseAuthCookies(request, redirectResponse)
+    return redirectResponse
   }
 
   if (user && isLoginLikeRoute) {
@@ -61,5 +83,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  if (invalidRefreshToken) clearSupabaseAuthCookies(request, supabaseResponse)
   return supabaseResponse
 }

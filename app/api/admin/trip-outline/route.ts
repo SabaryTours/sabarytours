@@ -24,7 +24,7 @@ async function requireAdmin(): Promise<AdminGate> {
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "admin") {
+  if (!['admin', 'owner'].includes(profile?.role || '')) {
     return { ok: false, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
   return { ok: true };
@@ -115,10 +115,8 @@ export async function POST(request: Request) {
         };
       });
 
-    const { error: clearError } = await supabaseAdmin.from("trip_year_outline").delete().eq("year", year);
-    if (clearError) throw clearError;
-
-    const rowsToInsert = payload.map((row) => ({
+    const rowsToSave = payload.map((row) => ({
+      ...(row.id ? { id: row.id } : {}),
       year: row.year,
       month: row.month,
       title: row.title,
@@ -132,11 +130,46 @@ export async function POST(request: Request) {
       sort_order: row.sort_order,
       updated_at: row.updated_at,
     }));
-    if (rowsToInsert.length > 0) {
-      const { error } = await supabaseAdmin.from("trip_year_outline").insert(rowsToInsert);
+
+    // Save first, then remove deleted cards. A failed insert must never erase the
+    // year's existing schedule.
+    const existingRows = rowsToSave.filter((row) => "id" in row);
+    const newRows = rowsToSave.filter((row) => !("id" in row));
+    const savedIds: string[] = [];
+
+    if (existingRows.length > 0) {
+      const { data, error } = await supabaseAdmin
+        .from("trip_year_outline")
+        .upsert(existingRows, { onConflict: "id" })
+        .select("id");
+      if (error) throw error;
+      savedIds.push(...(data || []).map((row) => row.id));
+    }
+
+    if (newRows.length > 0) {
+      const { data, error } = await supabaseAdmin.from("trip_year_outline").insert(newRows).select("id");
+      if (error) {
+        if (error.code === "23505") {
+          throw new Error("The database still allows only one tour per month. Apply the latest trip outline migration, then save again.");
+        }
+        throw error;
+      }
+      savedIds.push(...(data || []).map((row) => row.id));
+    }
+
+    const { data: currentRows, error: currentError } = await supabaseAdmin
+      .from("trip_year_outline")
+      .select("id")
+      .eq("year", year);
+    if (currentError) throw currentError;
+
+    const staleIds = (currentRows || []).map((row) => row.id).filter((id) => !savedIds.includes(id));
+    if (staleIds.length > 0) {
+      const { error } = await supabaseAdmin.from("trip_year_outline").delete().in("id", staleIds);
       if (error) throw error;
     }
-    return NextResponse.json({ success: true, saved: rowsToInsert.length });
+
+    return NextResponse.json({ success: true, saved: savedIds.length });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Save failed";
     return NextResponse.json({ error: msg }, { status: 500 });
