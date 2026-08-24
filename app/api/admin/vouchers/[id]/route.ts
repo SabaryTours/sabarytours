@@ -24,7 +24,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    if (!['admin', 'owner'].includes(profile?.role || '')) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -64,7 +64,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    if (!['admin', 'owner'].includes(profile?.role || '')) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

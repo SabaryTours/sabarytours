@@ -1,11 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { ArrowLeft01Icon } from "hugeicons-react";
+import { ArrowLeft01Icon, Calendar01Icon } from "hugeicons-react";
 
 export default function BookingSuccessPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const bookingReference = searchParams.get("ref")?.trim() || "";
+  const calendarHref = bookingReference
+    ? `/api/bookings/calendar?reference=${encodeURIComponent(bookingReference)}`
+    : null;
 
   return (
     <div className="min-h-screen bg-white">
@@ -64,6 +69,18 @@ export default function BookingSuccessPage() {
             >
               +233 576 093 838
             </a>
+
+            {calendarHref && (
+              <a
+                href={calendarHref}
+                target="_blank"
+                rel="noreferrer"
+                className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-[#0060cc] py-3 text-[16px] font-bold text-[#0060cc] transition-colors hover:bg-blue-50 font-sans"
+              >
+                <Calendar01Icon size={20} />
+                Add to Google Calendar
+              </a>
+            )}
 
             <button
               onClick={() => router.push("/packages")}

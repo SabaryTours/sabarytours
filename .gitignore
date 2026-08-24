@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -45,3 +46,4 @@ next-env.d.ts
 
 # SQL dumps (removed - using Supabase now)
 *.sql
+!supabase/migrations/20260822090000_trip_outline_multiple_cards_hardening.sql

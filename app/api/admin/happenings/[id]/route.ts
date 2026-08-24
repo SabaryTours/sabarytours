@@ -27,7 +27,7 @@ export async function PATCH(
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    if (!['admin', 'owner'].includes(profile?.role || '')) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -74,7 +74,7 @@ export async function DELETE(
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    if (!['admin', 'owner'].includes(profile?.role || '')) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
