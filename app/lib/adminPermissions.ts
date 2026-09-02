@@ -100,6 +100,7 @@ export function canAccessAdminPath(
 ): boolean {
   const required = getRequiredPermissionForPath(pathname);
   if (!required) return true;
-  if (role === "owner" || role === "admin") return true;
+  const normalizedRole = normalizeAdminRole(role);
+  if (normalizedRole === "owner" || normalizedRole === "admin") return true;
   return permissions.includes(required);
 }

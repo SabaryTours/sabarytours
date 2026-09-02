@@ -5,6 +5,8 @@ export type TripOutlineCardMeta = {
   tour_slug?: string;
   card_type?: "featured" | "upcoming";
   date?: string;
+  time?: string;
+  pickup?: string;
   inclusions?: string;
   price?: string;
   seats_remaining?: number | null;
@@ -27,6 +29,8 @@ export function parseTripOutlineBody(raw: string | null | undefined): TripOutlin
         tour_slug: typeof parsed.tour_slug === "string" ? parsed.tour_slug : "",
         card_type: parsed.card_type === "featured" ? "featured" : "upcoming",
         date: typeof parsed.date === "string" ? parsed.date : "",
+        time: typeof parsed.time === "string" ? parsed.time : "",
+        pickup: typeof parsed.pickup === "string" ? parsed.pickup : "",
         inclusions: typeof parsed.inclusions === "string" ? parsed.inclusions : "",
         price: typeof parsed.price === "string" ? parsed.price : "",
         seats_remaining: typeof parsed.seats_remaining === "number" ? parsed.seats_remaining : null,
@@ -49,6 +53,8 @@ export function buildTripOutlineBody(meta: TripOutlineCardMeta): string | null {
   const tour_slug = String(meta.tour_slug || "").trim();
   const card_type = meta.card_type === "featured" ? "featured" : "upcoming";
   const date = String(meta.date || "").trim();
+  const time = String(meta.time || "").trim();
+  const pickup = String(meta.pickup || "").trim();
   const inclusions = String(meta.inclusions || "").trim();
   const price = String(meta.price || "").trim();
   const details = String(meta.details || "").trim();
@@ -56,7 +62,7 @@ export function buildTripOutlineBody(meta: TripOutlineCardMeta): string | null {
   const total_seats = typeof meta.total_seats === "number" ? meta.total_seats : null;
   const show_seats = meta.show_seats === true;
 
-  if (!description && !image_url && !book_url && !tour_slug && !date && !inclusions && !price && !details) return null;
+  if (!description && !image_url && !book_url && !tour_slug && !date && !time && !pickup && !inclusions && !price && !details) return null;
 
   return JSON.stringify({
     description,
@@ -65,6 +71,8 @@ export function buildTripOutlineBody(meta: TripOutlineCardMeta): string | null {
     tour_slug,
     card_type,
     date,
+    time,
+    pickup,
     inclusions,
     price,
     seats_remaining,

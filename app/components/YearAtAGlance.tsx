@@ -15,8 +15,12 @@ function hasContent(m: TripOutlineMonth) {
 function mapRowToCard(row: TripOutlineMonth, month: number, index: number): UpcomingTourCardData {
   const meta = parseTripOutlineBody(row.body || "");
   const bookUrl = resolveTripOutlineBookUrl({
+    title: row.title,
     tour_slug: meta.tour_slug,
     book_url: row.book_url || meta.book_url,
+    date: meta.date,
+    time: meta.time,
+    pickup: meta.pickup,
   });
 
   return {
@@ -116,7 +120,7 @@ export default function YearAtAGlance({ year, items }: { year: number; items: Tr
                 Upcoming tours
               </h2>
               <p className="mt-2 max-w-xl text-sm text-gray-600 font-sans mx-auto md:mx-0">
-                A quick look at what&apos;s scheduled — tap a month to book or view the full calendar.
+                A quick look at what&apos;s scheduled. Tap a month to book and add to your calendar.
               </p>
             </div>
             <Link

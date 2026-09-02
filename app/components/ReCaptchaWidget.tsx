@@ -40,7 +40,7 @@ export default function ReCaptchaWidget({ onTokenChange }: { onTokenChange: (tok
   }, [onTokenChange, scriptLoaded, siteKey]);
 
   if (!siteKey) {
-    return <p className="text-sm text-amber-700">Spam protection is being configured. You can still send your message.</p>;
+    return null;
   }
 
   return (

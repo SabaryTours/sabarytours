@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "../utils/supabase/server";
 import {
   isAdminRole,
+  normalizeAdminRole,
   normalizePermissions,
   type AdminPermission,
 } from "./adminPermissions";
@@ -29,7 +30,7 @@ export async function getAdminSession(userId: string): Promise<AdminSession | nu
 
   return {
     userId,
-    role: profile.role,
+    role: normalizeAdminRole(profile.role),
     permissions: normalizePermissions(profile.role, profile.admin_permissions),
   };
 }

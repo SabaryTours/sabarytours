@@ -42,8 +42,12 @@ export default async function UpcomingToursPage() {
     const cards: UpcomingTourCardData[] = monthRows.map((row, index) => {
       const meta = parseTripOutlineBody(row.body || "");
       const bookUrl = resolveTripOutlineBookUrl({
+        title: row.title,
         tour_slug: meta.tour_slug,
         book_url: row.book_url || meta.book_url,
+        date: meta.date,
+        time: meta.time,
+        pickup: meta.pickup,
       });
 
       return {
