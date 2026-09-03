@@ -20,7 +20,7 @@ import {
 } from "hugeicons-react";
 import { logout } from "../../lib/authService";
 import Image from "next/image";
-import type { AdminPermission } from "../../lib/adminPermissions";
+import { normalizeAdminRole, type AdminPermission } from "../../lib/adminPermissions";
 
 const navItems: {
   name: string;
@@ -61,7 +61,8 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ isOpen, onClose, role, permissions }: AdminSidebarProps) {
   const pathname = usePathname();
   const allowed = new Set(permissions);
-  const visibleItems = role === "owner" || role === "admin"
+  const normalizedRole = normalizeAdminRole(role);
+  const visibleItems = normalizedRole === "owner" || normalizedRole === "admin"
     ? navItems
     : navItems.filter((item) => allowed.has(item.permission));
 

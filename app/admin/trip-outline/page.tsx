@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { buildTripOutlineBody, parseTripOutlineBody } from "../../lib/tripOutline";
-import { resolveTripOutlineBookUrl, tourBookingHref } from "../../lib/tourUrls";
+import { tourBookingHref } from "../../lib/tourUrls";
 
 const MONTH_LABELS = [
   "January",
@@ -25,6 +25,8 @@ type CardDraft = {
   title: string;
   description: string;
   date: string;
+  time: string;
+  pickup: string;
   inclusions: string;
   price: string;
   seats_remaining: string;
@@ -49,6 +51,8 @@ const emptyCard = (sortOrder: number): CardDraft => ({
   title: "",
   description: "",
   date: "",
+  time: "",
+  pickup: "",
   inclusions: "",
   price: "",
   seats_remaining: "",
@@ -105,6 +109,8 @@ export default function AdminTripOutlinePage() {
           title: r.title || "",
           description: r.description || meta.description || "",
           date: meta.date || "",
+          time: meta.time || "",
+          pickup: meta.pickup || "",
           inclusions: meta.inclusions || "",
           price: meta.price || "",
           seats_remaining:
@@ -141,7 +147,7 @@ export default function AdminTripOutlinePage() {
       Array.from({ length: 12 }, (_, i) =>
         (byMonth[i + 1] || []).map((card, idx) => {
           const bookUrl = card.tour_slug.trim()
-            ? tourBookingHref(card.tour_slug.trim())
+            ? tourBookingHref(card.tour_slug.trim(), { date: card.date, time: card.time, pickup: card.pickup })
             : "/contact?from=upcoming-tour";
 
           return {
@@ -159,6 +165,8 @@ export default function AdminTripOutlinePage() {
             tour_slug: card.tour_slug.trim() || undefined,
             card_type: card.card_type,
             date: card.date,
+            time: card.time,
+            pickup: card.pickup,
             inclusions: card.inclusions,
             price: card.price,
             seats_remaining: card.seats_remaining.trim() ? Number(card.seats_remaining) : null,
@@ -374,8 +382,8 @@ export default function AdminTripOutlinePage() {
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <input
-                              type="text"
-                              placeholder="Date, e.g. July 12, 2026"
+                              type="date"
+                              aria-label="Fixed tour date"
                               value={card.date}
                               onChange={(e) => updateCard(month, cardIndex, { date: e.target.value })}
                               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
@@ -385,6 +393,20 @@ export default function AdminTripOutlinePage() {
                               placeholder="Price, e.g. GHS 450"
                               value={card.price}
                               onChange={(e) => updateCard(month, cardIndex, { price: e.target.value })}
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                            />
+                            <input
+                              type="time"
+                              aria-label="Fixed tour time"
+                              value={card.time}
+                              onChange={(e) => updateCard(month, cardIndex, { time: e.target.value })}
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Fixed pickup point"
+                              value={card.pickup}
+                              onChange={(e) => updateCard(month, cardIndex, { pickup: e.target.value })}
                               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
                             />
                             <input

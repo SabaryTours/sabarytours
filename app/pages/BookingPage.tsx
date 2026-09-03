@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft01Icon, CheckmarkBadge01Icon, Calendar01Icon, UserIcon, CreditCardIcon } from "hugeicons-react";
 import { Tour } from "../data/packages";
 import { getUser } from "../lib/authService";
@@ -54,6 +54,11 @@ interface BookingPageProps {
 
 export default function BookingPage({ tour, otherTours = [] }: BookingPageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fixedDate = searchParams.get("date")?.trim() || "";
+  const fixedTime = searchParams.get("time")?.trim() || "";
+  const fixedPickup = searchParams.get("pickup")?.trim() || "";
+  const hasFixedSchedule = Boolean(fixedDate && fixedTime);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -61,9 +66,9 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
     email: "",
     phone: "",
     package: "",
-    date: "",
-    timeSlot: "",
-    pickupLocation: "",
+    date: fixedDate,
+    timeSlot: fixedTime,
+    pickupLocation: fixedPickup,
   });
   
   // Price tier quantities keyed by tier index ("0", "1", …).
@@ -461,13 +466,20 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                   <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">
                     Select Date & Time <span className="text-red-500">*</span>
                   </label>
-                  <AvailabilityCalendar
-                    value={formData.date}
-                    onChange={(date, timeSlot) => setFormData({ ...formData, date, timeSlot: timeSlot || "" })}
-                    selectedTimeSlot={formData.timeSlot}
-                    availableDates={availableDates}
-                    minDate={new Date().toISOString().split('T')[0]}
-                  />
+                  {hasFixedSchedule ? (
+                    <div className="rounded-xl border border-orange-100 bg-[#fff7f0] p-4 font-sans text-gray-800">
+                      <p className="font-bold">This group tour has a fixed schedule.</p>
+                      <p className="mt-1 text-sm">{fixedDate} at {fixedTime}</p>
+                    </div>
+                  ) : (
+                    <AvailabilityCalendar
+                      value={formData.date}
+                      onChange={(date, timeSlot) => setFormData({ ...formData, date, timeSlot: timeSlot || "" })}
+                      selectedTimeSlot={formData.timeSlot}
+                      availableDates={availableDates}
+                      minDate={new Date().toISOString().split('T')[0]}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -569,6 +581,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                     type="text"
                     value={formData.pickupLocation}
                     onChange={(e) => setFormData({ ...formData, pickupLocation: e.target.value })}
+                    readOnly={Boolean(fixedPickup)}
                     placeholder="Enter your pick-up address"
                     className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] font-sans"
                   />

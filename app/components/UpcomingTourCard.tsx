@@ -38,7 +38,7 @@ export default function UpcomingTourCard({
   moreInMonth?: number;
 }) {
   const accent = card.accent_color || "#ff5e00";
-  const excerpt = card.details || card.description || "Details coming soon for this experience.";
+  const excerpt = card.description || card.details || "Details coming soon for this experience.";
   const isFeatured = card.card_type === "featured";
 
   return (
