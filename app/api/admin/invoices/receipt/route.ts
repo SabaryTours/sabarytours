@@ -1,33 +1,12 @@
 import { NextResponse } from "next/server";
-import { createClient as createServerClient } from "../../../../utils/supabase/server";
-import { createClient } from "@supabase/supabase-js";
 import { formatInvoiceReceiptNumber } from "../../../../lib/invoiceReceiptEmailHtml";
 import { markInvoiceAsPaid, sendInvoiceReceiptEmail } from "../../../../lib/invoicePayment";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { adminAuthErrorResponse, requireAdminPermission, supabaseAdmin } from "../../../../lib/adminAuth";
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!['admin', 'owner'].includes(profile?.role || '')) {
-      return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
-    }
+    const auth = await requireAdminPermission("finance");
+    if (!auth.ok) return adminAuthErrorResponse(auth);
 
     const body = await request.json();
     const invoice_id = body.invoice_id as string | undefined;

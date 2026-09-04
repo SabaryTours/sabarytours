@@ -1,34 +1,15 @@
 import { NextResponse } from 'next/server';
-import { createClient as createServerClient } from '../../../../utils/supabase/server';
-import { createClient } from '@supabase/supabase-js';
 import { resend, FROM_EMAIL, PAYMENT_OPTIONS_HTML } from '../../../../lib/resend';
 import { buildEmailHtml } from '../../../../lib/emailTemplate';
 import { escapeHtml } from '../../../../lib/bookingReceiptEmailHtml';
+import { adminAuthErrorResponse, requireAdminPermission, supabaseAdmin } from '../../../../lib/adminAuth';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
-// Service-role client for inserts that bypass RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function POST(request: Request) {
   try {
-    // 1. Authenticate Admin User using server client (cookie-based auth)
-    const supabase = await createServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (!['admin', 'owner'].includes(profile?.role || '')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const auth = await requireAdminPermission("finance");
+    if (!auth.ok) return adminAuthErrorResponse(auth);
 
     // 2. Parse Request
     const body = await request.json();
@@ -217,7 +198,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ ...newBooking, payment_url: paymentUrl }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Walk-in Invoice Creation Error:', error);
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }

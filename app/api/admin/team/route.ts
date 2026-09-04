@@ -4,6 +4,8 @@ import {
   ADMIN_ROLE_OPTIONS,
   ADMIN_ROLE_PRESETS,
   isAdminRole,
+  isOwnerRole,
+  normalizeAdminRole,
   normalizePermissions,
   type AdminPermission,
 } from "../../../lib/adminPermissions";
@@ -82,7 +84,7 @@ function mapTeamMember(
   profile: Record<string, unknown>,
   authUser?: { email?: string | null; created_at?: string; user_metadata?: Record<string, unknown> },
 ) {
-  const role = typeof profile.role === "string" ? profile.role : "support";
+  const role = normalizeAdminRole(typeof profile.role === "string" ? profile.role : "support");
   return {
     id: profile.id,
     email: authUser?.email || profile.email || "",
@@ -269,7 +271,7 @@ export async function GET() {
     const { data: profiles, error } = await supabaseAdmin
       .from("profiles")
       .select("id, role, admin_permissions, first_name, last_name, created_at")
-      .in("role", [...ADMIN_ROLE_OPTIONS]);
+      .not("role", "is", null);
 
     if (error) throw error;
 
@@ -311,11 +313,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Valid email and role are required." }, { status: 400 });
     }
 
-    if (role === "owner" && auth.session.role !== "owner") {
+    if (role === "owner" && !isOwnerRole(auth.session.role)) {
       return NextResponse.json({ success: false, error: "Only an owner can assign owner access." }, { status: 403 });
     }
 
-    const permissions = requestedPermissions.length > 0
+    const permissions = role === "owner" || role === "admin"
+      ? ADMIN_ROLE_PRESETS[role]
+      : requestedPermissions.length > 0
       ? requestedPermissions
       : ADMIN_ROLE_PRESETS[role] || [];
 
@@ -400,6 +404,11 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, error: "Admin team member not found." }, { status: 404 });
     }
 
+    const targetRole = normalizeAdminRole(target.role);
+    if (targetRole === "owner" && !isOwnerRole(auth.session.role)) {
+      return NextResponse.json({ success: false, error: "Only an owner can modify owner access." }, { status: 403 });
+    }
+
     if (userId === auth.session.userId && removeAccess) {
       return NextResponse.json({ success: false, error: "You cannot remove your own admin access." }, { status: 400 });
     }
@@ -418,14 +427,16 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, error: "Invalid role." }, { status: 400 });
     }
 
-    const nextRole = role || target.role;
-    if (nextRole === "owner" && auth.session.role !== "owner") {
+    const nextRole = role || targetRole;
+    if ((targetRole === "owner" || nextRole === "owner") && !isOwnerRole(auth.session.role)) {
       return NextResponse.json({ success: false, error: "Only an owner can assign owner access." }, { status: 403 });
     }
 
     const payload: Record<string, unknown> = {};
     if (role) payload.role = role;
-    if (requestedPermissions) {
+    if (nextRole === "owner" || nextRole === "admin") {
+      payload.admin_permissions = ADMIN_ROLE_PRESETS[nextRole];
+    } else if (requestedPermissions) {
       payload.admin_permissions = requestedPermissions;
     } else if (role) {
       payload.admin_permissions = ADMIN_ROLE_PRESETS[role] || [];

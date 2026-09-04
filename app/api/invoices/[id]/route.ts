@@ -1,30 +1,11 @@
 import { NextResponse } from "next/server";
-import { createClient as createServerClient } from "../../../utils/supabase/server";
-import { createClient } from "@supabase/supabase-js";
 import { markInvoiceAsPaid, sendInvoiceReceiptEmail } from "../../../lib/invoicePayment";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { adminAuthErrorResponse, requireAdminPermission, supabaseAdmin } from "../../../lib/adminAuth";
 
 async function requireAdmin() {
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-
-  const { data: profile } = await supabaseAdmin
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (!['admin', 'owner'].includes(profile?.role || '')) {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-  return { user };
+  const auth = await requireAdminPermission("finance");
+  if (!auth.ok) return { error: adminAuthErrorResponse(auth) };
+  return { user: { id: auth.session.userId } };
 }
 
 export async function PATCH(
@@ -77,7 +58,7 @@ export async function PATCH(
     }
 
     const payload: Record<string, unknown> = { status };
-    let { error: upErr } = await supabaseAdmin.from("invoices").update(payload).eq("id", id);
+    const { error: upErr } = await supabaseAdmin.from("invoices").update(payload).eq("id", id);
     if (upErr) {
       return NextResponse.json({ error: upErr.message }, { status: 500 });
     }
