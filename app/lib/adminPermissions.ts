@@ -59,6 +59,15 @@ export function normalizeAdminRole(role: string | null | undefined) {
   return (role || "").trim().toLowerCase();
 }
 
+export function isOwnerRole(role: string | null | undefined) {
+  return normalizeAdminRole(role) === "owner";
+}
+
+export function isFullAdminRole(role: string | null | undefined) {
+  const normalizedRole = normalizeAdminRole(role);
+  return normalizedRole === "owner" || normalizedRole === "admin";
+}
+
 export function normalizePermissions(
   role: string | null | undefined,
   raw: unknown,

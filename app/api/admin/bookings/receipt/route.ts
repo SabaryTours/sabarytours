@@ -1,36 +1,15 @@
 import { NextResponse } from "next/server";
-import { createClient as createServerClient } from "../../../../utils/supabase/server";
-import { createClient } from "@supabase/supabase-js";
 import {
   buildOfflinePaymentReceiptEmailHtml,
   formatBookingReceiptNumber,
 } from "../../../../lib/bookingReceiptEmailHtml";
 import { resend, FROM_EMAIL } from "../../../../lib/resend";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { adminAuthErrorResponse, requireAdminPermission, supabaseAdmin } from "../../../../lib/adminAuth";
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!['admin', 'owner'].includes(profile?.role || '')) {
-      return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
-    }
+    const auth = await requireAdminPermission("finance");
+    if (!auth.ok) return adminAuthErrorResponse(auth);
 
     const body = await request.json();
     const booking_id = body.booking_id as string | undefined;
@@ -40,7 +19,7 @@ export async function POST(request: Request) {
     const update_booking_payment = body.update_booking_payment !== false;
     const send_email = body.send_email !== false;
 
-    let amount_received = Number(body.amount_received);
+    const amount_received = Number(body.amount_received);
     if (!booking_id) {
       return NextResponse.json({ success: false, error: "booking_id is required" }, { status: 400 });
     }
