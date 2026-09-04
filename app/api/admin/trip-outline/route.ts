@@ -75,6 +75,16 @@ function parseTourSlugFromBody(body: string | null | undefined): string {
   }
 }
 
+function hasFixedSchedule(body: string | null | undefined): boolean {
+  if (!body) return false;
+  try {
+    const parsed = JSON.parse(body) as { date?: string; time?: string };
+    return Boolean(parsed.date?.trim() && parsed.time?.trim());
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: Request) {
   const gate = await requireAdmin();
   if (!gate.ok) return gate.response;
@@ -88,6 +98,34 @@ export async function POST(request: Request) {
     }
     if (!Array.isArray(rows)) {
       return NextResponse.json({ error: "rows array required" }, { status: 400 });
+    }
+
+    const rowSlugs = rows.map((row) => parseTourSlugFromBody(row.body));
+    if (rowSlugs.some((slug) => !slug)) {
+      return NextResponse.json({ error: "Every upcoming card must be linked to a published tour." }, { status: 400 });
+    }
+    if (rows.some((row) => !hasFixedSchedule(row.body))) {
+      return NextResponse.json({ error: "Every upcoming group tour must have a fixed date and time." }, { status: 400 });
+    }
+    const linkedSlugs = [...new Set(rowSlugs)];
+
+    const { data: publishedTours, error: publishedError } = await supabaseAdmin
+      .from("tours")
+      .select("slug, title")
+      .eq("status", "published");
+    if (publishedError) throw publishedError;
+
+    const publishedSlugs = new Set(
+      (publishedTours || []).map((tour) =>
+        tour.slug || tour.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
+      ),
+    );
+    const invalidSlugs = linkedSlugs.filter((slug) => !publishedSlugs.has(slug));
+    if (invalidSlugs.length > 0) {
+      return NextResponse.json(
+        { error: "One or more selected tours are no longer published. Refresh the page and choose again." },
+        { status: 400 },
+      );
     }
 
     const payload = rows

@@ -334,22 +334,58 @@ export async function getSimilarTours(
 }
 
 export async function getPublishedTourOptions(): Promise<
-  Array<{ slug: string; title: string; category: string | null }>
+  Array<{
+    slug: string;
+    title: string;
+    category: string | null;
+    description: string;
+    image_url: string;
+    inclusions: string[];
+    price: string;
+    total_seats: number | null;
+    seats_remaining: number | null;
+    show_seats: boolean;
+  }>
 > {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tours")
-    .select("title, slug, category")
+    .select(`
+      title,
+      slug,
+      category,
+      description,
+      currency,
+      whats_included,
+      total_seats,
+      seats_remaining,
+      show_seats,
+      tour_images(image_url, display_order),
+      tour_prices(amount, currency, name)
+    `)
     .eq("status", "published")
     .order("title", { ascending: true });
 
   if (error || !data) return [];
 
-  return data.map((tour) => ({
-    slug: tour.slug || generateSlug(tour.title),
-    title: tour.title,
-    category: tour.category || null,
-  }));
+  return (data as TourRow[]).map((tour) => {
+    const images = [...(tour.tour_images || [])].sort((a, b) => a.display_order - b.display_order);
+    const prices = sortTourPriceTiers(tour.tour_prices || []);
+    const { amount, currency } = getLowestTierPrice(prices, tour.currency);
+
+    return {
+      slug: tour.slug || generateSlug(tour.title),
+      title: tour.title,
+      category: tour.category || null,
+      description: tour.description || "",
+      image_url: images[0]?.image_url || "",
+      inclusions: Array.isArray(tour.whats_included) ? tour.whats_included : [],
+      price: amount > 0 ? `${currency} ${amount}` : "",
+      total_seats: tour.total_seats ?? null,
+      seats_remaining: tour.seats_remaining ?? null,
+      show_seats: tour.show_seats === true,
+    };
+  });
 }
 
 export async function getTourBySlug(tourSlug: string): Promise<Tour | null> {
@@ -692,4 +728,3 @@ export async function getTripOutlineForYear(year: number): Promise<TripOutlineMo
   }
   return (data as TripOutlineMonth[]) || [];
 }
-

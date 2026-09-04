@@ -8,13 +8,20 @@ export function tourDetailHref(category: string | null | undefined, slug: string
 }
 
 /** Booking flow for a published tour slug. */
-export type FixedTourSchedule = { date?: string | null; time?: string | null; pickup?: string | null };
+export type FixedTourSchedule = {
+  id?: string | null;
+  date?: string | null;
+  time?: string | null;
+  pickup?: string | null;
+};
 
 export function tourBookingHref(slug: string, schedule?: FixedTourSchedule): string {
   const params = new URLSearchParams({ tour: slug.trim() });
   const date = schedule?.date?.trim();
   const time = schedule?.time?.trim();
   const pickup = schedule?.pickup?.trim();
+  const scheduleId = schedule?.id?.trim();
+  if (scheduleId) params.set("schedule", scheduleId);
   if (date) params.set("date", date);
   if (time) params.set("time", time);
   if (pickup) params.set("pickup", pickup);
@@ -36,15 +43,16 @@ type TripOutlineLinkMeta = {
   date?: string | null;
   time?: string | null;
   pickup?: string | null;
+  schedule_id?: string | null;
 };
 
 /** Resolve upcoming-tour CTA links without guessing slugs from card titles. */
 export function resolveTripOutlineBookUrl(meta: TripOutlineLinkMeta): string {
   const linkedSlug = meta.tour_slug?.trim();
-  if (linkedSlug) return tourBookingHref(linkedSlug, meta);
+  if (linkedSlug) return tourBookingHref(linkedSlug, { ...meta, id: meta.schedule_id });
 
   const bookUrl = meta.book_url?.trim();
-  if (bookUrl && bookUrl !== "/booking" && !bookUrl.startsWith("/contact?from=upcoming-tour")) return bookUrl;
+  if (bookUrl && bookUrl !== "/booking") return bookUrl;
 
   const inferredSlug = slugFromTitle((meta.title || "").replace(/\([^)]*\)/g, " "));
   return inferredSlug ? tourBookingHref(inferredSlug, meta) : "/packages";

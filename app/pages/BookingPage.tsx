@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ArrowLeft01Icon, CheckmarkBadge01Icon, Calendar01Icon, UserIcon, CreditCardIcon } from "hugeicons-react";
 import { Tour } from "../data/packages";
 import { getUser } from "../lib/authService";
@@ -16,6 +16,7 @@ import TourGrid from "../components/TourGrid";
 import { useCurrency } from "../context/CurrencyContext";
 import { inferTierCurrency, currencySymbol } from "../lib/tourPricing";
 import { computeClientPaymentAmount, roundBookingCurrency } from "../lib/bookingPricingClient";
+import type { ScheduledTour } from "../lib/scheduledTours";
 
 function tierSelectionKey(index: number) {
   return String(index);
@@ -50,25 +51,22 @@ function tierHeadingLabel(
 interface BookingPageProps {
   tour: Tour;
   otherTours?: Tour[];
+  schedule?: ScheduledTour | null;
 }
 
-export default function BookingPage({ tour, otherTours = [] }: BookingPageProps) {
+export default function BookingPage({ tour, otherTours = [], schedule = null }: BookingPageProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const fixedDate = searchParams.get("date")?.trim() || "";
-  const fixedTime = searchParams.get("time")?.trim() || "";
-  const fixedPickup = searchParams.get("pickup")?.trim() || "";
-  const hasFixedSchedule = Boolean(fixedDate && fixedTime);
+  const hasFixedSchedule = Boolean(schedule);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
-    package: "",
-    date: fixedDate,
-    timeSlot: fixedTime,
-    pickupLocation: fixedPickup,
+    package: schedule ? tour.title : "",
+    date: schedule?.date || "",
+    timeSlot: schedule?.time || "",
+    pickupLocation: schedule?.pickup || "",
   });
   
   // Price tier quantities keyed by tier index ("0", "1", …).
@@ -220,6 +218,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
       paymentAmount,
       tourId: tour.id,
       tourSlug: tour.slug,
+      scheduleId: schedule?.id || null,
       userId: userData?.id || null,
     };
 
@@ -447,7 +446,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                   )}
                 </div>
 
-                <div>
+                {!hasFixedSchedule ? <div>
                   <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">
                     Select Package
                   </label>
@@ -460,7 +459,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                     onChange={(value) => setFormData({ ...formData, package: value })}
                     placeholder="--Select--"
                   />
-                </div>
+                </div> : null}
 
                 <div>
                   <label className="block text-gray-900 text-[14px] font-bold mb-2 font-sans">
@@ -469,7 +468,8 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                   {hasFixedSchedule ? (
                     <div className="rounded-xl border border-orange-100 bg-[#fff7f0] p-4 font-sans text-gray-800">
                       <p className="font-bold">This group tour has a fixed schedule.</p>
-                      <p className="mt-1 text-sm">{fixedDate} at {fixedTime}</p>
+                      <p className="mt-1 text-sm">{schedule?.date} at {schedule?.time}</p>
+                      {schedule?.pickup ? <p className="mt-1 text-sm">Pickup: {schedule.pickup}</p> : null}
                     </div>
                   ) : (
                     <AvailabilityCalendar
@@ -581,7 +581,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                     type="text"
                     value={formData.pickupLocation}
                     onChange={(e) => setFormData({ ...formData, pickupLocation: e.target.value })}
-                    readOnly={Boolean(fixedPickup)}
+                    readOnly={hasFixedSchedule && Boolean(schedule?.pickup)}
                     placeholder="Enter your pick-up address"
                     className="w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ff5e00] font-sans"
                   />
@@ -740,6 +740,7 @@ export default function BookingPage({ tour, otherTours = [] }: BookingPageProps)
                             date: formData.date,
                             timeSlot: formData.timeSlot,
                             pickupLocation: formData.pickupLocation,
+                            scheduleId: schedule?.id || null,
                             paymentOption,
                             tierSelections,
                             totalCost: toGhs(totalPrice, pricingBase),

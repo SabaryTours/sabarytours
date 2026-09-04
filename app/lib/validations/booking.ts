@@ -37,6 +37,7 @@ export const bookingSchema = z.object({
 tierSelections: z.record(z.string(), z.number().int().min(0)).optional(),
   tourId: z.union([z.string(), z.number()]),
   tourSlug: z.string().trim().min(1, "Invalid tour"),
+  scheduleId: z.string().trim().min(1).nullable().optional(),
   userId: z.string().uuid().nullable().optional(),
 });
 
