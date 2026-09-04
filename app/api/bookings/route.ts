@@ -11,6 +11,7 @@ import {
   stableStringify,
   verifyBookingPricingSignature,
 } from "../../lib/serverBookingPricing";
+import { validateScheduledTour } from "../../lib/scheduledTours";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -164,6 +165,14 @@ export async function POST(request: Request) {
     const body = parsed.data;
     const isCashBooking = body.paymentOption === "cash";
 
+    await validateScheduledTour(supabaseAdmin, {
+      scheduleId: body.scheduleId,
+      tourSlug: body.tourSlug,
+      date: body.date,
+      time: body.timeSlot,
+      pickup: body.pickupLocation,
+    });
+
     const expectedPricing = await computeExpectedBookingPricing(supabaseAdmin, body);
     if (Math.abs(expectedPricing.totalPrice - Number(body.totalPrice)) > PRICE_TOLERANCE) {
       await logSecurityEvent({
@@ -224,6 +233,10 @@ export async function POST(request: Request) {
       const signedPricingMatches =
         verifyBookingPricingSignature(paystackMetadata, paystackMetadata.pricingSignature, paystackSecretKey) &&
         paystackMetadata.tourSlug === body.tourSlug &&
+        (paystackMetadata.scheduleId || null) === (body.scheduleId || null) &&
+        paystackMetadata.date === body.date &&
+        paystackMetadata.timeSlot === body.timeSlot &&
+        (paystackMetadata.pickupLocation || "") === (body.pickupLocation || "") &&
         Number(paystackMetadata.numberOfPeople) === Number(body.numberOfPeople) &&
         paystackMetadata.paymentOption === body.paymentOption &&
         (typeof paystackMetadata.voucherCode === "string" ? paystackMetadata.voucherCode : "") ===

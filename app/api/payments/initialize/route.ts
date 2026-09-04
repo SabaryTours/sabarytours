@@ -6,6 +6,7 @@ import {
   normalizeTierSelections,
   stableStringify,
 } from "../../../lib/serverBookingPricing";
+import { validateScheduledTour } from "../../../lib/scheduledTours";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -54,6 +55,14 @@ export async function POST(req: Request) {
       );
     }
 
+    await validateScheduledTour(supabaseAdmin, {
+      scheduleId: typeof metadata?.scheduleId === "string" ? metadata.scheduleId : null,
+      tourSlug,
+      date: typeof metadata?.date === "string" ? metadata.date : "",
+      time: typeof metadata?.timeSlot === "string" ? metadata.timeSlot : "",
+      pickup: typeof metadata?.pickupLocation === "string" ? metadata.pickupLocation : "",
+    });
+
     const pricing = await computeExpectedBookingPricing(supabaseAdmin, {
       tourSlug: tourSlug || "",
       tourId,
@@ -97,6 +106,8 @@ export async function POST(req: Request) {
       numberOfPeople,
       date: typeof metadata?.date === "string" ? metadata.date : null,
       timeSlot: typeof metadata?.timeSlot === "string" ? metadata.timeSlot.slice(0, 40) : null,
+      pickupLocation: typeof metadata?.pickupLocation === "string" ? metadata.pickupLocation.slice(0, 200) : null,
+      scheduleId: typeof metadata?.scheduleId === "string" ? metadata.scheduleId : null,
       paymentOption,
       voucherCode: signedMetadata.voucherCode as string | null,
       tierSelectionsJson: signedMetadata.tierSelectionsJson as string,

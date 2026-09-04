@@ -48,6 +48,7 @@ export default async function UpcomingToursPage() {
         date: meta.date,
         time: meta.time,
         pickup: meta.pickup,
+        schedule_id: row.id,
       });
 
       return {

@@ -132,6 +132,10 @@ export function createBookingPricingSignature(
 ): string {
   const signaturePayload = {
     tourSlug: metadata.tourSlug,
+    scheduleId: metadata.scheduleId || null,
+    date: metadata.date || null,
+    timeSlot: metadata.timeSlot || null,
+    pickupLocation: metadata.pickupLocation || null,
     numberOfPeople: Number(metadata.numberOfPeople),
     paymentOption: metadata.paymentOption,
     voucherCode: typeof metadata.voucherCode === "string" ? metadata.voucherCode.toUpperCase() : null,

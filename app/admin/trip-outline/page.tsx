@@ -45,6 +45,13 @@ type TourOption = {
   slug: string;
   title: string;
   category: string | null;
+  description: string;
+  image_url: string;
+  inclusions: string[];
+  price: string;
+  total_seats: number | null;
+  seats_remaining: number | null;
+  show_seats: boolean;
 };
 
 const emptyCard = (sortOrder: number): CardDraft => ({
@@ -77,7 +84,6 @@ export default function AdminTripOutlinePage() {
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [tourOptions, setTourOptions] = useState<TourOption[]>([]);
 
   const load = useCallback(async (y: number) => {
@@ -199,6 +205,26 @@ export default function AdminTripOutlinePage() {
     });
   };
 
+  const selectTour = (month: number, cardIndex: number, slug: string) => {
+    const tour = tourOptions.find((option) => option.slug === slug);
+    if (!tour) {
+      updateCard(month, cardIndex, { tour_slug: "" });
+      return;
+    }
+
+    updateCard(month, cardIndex, {
+      tour_slug: tour.slug,
+      title: tour.title,
+      description: tour.description,
+      image_url: tour.image_url,
+      inclusions: tour.inclusions.join(", "),
+      price: tour.price,
+      total_seats: tour.total_seats == null ? "" : String(tour.total_seats),
+      seats_remaining: tour.seats_remaining == null ? "" : String(tour.seats_remaining),
+      show_seats: tour.show_seats,
+    });
+  };
+
   const removeCard = (month: number, cardIndex: number) => {
     setByMonth((prev) => {
       const cards = (prev[month] || []).filter((_, i) => i !== cardIndex).map((card, i) => ({
@@ -224,25 +250,20 @@ export default function AdminTripOutlinePage() {
     });
   };
 
-  const uploadCardImage = async (month: number, cardIndex: number, file: File) => {
-    const key = `${month}-${cardIndex}`;
-    try {
-      setUploadingKey(key);
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok || !data.secure_url) throw new Error(data.error || "Upload failed");
-      updateCard(month, cardIndex, { image_url: data.secure_url });
-      toast.success("Image uploaded");
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Image upload failed");
-    } finally {
-      setUploadingKey(null);
-    }
-  };
-
   const saveAll = async () => {
+    const unlinkedCount = rowsPayload.filter((row) => !parseTripOutlineBody(row.body).tour_slug).length;
+    if (unlinkedCount > 0) {
+      toast.error(`Select a published tour for all ${unlinkedCount} unlinked card${unlinkedCount === 1 ? "" : "s"}.`);
+      return;
+    }
+    const unscheduledCount = rowsPayload.filter((row) => {
+      const meta = parseTripOutlineBody(row.body);
+      return !meta.date || !meta.time;
+    }).length;
+    if (unscheduledCount > 0) {
+      toast.error(`Add a fixed date and time for all ${unscheduledCount} group tour${unscheduledCount === 1 ? "" : "s"}.`);
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch("/api/admin/trip-outline", {
@@ -266,8 +287,7 @@ export default function AdminTripOutlinePage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-800 font-sans">Upcoming tours by month</h1>
           <p className="text-gray-500 text-sm font-sans mt-1">
-            Create multiple featured/upcoming cards per month. These cards power the public{" "}
-            <span className="font-semibold">Featured &amp; upcoming tours</span> page.
+            Choose published tours and schedule them by month. Tour details are filled automatically from the catalog.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -316,7 +336,6 @@ export default function AdminTripOutlinePage() {
                 ) : (
                   <div className="space-y-4">
                     {cards.map((card, cardIndex) => {
-                      const uploadKey = `${month}-${cardIndex}`;
                       return (
                         <div key={card.id || `${month}-${cardIndex}`} className="rounded-xl border border-gray-200 p-4 space-y-3 bg-gray-50">
                           <div className="flex items-center justify-between gap-2">
@@ -350,13 +369,31 @@ export default function AdminTripOutlinePage() {
                             </div>
                           </div>
 
+                          <div>
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-600">
+                              Published tour
+                            </label>
+                            <select
+                              value={card.tour_slug}
+                              onChange={(e) => selectTour(month, cardIndex, e.target.value)}
+                              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-sans"
+                            >
+                              <option value="">Select a published tour…</option>
+                              {tourOptions.map((tour) => (
+                                <option key={tour.slug} value={tour.slug}>
+                                  {tour.title}{tour.category ? ` — ${tour.category}` : ""}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <input
                               type="text"
                               placeholder="Short headline"
                               value={card.title}
-                              onChange={(e) => updateCard(month, cardIndex, { title: e.target.value })}
-                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                              readOnly
+                              className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 font-sans"
                             />
                             <select
                               value={card.card_type}
@@ -376,8 +413,8 @@ export default function AdminTripOutlinePage() {
                             placeholder="Short tour description"
                             rows={3}
                             value={card.description}
-                            onChange={(e) => updateCard(month, cardIndex, { description: e.target.value })}
-                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                            readOnly
+                            className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 font-sans"
                           />
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -392,8 +429,8 @@ export default function AdminTripOutlinePage() {
                               type="text"
                               placeholder="Price, e.g. GHS 450"
                               value={card.price}
-                              onChange={(e) => updateCard(month, cardIndex, { price: e.target.value })}
-                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                              readOnly
+                              className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 font-sans"
                             />
                             <input
                               type="time"
@@ -443,8 +480,8 @@ export default function AdminTripOutlinePage() {
                             placeholder="Inclusions, e.g. Transport, guide, lunch, museum fees"
                             rows={2}
                             value={card.inclusions}
-                            onChange={(e) => updateCard(month, cardIndex, { inclusions: e.target.value })}
-                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                            readOnly
+                            className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 font-sans"
                           />
 
                           <textarea
@@ -455,43 +492,14 @@ export default function AdminTripOutlinePage() {
                             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
                           />
 
-                          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
+                          <div className="grid grid-cols-1 gap-2">
                             <input
                               type="url"
-                              placeholder="Card image URL (optional)"
+                              placeholder="Tour image"
                               value={card.image_url}
-                              onChange={(e) => updateCard(month, cardIndex, { image_url: e.target.value })}
-                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans"
+                              readOnly
+                              className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 font-sans"
                             />
-                            <label className={`inline-flex cursor-pointer items-center justify-center rounded-lg bg-[#ff5e00] px-3 py-2 text-xs font-bold text-white hover:bg-[#e55500] ${uploadingKey === uploadKey ? "opacity-60" : ""}`}>
-                              {uploadingKey === uploadKey ? "Uploading..." : "Upload image"}
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                disabled={uploadingKey === uploadKey}
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) void uploadCardImage(month, cardIndex, file);
-                                  e.target.value = "";
-                                }}
-                              />
-                            </label>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <select
-                              value={card.tour_slug}
-                              onChange={(e) => updateCard(month, cardIndex, { tour_slug: e.target.value })}
-                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-sans bg-white md:col-span-2"
-                            >
-                              <option value="">No linked tour (Book Now goes to contact)</option>
-                              {tourOptions.map((tour) => (
-                                <option key={tour.slug} value={tour.slug}>
-                                  {tour.title} ({tour.slug})
-                                </option>
-                              ))}
-                            </select>
                           </div>
 
                           <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-sans text-gray-600">

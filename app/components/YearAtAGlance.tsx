@@ -21,6 +21,7 @@ function mapRowToCard(row: TripOutlineMonth, month: number, index: number): Upco
     date: meta.date,
     time: meta.time,
     pickup: meta.pickup,
+    schedule_id: row.id,
   });
 
   return {
