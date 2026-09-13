@@ -1,8 +1,7 @@
 "use client";
 
 import Footer from "../components/Footer";
-import TourComments from "../components/TourComments";
-// import ElfsightReviews from "../components/ElfsightReviews";
+import ReviewsWidget from "../components/ReviewsWidget";
 
 export default function ReviewsPage() {
   return (
@@ -30,10 +29,8 @@ export default function ReviewsPage() {
   </div>
 </div>
 
-      <div className="flex-1 container mx-auto px-4 sm:px-6 md:px-12 py-12 space-y-16">
-        {/* Elfsight reviews widget disabled - using our own reviews instead */}
-        {/* <ElfsightReviews /> */}
-        <TourComments />
+      <div className="flex-1 container mx-auto px-4 sm:px-6 md:px-12 py-12">
+        <ReviewsWidget title="" layout="grid" />
       </div>
 
       <Footer />
