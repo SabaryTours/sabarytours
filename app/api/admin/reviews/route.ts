@@ -1,5 +1,13 @@
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { createClient } from '../../../utils/supabase/server';
+
+// Read through the service role so pending reviews are visible to admins
+// even when the table's RLS only exposes approved rows to normal clients.
+const supabaseAdmin = createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // GET: Fetch all reviews for admin dashboard
 export async function GET() {
@@ -26,7 +34,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { data: reviews, error } = await supabase
+    const { data: reviews, error } = await supabaseAdmin
       .from('reviews')
       .select('*')
       .order('created_at', { ascending: false });
