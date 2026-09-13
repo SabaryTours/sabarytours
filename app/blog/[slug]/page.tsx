@@ -6,6 +6,7 @@ import BlogViewTracker from "../../components/BlogViewTracker";
 import JsonLd from "../../components/seo/JsonLd";
 import { buildBlogArticleSchema, buildBreadcrumbSchema } from "../../lib/seo/schema";
 import { buildPageMetadata } from "../../lib/seo/metadata";
+import { htmlToExcerpt } from "../../lib/htmlToText";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -27,8 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Post Not Found | Sabary Tours" };
   }
 
-  const description =
-    post.excerpt || post.content.replace(/<[^>]*>/g, " ").trim().slice(0, 160);
+  const description = post.excerpt || htmlToExcerpt(post.content, 160);
   const keywords = post.tags?.map((tag) => tag.replace(/^#+/, "").trim()).filter(Boolean) ?? [];
 
   return buildPageMetadata({

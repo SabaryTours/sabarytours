@@ -6,6 +6,7 @@ import JsonLd from "../../../components/seo/JsonLd";
 import { buildBreadcrumbSchema, buildTourActivitySchema } from "../../../lib/seo/schema";
 import { buildPageMetadata } from "../../../lib/seo/metadata";
 import { tourDetailHref } from "../../../lib/tourUrls";
+import { htmlToExcerpt } from "../../../lib/htmlToText";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!tour) return { title: "Tour Not Found - Sabary Tours" };
 
   const description =
-    tour.description?.replace(/<[^>]*>/g, " ").trim().slice(0, 160) ||
+    htmlToExcerpt(tour.description, 160) ||
     `Experience ${tour.title} in Ghana with Sabary Tours.`;
 
   return buildPageMetadata({

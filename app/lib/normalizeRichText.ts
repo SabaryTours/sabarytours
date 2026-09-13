@@ -23,6 +23,10 @@ export function normalizeRichTextHtml(html: string): string {
   // Quill artifacts
   sanitized = sanitized.replace(/<span class="ql-cursor[^"]*">[\s\S]*?<\/span>/gi, "");
 
+  // Word/Quill paste puts a non-breaking space between every word, which stops
+  // the text from wrapping. Turn them back into ordinary spaces.
+  sanitized = sanitized.replace(/&nbsp;/gi, " ").replace(/\u00A0/g, " ");
+
   // Empty paragraphs (including Quill's <p><br></p>)
   sanitized = sanitized.replace(/<p>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "");
 
