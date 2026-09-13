@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Footer from "../components/Footer";
 import type { FaqSectionGroup } from "../lib/faqs";
+import { sanitizePublicHtml } from "../lib/sanitizeHtml";
 
 const SECTION_ACCENT = ["#ff5e00", "#0060cc", "#05A5DF", "#893300"] as const;
 
@@ -12,7 +13,7 @@ function FaqBlock({ question, answer }: { question: string; answer: string }) {
       </h3>
       <div
         className="faq-answer mt-3 text-[14px] sm:text-[15px] text-gray-600 font-sans leading-relaxed space-y-3 [&_a]:text-[#0060cc] [&_a]:font-semibold [&_a:hover]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_p+p]:mt-3 [&_strong]:text-[#222]"
-        dangerouslySetInnerHTML={{ __html: answer }}
+        dangerouslySetInnerHTML={{ __html: sanitizePublicHtml(answer) }}
       />
     </article>
   );

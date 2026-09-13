@@ -1,3 +1,4 @@
+import { htmlToExcerpt } from "./htmlToText";
 import { tourDetailHref } from "./tourUrls";
 
 /** Max tours marked featured in admin and shown on the homepage. */
@@ -114,13 +115,14 @@ export function buildTourHighlights(tour: {
   whats_included?: string[] | null;
   description?: string | null;
 }): string {
-  const included = (tour.whats_included || []).map((s) => String(s).trim()).filter(Boolean);
+  const included = (tour.whats_included || [])
+    .map((s) => htmlToExcerpt(String(s)))
+    .filter(Boolean);
   if (included.length > 0) {
-    const text = included.slice(0, 3).join(", ");
-    return text.length > 200 ? `${text.slice(0, 197)}...` : text;
+    return htmlToExcerpt(included.slice(0, 3).join(", "), 200);
   }
-  const desc = tour.description?.trim();
-  if (desc) return desc.length > 200 ? `${desc.slice(0, 197)}...` : desc;
+  const desc = htmlToExcerpt(tour.description, 200);
+  if (desc) return desc;
   return "Guided experience with Sabary Tours";
 }
 

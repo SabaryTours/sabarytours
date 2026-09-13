@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import ShareButtons from "./ShareButtons";
+import { htmlToExcerpt } from "../lib/htmlToText";
 
 export type UpcomingTourCardData = {
   key: string;
@@ -38,7 +39,11 @@ export default function UpcomingTourCard({
   moreInMonth?: number;
 }) {
   const accent = card.accent_color || "#ff5e00";
-  const excerpt = card.description || card.details || "Details coming soon for this experience.";
+  const excerpt =
+    htmlToExcerpt(card.description) ||
+    htmlToExcerpt(card.details) ||
+    "Details coming soon for this experience.";
+  const inclusions = htmlToExcerpt(card.inclusions);
   const isFeatured = card.card_type === "featured";
 
   return (
@@ -113,9 +118,9 @@ export default function UpcomingTourCard({
           {excerpt}
         </p>
 
-        {card.inclusions ? (
+        {inclusions ? (
           <p className="mt-3 text-xs leading-relaxed text-gray-500 font-sans line-clamp-2">
-            <span className="font-bold text-[#0060cc]">Includes:</span> {card.inclusions}
+            <span className="font-bold text-[#0060cc]">Includes:</span> {inclusions}
           </p>
         ) : null}
 
