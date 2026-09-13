@@ -1,6 +1,15 @@
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { createClient } from '../../utils/supabase/server';
 import { rateLimit } from '../../lib/rateLimit';
+
+// Service-role client so a visitor's review can be written regardless of the
+// table's RLS policies. Safe here: this route validates every field and always
+// forces status 'pending', so nothing can be published without admin approval.
+const supabaseAdmin = createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -87,7 +96,7 @@ export async function POST(request: Request) {
     // Create an elegant UI avatar SVG 
     const fallbackAvatar = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='${encodeURIComponent(randomAvatarColor)}'/><text x='50' y='50' fill='white' font-family='sans-serif' font-size='40' font-weight='bold' text-anchor='middle' alignment-baseline='middle'>${name.charAt(0).toUpperCase()}</text></svg>`;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('reviews')
       .insert([
         {
