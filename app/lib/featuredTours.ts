@@ -94,6 +94,8 @@ export type TourForFeaturedCard = {
   description?: string | null;
   whats_included?: string[] | null;
   tour_images?: { image_url: string; display_order: number }[] | null;
+  /** "group" tours are sold via the Upcoming tours calendar, not the catalog. */
+  tour_type?: string | null;
 };
 
 function slugFromTitle(title: string): string {

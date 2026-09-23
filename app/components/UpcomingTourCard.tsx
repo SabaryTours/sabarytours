@@ -39,10 +39,13 @@ export default function UpcomingTourCard({
   moreInMonth?: number;
 }) {
   const accent = card.accent_color || "#ff5e00";
+  const description = htmlToExcerpt(card.description);
+  const detailsText = htmlToExcerpt(card.details);
   const excerpt =
-    htmlToExcerpt(card.description) ||
-    htmlToExcerpt(card.details) ||
-    "Details coming soon for this experience.";
+    description || detailsText || "Details coming soon for this experience.";
+  // Admin's "extra details" field gets its own block. It used to be a fallback
+  // for an empty description, so it never rendered on a card linked to a tour.
+  const extraDetails = description ? detailsText : "";
   const inclusions = htmlToExcerpt(card.inclusions);
   const isFeatured = card.card_type === "featured";
 
@@ -117,6 +120,12 @@ export default function UpcomingTourCard({
         <p className="mt-4 flex-1 text-sm leading-relaxed text-gray-600 font-sans line-clamp-4">
           {excerpt}
         </p>
+
+        {extraDetails ? (
+          <p className="mt-3 text-xs leading-relaxed text-gray-600 font-sans line-clamp-3">
+            {extraDetails}
+          </p>
+        ) : null}
 
         {inclusions ? (
           <p className="mt-3 text-xs leading-relaxed text-gray-500 font-sans line-clamp-2">

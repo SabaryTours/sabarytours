@@ -3,8 +3,11 @@ import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "../../../utils/supabase/server";
 import {
   isMissingTourCapacityColumnError,
+  isMissingTourTypeColumnError,
   stripTourCapacityFields,
+  stripTourTypeField,
   TOUR_CAPACITY_MIGRATION_HINT,
+  TOUR_TYPE_MIGRATION_HINT,
 } from "../../../lib/tourSchema";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -65,30 +68,46 @@ export async function POST(request: Request) {
     let finalTourId = tourId;
     let capacityMigrationWarning: string | undefined;
 
+    /** Drops a column the database hasn't been migrated for yet, so the save still lands. */
+    const stripUnmigrated = (
+      message: string,
+      input: Record<string, unknown>,
+    ): { input: Record<string, unknown>; warning: string } | null => {
+      if (isMissingTourCapacityColumnError(message)) {
+        return { input: stripTourCapacityFields(input), warning: TOUR_CAPACITY_MIGRATION_HINT };
+      }
+      if (isMissingTourTypeColumnError(message)) {
+        return { input: stripTourTypeField(input), warning: TOUR_TYPE_MIGRATION_HINT };
+      }
+      return null;
+    };
+
     // 1. Upsert Tour
     if (finalTourId) {
       const { error: tourError } = await supabaseAdmin.from("tours").update(tourInput).eq("id", finalTourId);
-      if (tourError && isMissingTourCapacityColumnError(tourError.message)) {
+      const updateFallback = tourError ? stripUnmigrated(tourError.message, tourInput) : null;
+      if (updateFallback) {
         const { error: retryError } = await supabaseAdmin
           .from("tours")
-          .update(stripTourCapacityFields(tourInput))
+          .update(updateFallback.input)
           .eq("id", finalTourId);
         if (retryError) throw retryError;
-        capacityMigrationWarning = TOUR_CAPACITY_MIGRATION_HINT;
+        capacityMigrationWarning = updateFallback.warning;
       } else if (tourError) {
         throw tourError;
       }
     } else {
       const { data: newTour, error: tourError } = await supabaseAdmin.from("tours").insert(tourInput).select().single();
-      if (tourError && isMissingTourCapacityColumnError(tourError.message)) {
+      const insertFallback = tourError ? stripUnmigrated(tourError.message, tourInput) : null;
+      if (insertFallback) {
         const { data: retriedTour, error: retryError } = await supabaseAdmin
           .from("tours")
-          .insert(stripTourCapacityFields(tourInput))
+          .insert(insertFallback.input)
           .select()
           .single();
         if (retryError) throw retryError;
         finalTourId = retriedTour.id;
-        capacityMigrationWarning = TOUR_CAPACITY_MIGRATION_HINT;
+        capacityMigrationWarning = insertFallback.warning;
       } else if (tourError) {
         throw tourError;
       } else {
