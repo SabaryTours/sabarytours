@@ -7,6 +7,8 @@ import { buildBreadcrumbSchema, buildTourActivitySchema } from "../../../lib/seo
 import { buildPageMetadata } from "../../../lib/seo/metadata";
 import { tourDetailHref } from "../../../lib/tourUrls";
 import { htmlToExcerpt } from "../../../lib/htmlToText";
+import { createClient } from "../../../utils/supabase/server";
+import { getDeparturesForTour } from "../../../lib/scheduledTours";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +55,7 @@ export default async function TourRoute({ params }: PageProps) {
 
   const category = await getPackageBySlug(tour.categorySlug);
   const similarTours = await getSimilarTours(tour.slug, tour.categorySlug);
+  const departures = await getDeparturesForTour(await createClient(), tour.slug);
 
   const breadcrumbSchema = buildBreadcrumbSchema([
     { name: "Home", path: "/" },
@@ -89,6 +92,7 @@ export default async function TourRoute({ params }: PageProps) {
         tour={tour}
         categoryTitle={category?.title ?? "Tours"}
         similarTours={similarTours}
+        departures={departures}
       />
     </>
   );

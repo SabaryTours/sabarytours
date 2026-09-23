@@ -1,7 +1,9 @@
 "use client";
 
 import Footer from "../components/Footer";
-import ReviewsWidget from "../components/ReviewsWidget";
+import TourComments from "../components/TourComments";
+import ElfsightReviews from "../components/ElfsightReviews";
+// import ReviewsWidget from "../components/ReviewsWidget";
 
 export default function ReviewsPage() {
   return (
@@ -29,8 +31,11 @@ export default function ReviewsPage() {
   </div>
 </div>
 
-      <div className="flex-1 container mx-auto px-4 sm:px-6 md:px-12 py-12">
-        <ReviewsWidget title="" layout="grid" />
+      <div className="flex-1 container mx-auto px-4 sm:px-6 md:px-12 py-12 space-y-16">
+        <ElfsightReviews />
+        <TourComments />
+        {/* In-house reviews widget - kept for a future switch back
+        <ReviewsWidget title="" layout="grid" /> */}
       </div>
 
       <Footer />
