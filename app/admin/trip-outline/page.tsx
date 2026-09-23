@@ -52,6 +52,7 @@ type TourOption = {
   total_seats: number | null;
   seats_remaining: number | null;
   show_seats: boolean;
+  tour_type?: string;
 };
 
 const emptyCard = (sortOrder: number): CardDraft => ({
@@ -381,6 +382,7 @@ export default function AdminTripOutlinePage() {
                               <option value="">Select a published tour…</option>
                               {tourOptions.map((tour) => (
                                 <option key={tour.slug} value={tour.slug}>
+                                  {tour.tour_type === "group" ? "[Group] " : ""}
                                   {tour.title}{tour.category ? ` — ${tour.category}` : ""}
                                 </option>
                               ))}

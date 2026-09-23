@@ -32,6 +32,7 @@ interface TourFormProps {
     location?: string;
     duration?: string;
     status?: string;
+    tour_type?: string;
     description?: string;
     map_url?: string;
     total_seats?: number | null;
@@ -104,6 +105,7 @@ export default function TourForm({ initialData }: TourFormProps) {
     location: initialData?.location || "Accra, Ghana",
     duration: initialData?.duration || "Full Day",
     status: initialData?.status || "published",
+    tour_type: initialData?.tour_type || "private",
     description: initialData?.description || "",
     map_url: initialData?.map_url || "",
     total_seats:
@@ -405,6 +407,7 @@ export default function TourForm({ initialData }: TourFormProps) {
         location: formData.location,
         duration: formData.duration,
         status: formData.status,
+        tour_type: formData.tour_type,
         description: formData.description,
         map_url: formData.map_url,
         total_seats: Number.isFinite(totalSeats) ? totalSeats : null,
@@ -563,6 +566,18 @@ export default function TourForm({ initialData }: TourFormProps) {
             <option value="published">Published</option>
             <option value="draft">Draft</option>
           </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 font-sans mb-1">Tour type</label>
+          <select name="tour_type" value={formData.tour_type} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5e00] outline-none font-sans bg-white text-black placeholder:text-gray-800">
+            <option value="private">Private tour</option>
+            <option value="group">Group departure</option>
+          </select>
+          <p className="text-xs text-gray-500 font-sans mt-1">
+            {formData.tour_type === "group"
+              ? "Hidden from the tours and packages listings. Schedule it under Upcoming tours plan, and it is booked at the prices you set here."
+              : "Listed on the tours and packages pages as a bookable private tour."}
+          </p>
         </div>
       </div>
 

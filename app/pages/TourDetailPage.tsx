@@ -10,20 +10,30 @@ import StarRating from "../components/StarRating";
 import TourGrid from "../components/TourGrid";
 import SafeHTML from "../components/SafeHTML";
 import TourComments from "../components/TourComments";
+// import ReviewsWidget from "../components/ReviewsWidget";
+import TourDepartures from "../components/TourDepartures";
 import { useCurrency } from "../context/CurrencyContext";
 import { inferTierCurrency } from "../lib/tourPricing";
 import { safeImageUrl } from "../lib/safeImageUrl";
 import ShareButtons from "../components/ShareButtons";
 import TourViewTracker from "../components/TourViewTracker";
 import { tourDetailHref } from "../lib/tourUrls";
+import type { TourDeparture } from "../lib/scheduledTours";
 
 interface TourDetailPageProps {
   tour: Tour;
   categoryTitle: string;
   similarTours?: Tour[];
+  /** Fixed-date group departures for this tour, soonest first. */
+  departures?: TourDeparture[];
 }
 
-export default function TourDetailPage({ tour, categoryTitle, similarTours = [] }: TourDetailPageProps) {
+export default function TourDetailPage({
+  tour,
+  categoryTitle,
+  similarTours = [],
+  departures = [],
+}: TourDetailPageProps) {
   const router = useRouter();
   const [showAllGallery, setShowAllGallery] = useState(false);
   const { symbol, convert } = useCurrency();
@@ -216,6 +226,9 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
               />
             </section>
           )}
+
+          {/* Upcoming fixed-date group departures */}
+          <TourDepartures departures={departures} tourTitle={tour.title} />
 
           {/* Inclusions */}
           {(tour.whatsIncluded && tour.whatsIncluded.length > 0) && (
@@ -452,6 +465,12 @@ export default function TourDetailPage({ tour, categoryTitle, similarTours = [] 
       {/* 4. Comments / Reviews Section */}
       <div className="container mx-auto px-4 sm:px-6 md:px-12">
         <TourComments tourSlug={tour.slug} />
+        {/* In-house reviews widget - kept for a future switch back
+        <ReviewsWidget
+          title="Reviews for this tour"
+          subtitle="What travelers said after joining this experience."
+          tourSlug={tour.slug}
+        /> */}
       </div>
 
       {/* 5. Similar Tours Cross-Sell */}

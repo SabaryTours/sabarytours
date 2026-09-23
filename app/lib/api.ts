@@ -38,6 +38,7 @@ type ItineraryRow = {
 type TourRow = {
   id: string | number;
   title: string;
+  tour_type?: string | null;
   slug?: string | null;
   category?: string | null;
   description?: string | null;
@@ -110,23 +111,51 @@ const FEATURED_TOUR_SELECT = `
   tour_images(image_url, display_order)
 `;
 
+/** Same columns plus the group/private flag, which older databases may not have. */
+const FEATURED_TOUR_SELECT_WITH_TYPE = `${FEATURED_TOUR_SELECT},
+  tour_type
+`;
+
+/**
+ * True when a query failed only because `tour_type` has not been migrated yet.
+ * Callers retry without it and treat every tour as private, so the public
+ * listings keep working if the code deploys before the migration runs.
+ */
+function isMissingTourTypeColumn(error: { message?: string } | null): boolean {
+  const message = error?.message || "";
+  return /tour_type/i.test(message) && /(schema cache|does not exist|column)/i.test(message);
+}
+
+/** Group departures are sold through the Upcoming tours calendar, not the catalog. */
+function isPrivateTour(row: { tour_type?: string | null }): boolean {
+  return (row.tour_type ?? "private") !== "group";
+}
+
 /** All published tours for the full catalog page (`/featured-tours`). */
 export async function getAllPublishedTours(): Promise<FeaturedTourCard[]> {
   const supabase = await createClient();
 
-  const { data: tours, error } = await supabase
-    .from("tours")
-    .select(FEATURED_TOUR_SELECT)
-    .eq("status", "published")
-    .order("is_featured", { ascending: false })
-    .order("updated_at", { ascending: false });
+  const publishedTours = (select: string) =>
+    supabase
+      .from("tours")
+      .select(select)
+      .eq("status", "published")
+      .order("is_featured", { ascending: false })
+      .order("updated_at", { ascending: false });
+
+  let { data: tours, error } = await publishedTours(FEATURED_TOUR_SELECT_WITH_TYPE);
+  if (error && isMissingTourTypeColumn(error)) {
+    ({ data: tours, error } = await publishedTours(FEATURED_TOUR_SELECT));
+  }
 
   if (error || !tours) {
     console.error("getAllPublishedTours:", error);
     return [];
   }
 
-  return (tours as TourForFeaturedCard[]).map((tour) => tourToFeaturedCard(tour));
+  return (tours as unknown as TourForFeaturedCard[])
+    .filter(isPrivateTour)
+    .map((tour) => tourToFeaturedCard(tour));
 }
 
 /** Featured tours marked in admin (`is_featured`), with legacy title-matcher fallback. */
@@ -135,17 +164,26 @@ export async function getFeaturedTours(
 ): Promise<FeaturedTourCard[]> {
   const supabase = await createClient();
 
-  const { data: adminFeatured, error: featuredError } = await supabase
-    .from("tours")
-    .select(FEATURED_TOUR_SELECT)
-    .eq("status", "published")
-    .eq("is_featured", true)
-    .order("updated_at", { ascending: false });
+  const featuredQuery = (select: string) =>
+    supabase
+      .from("tours")
+      .select(select)
+      .eq("status", "published")
+      .eq("is_featured", true)
+      .order("updated_at", { ascending: false });
 
-  if (!featuredError && adminFeatured && adminFeatured.length > 0) {
-    return (adminFeatured as TourForFeaturedCard[])
-      .slice(0, limit)
-      .map((tour) => tourToFeaturedCard(tour));
+  let { data: adminFeatured, error: featuredError } = await featuredQuery(
+    FEATURED_TOUR_SELECT_WITH_TYPE,
+  );
+  if (featuredError && isMissingTourTypeColumn(featuredError)) {
+    ({ data: adminFeatured, error: featuredError } = await featuredQuery(FEATURED_TOUR_SELECT));
+  }
+
+  const featuredPrivate = (adminFeatured as unknown as TourForFeaturedCard[] | null)?.filter(
+    isPrivateTour,
+  );
+  if (!featuredError && featuredPrivate && featuredPrivate.length > 0) {
+    return featuredPrivate.slice(0, limit).map((tour) => tourToFeaturedCard(tour));
   }
 
   if (featuredError && !/is_featured/i.test(featuredError.message)) {
@@ -219,7 +257,7 @@ export async function getToursByCategory(categorySlug: string): Promise<Tour[]> 
   }
 
   // Fetch review stats for all tours in this category
-  const typedTours = tours as TourRow[];
+  const typedTours = (tours as TourRow[]).filter(isPrivateTour);
   const tourSlugs = typedTours.map((t) => t.slug || generateSlug(t.title)).filter(Boolean);
   const { data: reviewStats } = await supabase
     .from('reviews')
@@ -300,6 +338,7 @@ export async function getSimilarTours(
   if (error || !tours) return [];
 
   const typedTours = (tours as TourRow[]).filter((tour) => {
+    if (!isPrivateTour(tour)) return false;
     const slug = tour.slug || generateSlug(tour.title);
     return slug !== excludeSlug;
   });
@@ -345,12 +384,11 @@ export async function getPublishedTourOptions(): Promise<
     total_seats: number | null;
     seats_remaining: number | null;
     show_seats: boolean;
+    tour_type: string;
   }>
 > {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("tours")
-    .select(`
+  const OPTION_SELECT = `
       title,
       slug,
       category,
@@ -362,13 +400,22 @@ export async function getPublishedTourOptions(): Promise<
       show_seats,
       tour_images(image_url, display_order),
       tour_prices(amount, currency, name)
-    `)
-    .eq("status", "published")
-    .order("title", { ascending: true });
+  `;
+  const optionsQuery = (select: string) =>
+    supabase
+      .from("tours")
+      .select(select)
+      .eq("status", "published")
+      .order("title", { ascending: true });
+
+  let { data, error } = await optionsQuery(`${OPTION_SELECT}, tour_type`);
+  if (error && isMissingTourTypeColumn(error)) {
+    ({ data, error } = await optionsQuery(OPTION_SELECT));
+  }
 
   if (error || !data) return [];
 
-  return (data as TourRow[]).map((tour) => {
+  return (data as unknown as TourRow[]).map((tour) => {
     const images = [...(tour.tour_images || [])].sort((a, b) => a.display_order - b.display_order);
     const prices = sortTourPriceTiers(tour.tour_prices || []);
     const { amount, currency } = getLowestTierPrice(prices, tour.currency);
@@ -384,6 +431,7 @@ export async function getPublishedTourOptions(): Promise<
       total_seats: tour.total_seats ?? null,
       seats_remaining: tour.seats_remaining ?? null,
       show_seats: tour.show_seats === true,
+      tour_type: tour.tour_type || "private",
     };
   });
 }
