@@ -778,11 +778,20 @@ export default function TourForm({ initialData }: TourFormProps) {
 
         <div className="space-y-4">
           {itinerary.map((item, index) => (
-            <div key={index} className="p-4 bg-gray-50 border border-gray-200 rounded-xl relative group">
-              <button type="button" onClick={() => removeItineraryItem(index)} className="absolute top-4 right-4 text-red-500 hover:bg-red-100 p-1 rounded font-bold opacity-0 group-hover:opacity-100 transition-opacity">X</button>
-              <h4 className="font-bold text-gray-800 mb-3">
-                {itineraryMode === "single-day" ? `Time Slot ${index + 1}` : `Day ${item.day || index + 1}`}
-              </h4>
+            <div key={index} className="p-4 bg-gray-50 border border-gray-200 rounded-xl">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <h4 className="font-bold text-gray-800">
+                  {itineraryMode === "single-day" ? `Time Slot ${index + 1}` : `Day ${item.day || index + 1}`}
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => removeItineraryItem(index)}
+                  aria-label={itineraryMode === "single-day" ? `Delete time slot ${index + 1}` : `Delete day ${item.day || index + 1}`}
+                  className="px-3 py-1 text-sm text-red-500 border border-red-200 hover:bg-red-50 rounded-lg font-semibold"
+                >
+                  Delete
+                </button>
+              </div>
               <div className="space-y-3">
                 {itineraryMode === "single-day" && (
                   <input
@@ -881,14 +890,18 @@ export default function TourForm({ initialData }: TourFormProps) {
         </div>
         <div className="space-y-4">
           {faqItems.map((item, index) => (
-            <div key={index} className="p-4 bg-gray-50 border border-gray-200 rounded-xl relative group">
-              <button
-                type="button"
-                onClick={() => removeFaqItem(index)}
-                className="absolute top-4 right-4 text-red-500 hover:bg-red-100 p-1 rounded font-bold opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                X
-              </button>
+            <div key={index} className="p-4 bg-gray-50 border border-gray-200 rounded-xl">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <h4 className="font-bold text-gray-800">FAQ {index + 1}</h4>
+                <button
+                  type="button"
+                  onClick={() => removeFaqItem(index)}
+                  aria-label={`Delete FAQ ${index + 1}`}
+                  className="px-3 py-1 text-sm text-red-500 border border-red-200 hover:bg-red-50 rounded-lg font-semibold"
+                >
+                  Delete
+                </button>
+              </div>
               <div className="space-y-3">
                 <input
                   type="text"
