@@ -27,8 +27,14 @@ export function normalizeRichTextHtml(html: string): string {
   // the text from wrapping. Turn them back into ordinary spaces.
   sanitized = sanitized.replace(/&nbsp;/gi, " ").replace(/\u00A0/g, " ");
 
-  // Empty paragraphs (including Quill's <p><br></p>)
-  sanitized = sanitized.replace(/<p>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "");
+  // Empty paragraphs (Quill's <p><br></p>) are blank lines the author added on
+  // purpose for spacing. Keep them as spacers, but drop any at the very start
+  // or end of the content.
+  const emptyParagraph = /<p>(\s|<br\s*\/?>)*<\/p>/gi;
+  sanitized = sanitized.replace(emptyParagraph, '<p class="rt-spacer"></p>');
+  sanitized = sanitized
+    .replace(/^(\s*<p class="rt-spacer"><\/p>)+/i, "")
+    .replace(/(<p class="rt-spacer"><\/p>\s*)+$/i, "");
 
   // Collapse stacked line breaks
   sanitized = sanitized.replace(/(<br\s*\/?>\s*){2,}/gi, "<br>");
@@ -56,7 +62,7 @@ export function normalizeRichTextHtml(html: string): string {
   while (prev !== sanitized) {
     prev = sanitized;
     sanitized = sanitized.replace(
-      /<\/p>\s*<p>([a-z(,][^<]*?)<\/p>/gi,
+      /(?<!<p class="rt-spacer">)<\/p>\s*<p>([a-z(,][^<]*?)<\/p>/gi,
       " $1</p>"
     );
   }

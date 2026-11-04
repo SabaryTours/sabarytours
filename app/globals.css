@@ -120,6 +120,12 @@ label {
   margin-bottom: 0;
 }
 
+/* A blank line the author typed in the editor (Quill's empty paragraph). */
+.rich-text-content p.rt-spacer {
+  height: 1.75em;
+  margin: 0;
+}
+
 .rich-text-content h1,
 .rich-text-content h2,
 .rich-text-content h3,
